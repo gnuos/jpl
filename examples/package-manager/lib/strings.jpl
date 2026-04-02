@@ -1,0 +1,56 @@
+// Strings 工具模块
+// 导出 Strings 对象，包含常用字符串函数
+
+$Strings = {
+    // 首字母大写
+    capitalize: fn($s) {
+        if (strlen($s) == 0) {
+            return $s
+        }
+        return upper(substr($s, 0, 1)) .. substr($s, 1)
+    },
+
+    // 转换为 slug（URL 友好格式）
+    slugify: fn($s) {
+        $s = lower($s)
+        $s = replace($s, " ", "-")
+        $s = replace($s, "!", "")
+        $s = replace($s, "?", "")
+        $s = replace($s, ".", "")
+        return $s
+    },
+
+    // 反转字符串
+    reverse: fn($s) {
+        $result = ""
+        $len = strlen($s)
+        for ($i = $len - 1; $i >= 0; $i--) {
+            $result = $result .. substr($s, $i, 1)
+        }
+        return $result
+    },
+
+    // 检查是否以指定前缀开头
+    starts_with: fn($s, $prefix) {
+        return substr($s, 0, strlen($prefix)) == $prefix
+    },
+
+    // 检查是否以指定后缀结尾
+    ends_with: fn($s, $suffix) {
+        $len = strlen($s)
+        $slen = strlen($suffix)
+        if ($len < $slen) {
+            return false
+        }
+        return substr($s, $len - $slen) == $suffix
+    },
+
+    // 重复字符串
+    repeat: fn($s, $n) {
+        $result = ""
+        for ($i = 0; $i < $n; $i++) {
+            $result = $result .. $s
+        }
+        return $result
+    }
+}

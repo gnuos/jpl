@@ -1,0 +1,132 @@
+// 模块示例 - 字符串工具函数
+// 扩展的字符串处理功能
+
+// 检查字符串是否为空或仅包含空白字符
+fn isEmpty(str) {
+    return trim(str) == ""
+}
+
+fn isBlank(str) {
+    return trim(str) == ""
+}
+
+// 确保字符串以特定前缀/后缀开始/结束
+fn ensurePrefix(str, prefix) {
+    if (startsWith(str, prefix)) {
+        return str
+    }
+    return prefix .. str
+}
+
+fn ensureSuffix(str, suffix) {
+    if (endsWith(str, suffix)) {
+        return str
+    }
+    return str .. suffix
+}
+
+// 截断字符串到指定长度，添加省略号
+fn truncate(str, maxLength) {
+    if (strlen(str) <= maxLength) {
+        return str
+    }
+    return substr(str, 0, maxLength - 3) .. "..."
+}
+
+// 反转单词顺序
+fn reverseWords(str) {
+    $words = split(str, " ")
+    $reversed = array_reverse($words)
+    return join($reversed, " ")
+}
+
+// 驼峰命名转换
+fn toCamelCase(str) {
+    $words = split(str, "_")
+    $result = $words[0]
+    for ($i = 1; $i < len($words); $i = $i + 1) {
+        $word = $words[$i]
+        $result = $result .. toUpper(charAt($word, 0)) .. substr($word, 1)
+    }
+    return $result
+}
+
+fn toSnakeCase(str) {
+    $result = ""
+    for ($i = 0; $i < strlen(str); $i = $i + 1) {
+        $char = charAt(str, $i)
+        if ($char >= "A" && $char <= "Z") {
+            if ($i > 0) {
+                $result = $result .. "_"
+            }
+            $result = $result .. toLower($char)
+        } else {
+            $result = $result .. $char
+        }
+    }
+    return $result
+}
+
+// 去除多余空白
+fn normalizeWhitespace(str) {
+    $words = split(trim(str), " ")
+    $filtered = filter($words, ($w) -> !isBlank($w))
+    return join($filtered, " ")
+}
+
+// 计数单词
+fn countWords(str) {
+    $words = split(trim(str), " ")
+    return len(filter($words, ($w) -> !isEmpty($w)))
+}
+
+// 填充字符串
+fn padLeft(str, length, padChar) {
+    if (!defined(padChar)) {
+        padChar = " "
+    }
+
+    $strLen = strlen(str)
+    if ($strLen >= length) {
+        return str
+    }
+
+    $padLen = length - $strLen
+    $padding = ""
+    for ($i = 0; $i < $padLen; $i = $i + 1) {
+        $padding = $padding .. padChar
+    }
+
+    return $padding .. str
+}
+
+fn padRight(str, length, padChar) {
+    if (!defined(padChar)) {
+        padChar = " "
+    }
+
+    $strLen = strlen(str)
+    if ($strLen >= length) {
+        return str
+    }
+
+    $padLen = length - $strLen
+    $padding = ""
+    for ($i = 0; $i < $padLen; $i = $i + 1) {
+        $padding = $padding .. padChar
+    }
+
+    return str .. $padding
+}
+
+// 测试
+println "=== StringUtils 模块 ==="
+println ""
+println "truncate('Hello World', 8): " .. truncate("Hello World", 8)
+println "reverseWords('Hello World'): " .. reverseWords("Hello World")
+println "toCamelCase('hello_world_test'): " .. toCamelCase("hello_world_test")
+println "toSnakeCase('HelloWorldTest'): " .. toSnakeCase("HelloWorldTest")
+println "normalizeWhitespace('  hello   world  '): '" .. normalizeWhitespace("  hello   world  ") .. "'"
+println "countWords('The quick brown fox'): " .. countWords("The quick brown fox")
+println "padLeft('42', 5, '0'): " .. padLeft("42", 5, "0")
+println "padRight('42', 5, ' '): '" .. padRight("42", 5, " ") .. "'"

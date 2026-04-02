@@ -1,0 +1,95 @@
+// 函数定义示例
+// 展示函数的各种定义和使用方式
+
+println "=== 传统函数定义 ==="
+fn greet(name) {
+    return "Hello, " .. name .. "!"
+}
+
+fn add(a, b) {
+    return a + b
+}
+
+fn factorial(n) {
+    if (n <= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+
+println greet("World")
+println "10 + 20 = " .. add(10, 20)
+println "5! = " .. factorial(5)
+
+println ""
+println "=== 箭头函数（Lambda） ==="
+// 多参数箭头函数
+$multiply = ($a, $b) -> $a * $b
+$square = ($x) -> $x * $x
+
+println "7 * 8 = " .. $multiply(7, 8)
+println "5² = " .. $square(5)
+
+// 多语句箭头函数
+$greetFormal = ($name, $title) -> {
+    $fullTitle = $title .. " " .. $name
+    return "Welcome, " .. $fullTitle
+}
+println $greetFormal("Smith", "Mr.")
+
+println ""
+println "=== 高阶函数 ==="
+fn applyOperation(a, b, operation) {
+    return operation(a, b)
+}
+
+$result = applyOperation(10, 5, ($x, $y) -> $x - $y)
+println "applyOperation(10, 5, subtract) = " .. $result
+
+println ""
+println "=== 闭包 ==="
+fn makeCounter() {
+    $count = 0
+    return () -> {
+        $count = $count + 1
+        return $count
+    }
+}
+
+$counter = makeCounter()
+println "Counter 1: " .. $counter()
+println "Counter 2: " .. $counter()
+println "Counter 3: " .. $counter()
+
+// 多个独立的计数器
+$counterA = makeCounter()
+$counterB = makeCounter()
+println "Counter A: " .. $counterA()
+println "Counter B: " .. $counterB()
+println "Counter A: " .. $counterA()
+
+println ""
+println "=== 函数作为返回值 ==="
+fn makeMultiplier(factor) {
+    return ($x) -> $x * $factor
+}
+
+$double = makeMultiplier(2)
+$triple = makeMultiplier(3)
+
+println "double(5) = " .. $double(5)
+println "triple(5) = " .. $triple(5)
+
+println ""
+println "=== 递归示例 ==="
+fn fibonacci(n) {
+    if (n <= 1) {
+        return n
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+println "斐波那契数列："
+for ($i = 0; $i <= 10; $i = $i + 1) {
+    println "fib({$i}) = " .. fibonacci($i)
+}

@@ -1,0 +1,59 @@
+// Test 脚本示例
+// 演示测试流程
+
+println "Running tests..."
+println ""
+
+$passed = 0
+$failed = 0
+
+// 测试 1: 基本运算
+$test_name = "Basic arithmetic"
+$result = 10 + 20
+if ($result == 30) {
+    println "  PASS: #{$test_name}"
+    $passed = $passed + 1
+} else {
+    println "  FAIL: #{$test_name} (expected 30, got #{$result})"
+    $failed = $failed + 1
+}
+
+// 测试 2: 字符串操作
+$test_name = "String concatenation"
+$str = "Hello" .. " " .. "World"
+if ($str == "Hello World") {
+    println "  PASS: #{$test_name}"
+    $passed = $passed + 1
+} else {
+    println "  FAIL: #{$test_name}"
+    $failed = $failed + 1
+}
+
+// 测试 3: 数组操作
+$test_name = "Array length"
+$arr = [1, 2, 3, 4, 5]
+if (count($arr) == 5) {
+    println "  PASS: #{$test_name}"
+    $passed = $passed + 1
+} else {
+    println "  FAIL: #{$test_name}"
+    $failed = $failed + 1
+}
+
+// 测试 4: 函数调用
+$test_name = "Function call"
+$multiply = fn($a, $b) { return $a * $b }
+if ($multiply(6, 7) == 42) {
+    println "  PASS: #{$test_name}"
+    $passed = $passed + 1
+} else {
+    println "  FAIL: #{$test_name}"
+    $failed = $failed + 1
+}
+
+println ""
+println "Results: #{$passed} passed, #{$failed} failed"
+
+if ($failed > 0) {
+    exit(1)
+}

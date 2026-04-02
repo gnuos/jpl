@@ -1,0 +1,77 @@
+// TCP Echo 服务器示例
+// 使用事件循环实现高性能异步服务器
+
+println "=== TCP Echo Server ==="
+println "Starting server on 0.0.0.0:8080"
+
+// 创建 TCP 监听 socket
+$server = net_tcp_listen("0.0.0.0", 8080)
+println "Server listening..."
+
+// 创建事件注册表
+$registry = ev_registry_new()
+
+// 注册 accept 事件处理器
+$registry.on_accept($server, fn($client) {
+    // 获取客户端地址
+    $peer = net_getpeername($client)
+    println "New connection from: #{$peer.ip}:#{$peer.port}"
+    
+    // 为客户端注册读事件
+    $registry.on_read($client, fn($fd) {
+        // 读取数据
+        $data = net_recv($fd, 1024)
+        
+        // 检查连接是否关闭
+        if (empty($data)) {
+            println "Client disconnected"
+            net_close($fd)
+            $registry.off($fd)
+            return
+        }
+        
+        println "Received: #{$data}"
+        
+        // 回显数据
+        $response = "Echo: " .. $data
+        net_send($fd, $response)
+        
+        // 如果收到 quit，关闭连接
+        if (trim($data) == "quit") {
+            println "Client requested disconnect"
+            net_close($fd)
+            $registry.off($fd)
+        }
+    })
+    
+    // 注册错误处理
+    $registry.on_error($client, fn($fd, $err) {
+        println "Error on fd #{$fd}: #{$err}"
+        net_close($fd)
+        $registry.off($fd)
+    })
+})
+
+// 注册定时器（每 5 秒发送心跳）
+$heartbeat_count = 0
+$registry.on_timer(5000000, fn() {
+    $heartbeat_count = $heartbeat_count + 1
+    println "[Heartbeat #{$heartbeat_count}] Server is running..."
+})
+
+// 注册信号处理（Ctrl+C 退出）
+$registry.on_signal(2, fn() {
+    println ""
+    println "Received SIGINT, shutting down..."
+    net_close($server)
+    ev_stop($loop)
+})
+
+// 创建事件循环并运行
+$loop = ev_loop_new()
+ev_attach($loop, $registry)
+
+println "Server running. Press Ctrl+C to stop."
+ev_run($loop)
+
+println "Server stopped."

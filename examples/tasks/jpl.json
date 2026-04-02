@@ -1,0 +1,23 @@
+{
+    "name": "tasks-demo",
+    "version": "0.1.0",
+    "description": "JPL 任务系统示例项目",
+    "dependencies": {},
+    "tasks": {
+        "clean": "rm -rf build",
+        "lint": "jpl run scripts/lint.jpl",
+        "build": {
+            "cmd": "jpl run scripts/build.jpl",
+            "deps": ["clean", "lint"]
+        },
+        "test": {
+            "cmd": "jpl run tests/main.jpl",
+            "deps": ["build"]
+        },
+        "dev": "jpl run scripts/dev.jpl --watch",
+        "all": {
+            "cmd": "echo All tasks completed!",
+            "deps": ["test", "dev"]
+        }
+    }
+}

@@ -1,0 +1,44 @@
+// puts 和 pp 函数演示
+// 
+// puts: 纯文本输出（所有值都不带引号）
+// pp: Pretty Print 格式化输出（带缩进，适合调试）
+
+puts "=== puts 函数 - 纯文本输出 ==="
+puts "字符串:", "Hello, World!"
+puts "数字:", 42, "和", 3.14
+puts "布尔值:", true
+puts "数组:", [1, 2, 3]
+puts "对象:", {name: "Alice", age: 25}
+puts ""
+
+puts "=== pp 函数 - 格式化输出 ==="
+
+// 简单值
+pp 42
+pp "Hello"
+pp true
+
+puts ""
+
+// 数组
+$arr = [1, 2, 3]
+pp $arr
+
+$nested = [1, [2, 3], 4]
+pp $nested
+
+puts ""
+
+// 对象
+$user = {name: "Alice", age: 25}
+pp $user
+
+// 对象数组
+$users = [
+    {id: 1, name: "Alice"},
+    {id: 2, name: "Bob"}
+]
+pp $users
+
+puts ""
+puts "=== 演示完成 ==="

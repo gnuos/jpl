@@ -1,0 +1,181 @@
+// Event Loop 框架使用教程
+// 本教程详细介绍 JPL 事件循环框架的使用方法
+
+println "=== Event Loop Tutorial ==="
+println ""
+
+// ========================================
+// 1. 基本概念
+// ========================================
+println "1. Event Loop 基本概念"
+println "   - Event Loop: 事件循环，基于 IO 多路复用(epoll/kqueue)"
+println "   - Registry: 事件注册表，管理所有事件处理器"
+println "   - 工作流程: 创建注册表 -> 注册事件 -> 创建循环 -> 附加注册表 -> 运行"
+println ""
+
+// ========================================
+// 2. 创建事件注册表
+// ========================================
+println "2. 创建事件注册表"
+
+$registry = ev_registry_new()
+println "   Registry created"
+println ""
+
+// ========================================
+// 3. 注册定时器
+// ========================================
+println "3. 注册定时器事件"
+println "   - on_timer(interval_us, callback): 周期性定时器"
+println "   - on_timer_once(interval_us, callback): 一次性定时器"
+println ""
+
+// 周期性定时器：每 1 秒触发一次
+$registry.on_timer(1000000, fn() {
+    println "   [Timer] Tick"
+})
+
+// 一次性定时器：3 秒后触发
+$registry.on_timer_once(3000000, fn() {
+    println "   [Timer Once] This fires only once after 3 seconds"
+})
+
+println "   Registered: periodic timer (1s) + one-shot timer (3s)"
+println ""
+
+// ========================================
+// 4. 注册信号处理
+// ========================================
+println "4. 注册信号处理"
+println "   - on_signal(sig_num, callback): 处理系统信号"
+println "   - 常见信号: 2=SIGINT(Ctrl+C), 15=SIGTERM"
+println ""
+
+$registry.on_signal(2, fn() {
+    println "   [Signal] SIGINT received, preparing to exit..."
+})
+
+println "   Registered: SIGINT handler"
+println ""
+
+// ========================================
+// 5. 注册文件描述符事件
+// ========================================
+println "5. 文件描述符事件（用于网络编程）"
+println "   - on_read(fd, callback): 可读事件"
+println "   - on_write(fd, callback): 可写事件"
+println "   - on_accept(fd, callback): 接受连接事件"
+println ""
+
+println "   (Network events demonstrated in tcp-echo-server.jpl)"
+println ""
+
+// ========================================
+// 6. 注销事件
+// ========================================
+println "6. 注销事件"
+println "   - off(source): 注销事件源的所有事件"
+println ""
+
+// ========================================
+// 7. 查询注册表状态
+// ========================================
+println "7. 查询注册表状态"
+
+$count = $registry.count()
+println "   Registered events: #{$count}"
+println ""
+
+// ========================================
+// 8. 创建和运行事件循环
+// ========================================
+println "8. 创建和运行事件循环"
+println "   - ev_loop_new(): 创建事件循环"
+println "   - ev_attach(loop, registry): 附加注册表"
+println "   - ev_run(loop): 阻塞运行（直到 ev_stop）"
+println "   - ev_run_once(loop): 非阻塞运行一次"
+println "   - ev_stop(loop): 停止循环"
+println "   - ev_is_running(loop): 检查运行状态"
+println ""
+
+$loop = ev_loop_new()
+println "   Event loop created"
+
+// 附加注册表
+ev_attach($loop, $registry)
+println "   Registry attached"
+
+// 检查运行状态
+$is_running = ev_is_running($loop)
+println "   Loop running: #{$is_running}"
+println ""
+
+// ========================================
+// 9. 微秒级时间
+// ========================================
+println "9. 微秒级时间"
+
+$now = ev_timer_now()
+println "   Current time (us): #{$now}"
+println ""
+
+// ========================================
+// 10. 完整示例流程
+// ========================================
+println "10. 完整示例总结"
+println ""
+println "   // 1. 创建注册表"
+println "   $registry = ev_registry_new()"
+println ""
+println "   // 2. 注册事件"
+println "   $registry.on_timer(1000000, fn() { println 'tick' })"
+println "   $registry.on_signal(2, fn() { ev_stop($loop) })"
+println ""
+println "   // 3. 创建并运行循环"
+println "   $loop = ev_loop_new()"
+println "   ev_attach($loop, $registry)"
+println "   ev_run($loop)"
+println ""
+
+// ========================================
+// 11. 实际运行演示（简短时间）
+// ========================================
+println "11. 运行演示（5 秒后自动停止）"
+println ""
+
+// 添加一个 5 秒的停止定时器用于演示
+$registry.on_timer_once(5000000, fn() {
+    println ""
+    println "   [Demo] Auto-stopping after 5 seconds..."
+    ev_stop($loop)
+})
+
+println "   Starting event loop..."
+println "   (This will run for 5 seconds)"
+println ""
+
+// 运行事件循环（将在 5 秒后停止）
+ev_run($loop)
+
+println ""
+println "   Event loop stopped"
+println ""
+
+// ========================================
+// 12. 清理
+// ========================================
+println "12. 清理"
+
+$registry.clear()
+println "   Registry cleared"
+
+$final_count = $registry.count()
+println "   Final event count: #{$final_count}"
+println ""
+
+println "=== Tutorial Completed ==="
+println ""
+println "See also:"
+println "  - examples/network/tcp-echo-server.jpl   (TCP server with event loop)"
+println "  - examples/network/unix-echo-server.jpl  (Unix socket with event loop)"
+println "  - examples/network/binary-protocol.jpl   (Binary protocol handling)"

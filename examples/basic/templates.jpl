@@ -1,0 +1,150 @@
+// Phase 10 - Practical Template Generation Examples
+// Real-world use cases for multiline strings and interpolation
+
+// ============================================
+// 1. Email Template
+// ============================================
+
+$customer = {
+    name: "John Smith",
+    email: "john@example.com",
+    orderId: "ORD-2024-001",
+    total: 299.99
+}
+
+$email = """
+Subject: Order Confirmation - #{$customer.orderId}
+
+Dear #{$customer.name},
+
+Thank you for your order! Here are the details:
+
+Order ID: #{$customer.orderId}
+Customer: #{$customer.name}
+Email: #{$customer.email}
+Total: $#{$customer.total}
+
+Your order will be processed within 1-2 business days.
+
+Best regards,
+The Sales Team
+"""
+
+println "=== Email Template ==="
+println $email
+
+// ============================================
+// 2. Log Entry Template
+// ============================================
+
+$timestamp = "2026-03-26 10:00:00"
+$level = "INFO"
+$module = "Database"
+$message = "Connection established"
+$duration = 45
+
+$log = "[#{$timestamp}] [#{$level}] [#{$module}] #{$message} (#{$duration}ms)"
+println "=== Log Entry ==="
+println $log
+
+// ============================================
+// 3. Error Report Template
+// ============================================
+
+$error = {
+    code: 500,
+    type: "DatabaseError",
+    message: "Connection timeout",
+    file: "db.jpl",
+    line: 42
+}
+
+$errorReport = """
+ERROR REPORT
+============
+Code: #{$error.code}
+Type: #{$error.type}
+Message: #{$error.message}
+Location: #{$error.file}:#{$error.line}
+Time: 2026-03-26 10:00:00
+
+Stack trace would appear here in production.
+"""
+
+println "=== Error Report ==="
+println $errorReport
+
+// ============================================
+// 4. API Response Template
+// ============================================
+
+$apiResponse = """
+{
+    "status": "success",
+    "data": {
+        "users": [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"}
+        ],
+        "total": 2,
+        "page": 1
+    },
+    "meta": {
+        "timestamp": "2026-03-26 10:00:00",
+        "version": "1.0"
+    }
+}
+"""
+
+println "=== API Response ==="
+println $apiResponse
+
+// ============================================
+// 5. Configuration Template
+// ============================================
+
+$db = {
+    host: "localhost",
+    port: 3306,
+    name: "myapp",
+    user: "admin",
+    pool: 10
+}
+
+$config = """
+; Database Configuration
+; Generated at 2026-03-26 10:00:00
+
+[database]
+host = #{$db.host}
+port = #{$db.port}
+database = #{$db.name}
+username = #{$db.user}
+connection_pool = #{$db.pool}
+timeout = 30
+
+[cache]
+enabled = true
+ttl = 3600
+"""
+
+println "=== Configuration ==="
+println $config
+
+// ============================================
+// 6. Simple String Concatenation Example
+// ============================================
+
+$project = "JPL"
+$version = "0.2.0"
+$author = "JPL Team"
+
+$readme = "# " .. $project .. "\n"
+$readme = $readme .. "Version: " .. $version .. "\n"
+$readme = $readme .. "Author: " .. $author .. "\n"
+$readme = $readme .. "Date: 2026-03-26"
+
+println "=== String Concatenation ==="
+println $readme
+
+println "All template examples generated successfully!"

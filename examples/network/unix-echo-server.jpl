@@ -1,0 +1,76 @@
+// Unix Domain Socket Echo 服务器
+// 本地进程间通信，性能优于 TCP
+
+$socket_path = "/tmp/jpl_echo.sock"
+
+println "=== Unix Domain Echo Server ==="
+println "Socket path: #{$socket_path}"
+
+// 清理旧 socket 文件
+if (exists($socket_path)) {
+    unlink($socket_path)
+    println "Cleaned up old socket file"
+}
+
+// 创建 Unix Domain 监听 socket
+$server = net_unix_listen($socket_path)
+println "Server listening on Unix socket..."
+
+// 创建事件注册表
+$registry = ev_registry_new()
+
+pp $registry
+
+// 统计连接数
+$connection_count = 0
+
+// 注册 accept 事件
+$registry.on_accept($server, fn($client) {
+    $connection_count = $connection_count + 1
+    println "Client #{$connection_count} connected"
+    
+    // 注册读事件
+    $registry.on_read($client, fn($fd) {
+        $data = net_recv($fd, 1024)
+        
+        if (empty($data)) {
+            println "Client #{$connection_count} disconnected"
+            net_close($fd)
+            $registry.off($fd)
+            return
+        }
+        
+        println "Received: #{$data}"
+        
+        // 回显
+        $response = "Unix Echo: " .. $data
+        net_send($fd, $response)
+        
+        // 退出命令
+        if (trim($data) == "quit") {
+            println "Client requested disconnect"
+            net_close($fd)
+            $registry.off($fd)
+        }
+    })
+})
+
+// 信号处理
+$registry.on_signal(2, fn() {
+    println ""
+    println "Shutting down..."
+    net_close($server)
+    unlink($socket_path)
+    ev_stop($loop)
+})
+
+// 运行事件循环
+$loop = ev_loop_new()
+ev_attach($loop, $registry)
+
+println "Server running. Press Ctrl+C to stop."
+ev_run($loop)
+
+// 清理
+unlink($socket_path)
+println "Server stopped."

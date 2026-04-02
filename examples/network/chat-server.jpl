@@ -1,0 +1,178 @@
+// TCP 聊天室示例
+// 展示多客户端广播和消息转发
+//
+// 运行: jpl run examples/network/chat-server.jpl
+// 连接: telnet localhost 9000 或 nc localhost 9000
+
+println "=== TCP Chat Server ==="
+println "Starting server on port 9000"
+
+// 全局客户端列表
+$clients = []
+$client_names = {}
+
+// 广播消息给所有客户端（除发送者外）
+fn broadcast($sender, $message) {
+    foreach (client in $clients) {
+        if ($client != $sender) {
+            net_send($client, $message)
+        }
+    }
+}
+
+// 广播消息给所有客户端（包括发送者）
+fn broadcast_all($message) {
+    foreach (client in $clients) {
+        net_send($client, $message)
+    }
+}
+
+// 获取客户端名称
+fn get_client_name($client) {
+    if (array_key_exists(string($client), $client_names)) {
+        return $client_names[string($client)]
+    }
+    $peer = net_getpeername($client)
+    return "#{$peer.ip}:#{$peer.port}"
+}
+
+// 设置客户端名称
+fn set_client_name($client, $name) {
+    $client_names[string($client)] = $name
+}
+
+// 移除客户端
+fn remove_client($client) {
+    $idx = indexOf($clients, $client)
+    if ($idx >= 0) {
+        splice($clients, $idx, 1)
+    }
+    $key = string($client)
+    if (array_key_exists($key, $client_names)) {
+        $client_names[$key] = null
+    }
+}
+
+// 处理客户端命令
+fn handle_command($client, $message) {
+    $parts = split($message, " ")
+    $cmd = toLower($parts[0])
+
+    if ($cmd == "/nick" && count($parts) >= 2) {
+        // 设置昵称
+        $old_name = get_client_name($client)
+        $new_name = $parts[1]
+        set_client_name($client, $new_name)
+        broadcast_all("[Server] #{$old_name} is now known as #{$new_name}\n")
+        return true
+    } else if ($cmd == "/users") {
+        // 列出在线用户
+        $user_list = "Online users:\n"
+        foreach (c in $clients) {
+            $user_list = $user_list .. "  - #{$client_names[string($c)]}\n"
+        }
+        net_send($client, $user_list)
+        return true
+    } else if ($cmd == "/help") {
+        // 显示帮助
+        $help = """
+Commands:
+  /nick <name>  - Set your nickname
+  /users        - List online users
+  /help         - Show this help
+  /quit         - Leave the chat
+"""
+        net_send($client, $help)
+        return true
+    } else if ($cmd == "/quit") {
+        // 退出
+        $name = get_client_name($client)
+        remove_client($client)
+        broadcast_all("[Server] #{$name} has left the chat\n")
+        net_close($client)
+        return true
+    }
+
+    return false
+}
+
+// 创建 TCP 服务器
+$server = net_tcp_listen("0.0.0.0", 9000)
+println "Chat server listening on port 9000"
+
+// 创建事件注册表
+$registry = ev_registry_new()
+
+// 注册 accept 事件
+$registry.on_accept($server, fn($client) {
+    $peer = net_getpeername($client)
+    println "New connection from: #{$peer.ip}:#{$peer.port}"
+
+    // 添加到客户端列表
+    push($clients, $client)
+    $name = "Guest#{$peer.port}"
+    set_client_name($client, $name)
+
+    // 发送欢迎消息
+    $welcome = """
+Welcome to JPL Chat Server!
+You are known as #{$name}
+Type /help for commands
+"""
+    net_send($client, $welcome)
+
+    // 广播新用户加入
+    broadcast($client, "[Server] #{$name} has joined the chat\n")
+
+    // 注册读事件
+    $registry.on_read($client, fn($socket, $data) {
+        $message = trim($data)
+        if (empty($message)) {
+            return
+        }
+
+        // 检查是否是命令
+        if (startsWith($message, "/")) {
+            handle_command($socket, $message)
+            return
+        }
+
+        // 广播消息
+        $name = get_client_name($socket)
+        $formatted = "#{$name}: #{$message}\n"
+        println $formatted
+        broadcast($socket, $formatted)
+    })
+})
+
+// 心跳定时器
+$registry.on_timer(30000000, fn() {
+    println "[Heartbeat] #{$count($clients)} users online"
+})
+
+// 信号处理
+$registry.on_signal(2, fn() {
+    println ""
+    println "Shutting down chat server..."
+    broadcast_all("[Server] Server is shutting down\n")
+    foreach (client in $clients) {
+        net_close($client)
+    }
+    net_close($server)
+    ev_stop($loop)
+})
+
+// 创建事件循环并运行
+$loop = ev_loop_new()
+ev_attach($loop, $registry)
+
+println ""
+println "Chat server running!"
+println "Connect with: telnet localhost 9000"
+println "Or: nc localhost 9000"
+println ""
+println "Press Ctrl+C to stop"
+
+ev_run($loop)
+
+println "Server stopped."

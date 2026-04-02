@@ -1,0 +1,53 @@
+// Math 工具模块
+// 导出 Math 对象，包含常用数学函数
+
+$Math = {
+    // 加法
+    add: ($a, $b) -> $a + $b,
+
+    // 减法
+    sub: ($a, $b) -> $a - $b,
+
+    // 乘法
+    mul: ($a, $b) -> $a * $b,
+
+    // 求最大值
+    max: fn($arr) {
+        $result = $arr[0]
+        foreach ($arr as $v) {
+            if ($v > $result) {
+                $result = $v
+            }
+        }
+        return $result
+    },
+
+    // 求最小值
+    min: fn($arr) {
+        $result = $arr[0]
+        foreach ($arr as $v) {
+            if ($v < $result) {
+                $result = $v
+            }
+        }
+        return $result
+    },
+
+    // 求平均值
+    avg: fn($arr) {
+        $sum = 0
+        foreach ($arr as $v) {
+            $sum = $sum + $v
+        }
+        return $sum / count($arr)
+    },
+
+    // 求和
+    sum: fn($arr) {
+        $total = 0
+        foreach ($arr as $v) {
+            $total = $total + $v
+        }
+        return $total
+    }
+}

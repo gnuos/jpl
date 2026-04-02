@@ -1,0 +1,259 @@
+// Redis 客户端示例
+// 使用 RESP (Redis Serialization Protocol) 协议实现
+//
+// 运行: jpl run examples/network/redis-client.jpl
+// 前提: Redis 服务器运行在 localhost:6379
+
+println "=== Redis Client (RESP Protocol) ==="
+
+// RESP 协议编码函数
+// 参考: https://redis.io/docs/reference/protocol-spec/
+
+// 编码命令为 RESP 格式
+fn resp_encode_command($cmd, $args) {
+    // RESP 数组格式: *<count>\r\n$<len>\r\n<data>\r\n...
+    $count = 1 + count($args)
+    $result = "*#{$count}\r\n"
+
+    // 命令名
+    $result = $result .. "$#{strlen($cmd)}\r\n#{$cmd}\r\n"
+
+    // 参数
+    foreach ($arg in $args) {
+        $arg_str = string($arg)
+        $result = $result .. "$#{strlen($arg_str)}\r\n#{$arg_str}\r\n"
+    }
+
+    return $result
+}
+
+// 解析 RESP 响应
+fn resp_parse($data) {
+    if (empty($data)) {
+        return null
+    }
+
+    $type = substr($data, 0, 1)
+    $content = substr($data, 1)
+
+    // 查找第一个 \r\n
+    $pos = strpos($content, "\r\n")
+    if ($pos < 0) {
+        return null
+    }
+
+    $value = substr($content, 0, $pos)
+    $rest = substr($content, $pos + 2)
+
+    if ($type == "+") {
+        return {type: "string", value: $value, rest: $rest}
+    } else if ($type == "-") {
+        return {type: "error", value: $value, rest: $rest}
+    } else if ($type == ":") {
+        return {type: "integer", value: parseInt($value), rest: $rest}
+    } else if ($type == "$") {
+        $len = parseInt($value)
+        if ($len < 0) {
+            return {type: "null", value: null, rest: $rest}
+        }
+        $content = substr($rest, 0, $len)
+        $rest = substr($rest, $len + 2)
+        return {type: "bulk", value: $content, rest: $rest}
+    } else if ($type == "*") {
+        $count = parseInt($value)
+        if ($count < 0) {
+            return {type: "null", value: null, rest: $rest}
+        }
+        $arr = []
+        for ($i = 0; $i < $count; $i = $i + 1) {
+            $item = resp_parse($rest)
+            if ($item == null) {
+                break
+            }
+            push($arr, $item.value)
+            $rest = $item.rest
+        }
+        return {type: "array", value: $arr, rest: $rest}
+    }
+
+    return null
+}
+
+// Redis 客户端封装
+fn RedisClient(host, p) {
+    $conn = net_tcp_connect(host, p)
+    if ($conn == null) {
+        return null
+    }
+
+    // 将 command 定义为局部闭包变量，供其他方法调用
+    $command = fn($cmd, $args) {
+        try {
+            $encoded = resp_encode_command($cmd, $args)
+            net_send($conn, $encoded)
+
+            $response = net_recv($conn, 4096)
+            if (empty($response)) {
+                return null
+            }
+
+            $parsed = resp_parse($response)
+            if ($parsed == null) {
+                return null
+            }
+
+            if ($parsed.type == "error") {
+                println "Redis error: #{$parsed.value}"
+                return null
+            }
+
+            return $parsed.value
+        } catch ($e) {
+            println "Error executing command #{$cmd}: #{$e.message}"
+            return null
+        }
+    }
+
+    return {
+        command: $command,
+
+        close: fn() {
+            try {
+                net_close($conn)
+            } catch ($e) {
+                println "Error closing connection: #{$e.message}"
+            }
+        },
+
+        set: ($key, $value) -> @command("SET", [$key, $value]),
+
+        get: ($key) -> @command("GET", [$key]),
+
+        del: ($akey) -> @command("DEL", [$key]),
+
+        exists: ($key) -> @command("EXISTS", [$key]),
+
+        incr: ($key) -> @command("INCR", [$key]),
+
+        decr: ($key) -> @command("DECR", [$key]),
+
+        hset: ($key, $field, $value) -> @command("HSET", [$key, $field, $value]),
+
+        hget: ($key, $field) -> @command("HGET", [$key, $field]),
+
+        hgetall: ($key) -> @command("HGETALL", [$key]),
+
+        lpush: ($key, $value) -> @command("LPUSH", [$key, $value]),
+
+        rpush: ($key, $value) -> @command("RPUSH", [$key, $value]),
+
+        lpop: ($key) -> @command("LPOP", [$key]),
+
+        rpop: ($key) -> $command("RPOP", [$key]),
+
+        lrange: ($key, $start, $stop) -> $command("LRANGE", [$key, $start, $stop]),
+
+        sadd: ($key, $member) -> $command("SADD", [$key, $member]),
+
+        smembers: ($key) -> $command("SMEMBERS", [$key]),
+
+        zadd: ($key, $score, $member) -> $command("ZADD", [$key, $score, $member]),
+
+        zrange: ($key, $start, $stop) -> $command("ZRANGE", [$key, $start, $stop]),
+
+        ping: () -> $command("PING", []),
+
+        flushdb: () -> $command("FLUSHDB", []),
+
+        keys: ($pattern) -> $command("KEYS", [$pattern])
+    }
+}
+
+// ========== 测试代码 ==========
+
+println "Connecting to Redis at localhost:6379..."
+
+$r = RedisClient("localhost", 6379)
+if ($r == null) {
+    println "Failed to connect to Redis!"
+    println "Make sure Redis is running: redis-server"
+    exit(1)
+}
+
+println "Connected!"
+
+// Ping 测试
+$result = $r.ping()
+println "PING -> #{$result}"
+
+// 字符串操作
+println ""
+println "--- String Operations ---"
+$r.set("name", "JPL")
+$r.set("counter", 100)
+println "SET name JPL -> OK"
+println "GET name -> #{$r.get("name")}"
+$r.incr("counter")
+println "INCR counter -> #{$r.get("counter")}"
+$r.del("name")
+println "DEL name -> OK"
+println "GET name -> #{$r.get("name")}"
+
+// 哈希操作
+println ""
+println "--- Hash Operations ---"
+$r.hset("user:1", "name", "Alice")
+$r.hset("user:1", "age", 30)
+$r.hset("user:1", "city", "Beijing")
+println "HSET user:1 name Alice -> OK"
+println "HGET user:1 name -> #{$r.hget("user:1", "name")}"
+$all = $r.hgetall("user:1")
+println "HGETALL user:1 -> #{$all}"
+
+// 列表操作
+println ""
+println "--- List Operations ---"
+$r.rpush("queue", "task1")
+$r.rpush("queue", "task2")
+$r.rpush("queue", "task3")
+println "RPUSH queue task1/task2/task3 -> OK"
+$items = $r.lrange("queue", 0, -1)
+println "LRANGE queue 0 -1 -> #{$items}"
+$pop = $r.lpop("queue")
+println "LPOP queue -> #{$pop}"
+
+// 集合操作
+println ""
+println "--- Set Operations ---"
+$r.sadd("tags", "golang")
+$r.sadd("tags", "redis")
+$r.sadd("tags", "jpl")
+$tags = $r.smembers("tags")
+println "SMEMBERS tags -> #{$tags}"
+
+// 有序集合操作
+println ""
+println "--- Sorted Set Operations ---"
+$r.zadd("scores", 100, "Alice")
+$r.zadd("scores", 85, "Bob")
+$r.zadd("scores", 95, "Charlie")
+$rank = $r.zrange("scores", 0, -1)
+println "ZRANGE scores 0 -1 -> #{$rank}"
+
+// Keys 操作
+println ""
+println "--- Keys ---"
+$keys = $r.keys("*")
+println "KEYS * -> #{$keys}"
+
+// 清理
+$r.del("counter")
+$r.del("user:1")
+$r.del("queue")
+$r.del("tags")
+$r.del("scores")
+
+// 关闭连接
+$r.close()
+println ""
+println "Connection closed. Done!"

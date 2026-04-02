@@ -1,0 +1,181 @@
+// Phase 10 - JSON and Configuration File Generation
+// Practical examples of generating structured data with multiline strings
+
+// ============================================
+// 1. package.json style configuration
+// ============================================
+
+$project = {
+    name: "my-awesome-app",
+    version: "1.0.0",
+    description: "A sample application built with JPL",
+    author: "Developer Name",
+    license: "MIT"
+}
+
+$package = """
+{
+    "name": "#{$project.name}",
+    "version": "#{$project.version}",
+    "description": "#{$project.description}",
+    "main": "index.jpl",
+    "scripts": {
+        "start": "jpl run index.jpl",
+        "test": "jpl test"
+    },
+    "keywords": ["jpl", "scripting", "automation"],
+    "author": "#{$project.author}",
+    "license": "#{$project.license}"
+}
+"""
+
+println "=== package.json ==="
+println $package
+
+// ============================================
+// 2. Database configuration with interpolation
+// ============================================
+
+$env = "development"
+$db = {
+    host: "localhost",
+    port: 3306,
+    name: "myapp_dev"
+}
+
+$dbConfig = """
+{
+    "environment": "#{$env}",
+    "database": {
+        "host": "#{$db.host}",
+        "port": #{$db.port},
+        "name": "#{$db.name}",
+        "charset": "utf8mb4"
+    },
+    "pool": {
+        "min": 2,
+        "max": 10,
+        "timeout": 30000
+    }
+}
+"""
+
+println "=== Database Config ==="
+println $dbConfig
+
+// ============================================
+// 3. Application settings
+// ============================================
+
+$app = {
+    name: "MyApp",
+    debug: true,
+    version: "2.1.0"
+}
+
+$features = ["auth", "api", "logging", "cache"]
+
+// Build features array string
+$featuresStr = ""
+for ($i = 0; $i < count($features); $i = $i + 1) {
+    $featuresStr = $featuresStr .. "        \"" .. $features[$i] .. "\""
+    if ($i < count($features) - 1) {
+        $featuresStr = $featuresStr .. ",\n"
+    }
+}
+
+$settings = """
+{
+    "app": {
+        "name": "#{$app.name}",
+        "version": "#{$app.version}",
+        "debug": #{$app.debug ? "true" : "false"}
+    },
+    "features": [
+#{$featuresStr}
+    ],
+    "limits": {
+        "max_upload": 10485760,
+        "max_requests": 1000
+    }
+}
+"""
+
+println "=== App Settings ==="
+println $settings
+
+// ============================================
+// 4. Docker Compose configuration
+// ============================================
+
+$services = [
+    {name: "web", image: "nginx:latest", port: 80},
+    {name: "app", image: "myapp:latest", port: 3000},
+    {name: "db", image: "mysql:8.0", port: 3306}
+]
+
+$compose = """
+version: '3.8'
+
+services:
+  #{$services[0].name}:
+    image: #{$services[0].image}
+    ports:
+      - "#{$services[0].port}:#{$services[0].port}"
+
+  #{$services[1].name}:
+    image: #{$services[1].image}
+    ports:
+      - "#{$services[1].port}:#{$services[1].port}"
+    environment:
+      - NODE_ENV=production
+
+  #{$services[2].name}:
+    image: #{$services[2].image}
+    ports:
+      - "#{$services[2].port}:#{$services[2].port}"
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+"""
+
+println "=== Docker Compose ==="
+println $compose
+
+// ============================================
+// 5. Environment variables template
+// ============================================
+
+$envConf = {
+    db: {host: "localhost", port: 3306, user: "admin", pass: "secret123"},
+    redis: {host: "localhost", port: 6379},
+    api: {key: "abc123xyz", url: "https://api.example.com"}
+}
+
+$envFile = """
+# Environment Configuration
+# Generated at 2026-03-26 10:00:00
+
+# Database
+DB_HOST=#{$envConf.db.host}
+DB_PORT=#{$envConf.db.port}
+DB_USER=#{$envConf.db.user}
+DB_PASS=#{$envConf.db.pass}
+
+# Redis
+REDIS_HOST=#{$envConf.redis.host}
+REDIS_PORT=#{$envConf.redis.port}
+
+# API
+API_KEY=#{$envConf.api.key}
+API_URL=#{$envConf.api.url}
+
+# Application
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://app.example.com
+"""
+
+println "=== Environment File ==="
+println $envFile
+
+println "Configuration files generated successfully!"

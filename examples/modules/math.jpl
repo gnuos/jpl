@@ -1,0 +1,128 @@
+// 模块示例 - 数学工具函数
+// 这个文件展示如何创建可复用的模块
+
+// 导出函数（通过全局变量模拟导出）
+
+// 常量
+$PI = 3.14159265359
+$E = 2.71828182846
+
+// 基本运算
+fn add(a, b) {
+    return a + b
+}
+
+fn subtract(a, b) {
+    return a - b
+}
+
+fn multiply(a, b) {
+    return a * b
+}
+
+fn divide(a, b) {
+    if (b == 0) {
+        throw error("Division by zero", 1001)
+    }
+    return a / b
+}
+
+// 幂运算
+fn power(base, exponent) {
+    $result = 1
+    for ($i = 0; $i < $exponent; $i = $i + 1) {
+        $result = $result * $base
+    }
+    return $result
+}
+
+// 平方根（牛顿迭代法）
+fn sqrt(n) {
+    if ($n < 0) {
+        throw error("Cannot compute square root of negative number", 1002)
+    }
+    if ($n == 0) {
+        return 0
+    }
+    
+    $x = $n
+    for ($i = 0; $i < 20; $i = $i + 1) {
+        $x = ($x + $n / $x) / 2
+    }
+    return $x
+}
+
+// 统计函数
+fn sum(arr) {
+    return reduce($arr, 0, (acc, x) => acc + x)
+}
+
+fn average(arr) {
+    if (# $arr == 0) {
+        return 0
+    }
+    return sum($arr) / # $arr
+}
+
+fn min(arr) {
+    if (# $arr == 0) {
+        throw error("Cannot find min of empty array", 1003)
+    }
+    $min = $arr[0]
+    foreach (x in $arr) {
+        if ($x < $min) {
+            $min = $x
+        }
+    }
+    return $min
+}
+
+fn max(arr) {
+    if (# $arr == 0) {
+        throw error("Cannot find max of empty array", 1004)
+    }
+    $max = $arr[0]
+    foreach (x in $arr) {
+        if ($x > $max) {
+            $max = $x
+        }
+    }
+    return $max
+}
+
+// 几何函数
+fn circleArea(radius) {
+    return $PI * $radius * $radius
+}
+
+fn circleCircumference(radius) {
+    return 2 * $PI * $radius
+}
+
+fn rectangleArea(width, height) {
+    return $width * $height
+}
+
+fn rectanglePerimeter(width, height) {
+    return 2 * ($width + $height)
+}
+
+// 三角函数（简化版）
+fn degreesToRadians(degrees) {
+    return $degrees * $PI / 180
+}
+
+fn radiansToDegrees(radians) {
+    return $radians * 180 / $PI
+}
+
+// 如果直接运行此文件，显示帮助信息
+println "=== Math 模块 ==="
+println "可用的函数："
+println "  基本运算: add, subtract, multiply, divide"
+println "  幂运算: power, sqrt"
+println "  统计: sum, average, min, max"
+println "  几何: circleArea, circleCircumference, rectangleArea, rectanglePerimeter"
+println "  转换: degreesToRadians, radiansToDegrees"
+println ""
+println "常量: PI = " + $PI + ", E = " + $E

@@ -1,0 +1,70 @@
+// DNS 解析示例
+// 展示域名解析的各种方法
+
+println "=== DNS Resolution Example ==="
+
+// 要解析的域名列表
+$domains = ["localhost", "example.com", "google.com"]
+
+foreach ($domain in $domains) {
+    println ""
+    println "----------------------------------------"
+    println "Domain: #{$domain}"
+    println "----------------------------------------"
+    
+    // 1. 获取所有 IP
+    $ips = dns_resolve($domain)
+    println "All IPs: #{$ips}"
+    
+    // 2. 获取单个 IP（最快）
+    $ip = dns_resolve_one($domain)
+    println "First IP: #{$ip}"
+    
+    // 3. 仅 IPv4
+    $ipv4s = dns_resolve_v4($domain)
+    println "IPv4 only: #{$ipv4s}"
+    
+    // 4. 仅 IPv6
+    $ipv6s = dns_resolve_v6($domain)
+    println "IPv6 only: #{$ipv6s}"
+    
+    // 5. 获取详细记录
+    println ""
+    println "DNS Records:"
+    $records = dns_get_records($domain)
+    
+    foreach (record in $records) {
+        $type = $record.type
+        if ($type == "A" || $type == "AAAA") {
+            println "  [#{$type}] #{$record.ip}"
+        } else if ($type == "CNAME") {
+            println "  [#{$type}] #{$record.target}"
+        } else if ($type == "MX") {
+            println "  [#{$type}] Priority #{$record.priority}: #{$record.target}"
+        } else if ($type == "NS") {
+            println "  [#{$type}] #{$record.target}"
+        } else if ($type == "TXT") {
+            println "  [#{$type}] #{$record.text}"
+        }
+    }
+}
+
+println ""
+println "=== DNS Performance Test ==="
+
+// 性能测试：多次解析
+$test_domain = "example.com"
+$start_time = microtime()
+
+for ($i = 0; $i < 10; $i += 1) {
+    $ip = dns_resolve_one($test_domain)
+}
+
+$end_time = microtime()
+$elapsed = ($end_time - $start_time) * 1000
+
+println "Resolved #{$test_domain} 10 times in #{$elapsed} ms"
+println "Average: #{$elapsed / 10} ms per query"
+
+println ""
+println "DNS example completed."

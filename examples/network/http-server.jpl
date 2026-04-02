@@ -1,0 +1,244 @@
+// HTTP 服务器示例
+// 基于 TCP 和事件循环实现简单的 HTTP 服务器
+//
+// 运行: jpl run examples/network/http-server.jpl
+// 测试: curl http://localhost:8080/ 或 http://localhost:8080/api/hello
+
+println "=== HTTP Server ==="
+println "Starting server on http://localhost:8080"
+
+// HTTP 响应构建函数
+fn http_response($status, $content_type, $body) {
+    $status_text = "200 OK"
+    if ($status == 404) {
+        $status_text = "404 Not Found"
+    } else if ($status == 400) {
+        $status_text = "400 Bad Request"
+    } else if ($status == 500) {
+        $status_text = "500 Internal Server Error"
+    }
+
+    $response = "HTTP/1.1 #{$status_text}\r\n"
+    $response = $response .. "Content-Type: #{$content_type}\r\n"
+    $response = $response .. "Content-Length: #{strlen($body)}\r\n"
+    $response = $response .. "Connection: close\r\n"
+    $response = $response .. "\r\n"
+    $response = $response .. $body
+    return $response
+}
+
+// 解析 HTTP 请求行和头部
+fn parse_request($data) {
+    $lines = split($data, "\r\n")
+    if (empty($lines)) {
+        return null
+    }
+
+    // 解析请求行: GET /path HTTP/1.1
+    $parts = split($lines[0], " ")
+    if (count($parts) < 3) {
+        return null
+    }
+
+    $request = {
+        method: $parts[0],
+        path: $parts[1],
+        version: $parts[2],
+        headers: {}
+    }
+
+    // 解析头部
+    $i = 1
+    while ($i < count($lines)) {
+        $line = $lines[$i]
+        if (empty($line)) {
+            break
+        }
+        $colon_pos = strpos($line, ":")
+        if ($colon_pos >= 0) {
+            $key = trim(substr($line, 0, $colon_pos))
+            $value = trim(substr($line, $colon_pos + 1))
+            $request.headers[$key] = $value
+        }
+        $i = $i + 1
+    }
+
+    return $request
+}
+
+// 路由处理函数
+fn handle_request($request) {
+    if ($request == null) {
+        return http_response(400, "text/plain", "Bad Request")
+    }
+
+    println "#{$request.method} #{$request.path}"
+
+    // 首页
+    if ($request.path == "/" || $request.path == "/index.html") {
+        $html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JPL HTTP Server</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #333; }
+        .endpoint { background: #f4f4f4; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        code { background: #e0e0e0; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to JPL HTTP Server!</h1>
+    <p>This is a simple HTTP server built with JPL scripting language.</p>
+
+    <h2>Available Endpoints:</h2>
+    <div class="endpoint">
+        <strong>GET /</strong> - This page
+    </div>
+    <div class="endpoint">
+        <strong>GET /api/hello</strong> - JSON greeting
+    </div>
+    <div class="endpoint">
+        <strong>GET /api/time</strong> - Current server time
+    </div>
+    <div class="endpoint">
+        <strong>GET /api/info</strong> - Server information
+    </div>
+    <div class="endpoint">
+        <strong>GET /echo?msg=xxx</strong> - Echo the message
+    </div>
+</body>
+</html>
+"""
+        return http_response(200, "text/html", $html)
+    }
+
+    // JSON API: /api/hello
+    if ($request.path == "/api/hello") {
+        $data = {
+            message: "Hello from JPL!",
+            timestamp: time(),
+            success: true
+        }
+        return http_response(200, "application/json", json_encode($data))
+    }
+
+    // JSON API: /api/time
+    if ($request.path == "/api/time") {
+        $data = {
+            timestamp: time(),
+            formatted: date("Y-m-d H:i:s"),
+            timezone: now().timezone
+        }
+        return http_response(200, "application/json", json_encode($data))
+    }
+
+    // JSON API: /api/info
+    if ($request.path == "/api/info") {
+        $data = {
+            server: "JPL HTTP Server",
+            version: jpl_version(),
+            os: uname().sysname,
+            pid: getpid(),
+            uptime: time()
+        }
+        return http_response(200, "application/json", json_encode($data))
+    }
+
+    // Echo API: /echo?msg=xxx
+    if (startsWith($request.path, "/echo")) {
+        $query_pos = strpos($request.path, "?")
+        if ($query_pos >= 0) {
+            $query = substr($request.path, $query_pos + 1)
+            $pairs = split($query, "&")
+            $params = {}
+            foreach (pair in $pairs) {
+                $kv = split($pair, "=")
+                if (count($kv) == 2) {
+                    $params[$kv[0]] = urldecode($kv[1])
+                }
+            }
+            if (array_key_exists("msg", $params)) {
+                $data = {echo: $params.msg, length: strlen($params.msg)}
+                return http_response(200, "application/json", json_encode($data))
+            }
+        }
+        return http_response(400, "application/json", json_encode({error: "Missing 'msg' parameter"}))
+    }
+
+    // 404 Not Found
+    $not_found = """
+<!DOCTYPE html>
+<html>
+<head><title>404 Not Found</title></head>
+<body>
+    <h1>404 Not Found</h1>
+    <p>The requested path <code>#{$request.path}</code> was not found.</p>
+    <p><a href="/">Back to Home</a></p>
+</body>
+</html>
+"""
+    return http_response(404, "text/html", $not_found)
+}
+
+// 主处理函数：处理客户端连接
+fn handle_client($client) {
+    // 读取请求数据
+    $data = net_recv($client, 4096)
+
+    if (empty($data)) {
+        net_close($client)
+        return
+    }
+
+    // 解析并处理请求
+    $request = parse_request($data)
+    $response = handle_request($request)
+
+    // 发送响应
+    net_send($client, $response)
+
+    // 关闭连接
+    net_close($client)
+}
+
+// 创建 TCP 服务器
+$server = net_tcp_listen("0.0.0.0", 8080)
+println "Server listening on port 8080..."
+
+// 创建事件注册表
+$registry = ev_registry_new()
+
+// 注册 accept 事件
+$registry.on_accept($server, fn($client) {
+    $peer = net_getpeername($client)
+    println "Connection from: #{$peer.ip}:#{$peer.port}"
+    handle_client($client)
+})
+
+// 注册信号处理（Ctrl+C 退出）
+$registry.on_signal(2, fn() {
+    println ""
+    println "Shutting down server..."
+    net_close($server)
+    ev_stop($loop)
+})
+
+// 创建事件循环并运行
+$loop = ev_loop_new()
+ev_attach($loop, $registry)
+
+println "Server running. Press Ctrl+C to stop."
+println ""
+println "Try these commands:"
+println "  curl http://localhost:8080/"
+println "  curl http://localhost:8080/api/hello"
+println "  curl http://localhost:8080/api/time"
+println "  curl http://localhost:8080/api/info"
+println "  curl 'http://localhost:8080/echo?msg=hello'"
+println ""
+
+ev_run($loop)
+
+println "Server stopped."

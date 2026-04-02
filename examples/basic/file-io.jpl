@@ -1,0 +1,284 @@
+// 文件读写操作示例
+// 展示 JPL 文件 I/O 和流操作 API
+
+println "=== File I/O Operations Example ==="
+
+// ========================================
+// 1. 基本文件读写
+// ========================================
+println ""
+println "1. Basic File Read/Write"
+
+$test_file = "/tmp/jpl_test_file.txt"
+$test_content = "Hello, JPL File I/O!\nThis is a test file.\nLine 3: Hello, World!"
+
+// 写入文件（覆盖模式）
+file_put_contents($test_file, $test_content)
+println "Written to file: #{$test_file}"
+
+// 读取文件内容
+$read_content = file_get_contents($test_file)
+println "Read from file:"
+println $read_content
+
+// 追加内容
+$append_content = "\nLine 4: Appended at " .. date("Y-m-d H:i:s")
+append($test_file, $append_content)
+println "Appended content"
+
+// 再次读取
+$new_content = file_get_contents($test_file)
+println "File now contains:"
+println $new_content
+
+// ========================================
+// 2. 流式文件操作（fopen/fread/fwrite/fclose）
+// ========================================
+println ""
+println "2. Stream-based File Operations"
+
+$stream_file = "/tmp/jpl_stream_test.txt"
+
+// 打开文件用于写入
+$fp = fopen($stream_file, "w")
+if ($fp != null) {
+    $lines = ["Line 1: First", "Line 2: Second", "Line 3: Third"]
+    foreach ($line in $lines) {
+        fwrite($fp, $line .. "\n")
+    }
+    fclose($fp)
+    println "Stream write completed"
+}
+
+// 打开文件用于读取
+$fp = fopen($stream_file, "r")
+if ($fp != null) {
+    println "Reading with stream:"
+
+    while (!feof($fp)) {
+        $line = fgets($fp)
+        if ($line != null) {
+            println "  " .. trim($line)
+        }
+    }
+
+    fclose($fp)
+}
+
+// ========================================
+// 3. 文件信息和检查
+// ========================================
+println ""
+println "3. File Information and Checks"
+
+if (file_exists($test_file)) {
+    println "File exists: #{$test_file}"
+
+    $size = fileSize($test_file)
+    println "  Size: #{$size} bytes"
+
+    $mtime = filemtime($test_file)
+    println "  Modified: " .. date("Y-m-d H:i:s", $mtime)
+
+    println "  Is file: " .. (isFile($test_file) ? "Yes" : "No")
+    println "  Is readable: " .. (is_readable($test_file) ? "Yes" : "No")
+    println "  Is writable: " .. (is_writable($test_file) ? "Yes" : "No")
+}
+
+// ========================================
+// 4. 文件复制和重命名
+// ========================================
+println ""
+println "4. File Copy and Rename"
+
+$copy_file = "/tmp/jpl_test_copy.txt"
+$rename_file = "/tmp/jpl_test_renamed.txt"
+
+copy($test_file, $copy_file)
+println "Copied to: #{$copy_file}"
+println "  Copy exists: " .. (file_exists($copy_file) ? "Yes" : "No")
+
+rename($copy_file, $rename_file)
+println "Renamed to: #{$rename_file}"
+println "  Renamed file exists: " .. (file_exists($rename_file) ? "Yes" : "No")
+
+// ========================================
+// 5. 目录操作
+// ========================================
+println ""
+println "5. Directory Operations"
+
+$test_dir = "/tmp/jpl_test_dir"
+
+// 创建目录（先清理可能存在的旧目录）
+if (exists($test_dir)) {
+    rmdir($test_dir)
+}
+mkdir($test_dir)
+println "Created directory: #{$test_dir}"
+
+// 在目录中创建文件
+$dir_file = $test_dir .. "/test.txt"
+file_put_contents($dir_file, "File in directory")
+println "Created file in directory: #{$dir_file}"
+
+// 扫描目录
+$entries = scandir($test_dir)
+println "Directory entries:"
+foreach ($entry in $entries) {
+    println "  - #{$entry}"
+}
+
+// 获取目录信息
+$dir_info = pathinfo($dir_file)
+println "Path info for #{$dir_file}:"
+println "  Dirname: #{$dir_info.dirname}"
+println "  Basename: #{$dir_info.basename}"
+println "  Extension: #{$dir_info.extension}"
+println "  Filename: #{$dir_info.filename}"
+
+// ========================================
+// 6. JSON 文件处理
+// ========================================
+println ""
+println "6. JSON File Processing"
+
+$json_file = "/tmp/jpl_test_config.json"
+
+$config = {
+    database: {
+        host: "localhost",
+        port: 3306,
+        name: "myapp",
+        user: "admin"
+    },
+    cache: {
+        enabled: true,
+        ttl: 3600
+    },
+    features: ["auth", "api", "logging"]
+}
+
+$json_str = json_encode($config, JSON_PRETTY)
+file_put_contents($json_file, $json_str)
+println "Saved JSON config to: #{$json_file}"
+
+$loaded_json = file_get_contents($json_file)
+$loaded_config = json_decode($loaded_json)
+
+println "Loaded config:"
+println "  Database host: #{$loaded_config.database.host}"
+println "  Database port: #{$loaded_config.database.port}"
+println "  Cache enabled: #{$loaded_config.cache.enabled}"
+println "  Features: " .. implode(", ", $loaded_config.features)
+
+// ========================================
+// 7. 批量文件处理
+// ========================================
+println ""
+println "7. Batch File Processing"
+
+$batch_dir = "/tmp/jpl_batch_test"
+if (exists($batch_dir)) {
+    rmdir($batch_dir)
+}
+mkdir($batch_dir)
+
+for ($i = 1; $i <= 5; $i = $i + 1) {
+    $batch_file = $batch_dir .. "/file_" .. $i .. ".txt"
+    $content = "This is file number " .. $i .. "\nCreated at " .. now()
+    file_put_contents($batch_file, $content)
+}
+println "Created 5 files in #{$batch_dir}"
+
+// 批量读取
+$files = scandir($batch_dir)
+$processed = 0
+foreach ($file in $files) {
+    if ($file != "." && $file != "..") {
+        $full_path = $batch_dir .. "/" .. $file
+        $content = file_get_contents($full_path)
+        $lines = explode("\n", $content)
+        println "  #{$file}: " .. len($lines) .. " lines"
+        $processed = $processed + 1
+    }
+}
+println "Processed #{$processed} files"
+
+// 使用 glob 查找特定文件
+$txt_files = glob($batch_dir .. "/*.txt")
+println "Found " .. len($txt_files) .. " .txt files using glob()"
+
+// ========================================
+// 8. 临时文件操作
+// ========================================
+println ""
+println "8. Working with Temporary Files"
+
+$temp_file = tempnam("/tmp", "jpl_")
+println "Created temp file: #{$temp_file}"
+
+$temp_data = "Temporary data: " .. rand_str(10)
+file_put_contents($temp_file, $temp_data)
+
+$read_temp = file_get_contents($temp_file)
+println "  Content: #{$read_temp}"
+
+unlink($temp_file)
+println "  Deleted temp file"
+
+// ========================================
+// 9. 文件权限和所有者
+// ========================================
+println ""
+println "9. File Permissions and Ownership"
+
+$perm_file = "/tmp/jpl_perm_test.txt"
+file_put_contents($perm_file, "Permission test")
+
+chmod($perm_file, 0644)
+println "Set permissions on #{$perm_file}"
+
+println "  Current PID: " .. getpid()
+println "  Current UID: " .. getuid()
+println "  Current GID: " .. getgid()
+
+// ========================================
+// 10. 清理
+// ========================================
+println ""
+println "10. Cleanup"
+
+unlink($test_file)
+unlink($stream_file)
+unlink($rename_file)
+unlink($json_file)
+unlink($perm_file)
+println "Deleted test files"
+
+// 删除目录及其内容
+fn deleteDirectory(dir) {
+    $files = scandir($dir)
+    foreach ($file in $files) {
+        if ($file != "." && $file != "..") {
+            $path = $dir .. "/" .. $file
+            if (isDir($path)) {
+                deleteDirectory($path)
+                rmdir($path)
+            } else {
+                unlink($path)
+            }
+        }
+    }
+}
+
+deleteDirectory($test_dir)
+rmdir($test_dir)
+println "Deleted test directory: #{$test_dir}"
+
+deleteDirectory($batch_dir)
+rmdir($batch_dir)
+println "Deleted batch directory: #{$batch_dir}"
+
+println ""
+println "File I/O example completed successfully!"

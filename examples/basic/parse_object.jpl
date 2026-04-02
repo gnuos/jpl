@@ -1,0 +1,155 @@
+// parse_object() 安全对象解析演示
+//
+// parse_object() 函数安全地将 JPL 格式的对象字面量字符串转换为对象值
+// 与 eval() 不同，parse_object() 只解析字面量，拒绝函数调用和表达式，避免代码注入风险
+//
+// 运行: jpl run examples/basic/parse_object.jpl
+
+puts "=== parse_object() 基本用法 ==="
+
+// 解析简单的对象
+$config_str = "{host: 'localhost', port: 3306, debug: true}"
+$config = parse_object($config_str)
+
+puts "配置对象:"
+puts "  host:", $config.host
+puts "  port:", $config.port
+puts "  debug:", $config.debug
+
+puts ""
+puts "=== 嵌套对象和数组 ==="
+
+// 嵌套对象
+$user_str = "{
+    name: 'John',
+    age: 30,
+    address: {
+        city: 'Beijing',
+        zip: '100000'
+    }
+}"
+$user = parse_object($user_str)
+
+puts "用户对象:"
+puts "  姓名:", $user.name
+puts "  年龄:", $user.age
+puts "  城市:", $user.address.city
+
+// 包含数组的对象
+$menu_str = "{
+    name: '餐厅菜单',
+    items: [
+        {name: '宫保鸡丁', price: 38},
+        {name: '鱼香肉丝', price: 32},
+        {name: '麻婆豆腐', price: 28}
+    ]
+}"
+$menu = parse_object($menu_str)
+
+puts ""
+puts "菜单对象:"
+puts "  餐厅名:", $menu.name
+puts "  菜品数量:", len($menu.items)
+puts "  第一道菜:", $menu.items[0].name, "价格:", $menu.items[0].price
+
+puts ""
+puts "=== 实际应用场景 ==="
+
+// 场景 1: 解析配置文件
+puts ""
+puts "场景 1: 解析配置文件"
+$db_config_str = "{
+    driver: 'mysql',
+    host: '127.0.0.1',
+    port: 3306,
+    database: 'myapp',
+    options: {
+        charset: 'utf8mb4',
+        timeout: 30
+    }
+}"
+$db_config = parse_object($db_config_str)
+
+puts "数据库配置:"
+puts "  驱动:", $db_config.driver
+puts "  主机:", $db_config.host .. ":" .. string($db_config.port)
+puts "  数据库:", $db_config.database
+puts "  字符集:", $db_config.options.charset
+
+// 场景 2: 解析 API 响应数据
+puts ""
+puts "场景 2: 解析 JSON-like 数据"
+$api_response = "{
+    status: 'success',
+    data: {
+        users: [
+            {id: 1, name: 'Alice', active: true},
+            {id: 2, name: 'Bob', active: false}
+        ],
+        total: 2,
+        page: 1
+    }
+}"
+$response = parse_object($api_response)
+
+puts "API 响应:"
+puts "  状态:", $response.status
+puts "  用户总数:", $response.data.total
+puts "  第一用户:", $response.data.users[0].name
+
+// 场景 3: 解析路由配置
+puts ""
+puts "场景 3: 解析路由配置"
+$routes_str = "{
+    home: {path: '/', controller: 'HomeController', action: 'index'},
+    users: {path: '/users', controller: 'UserController', action: 'list'},
+    user_show: {path: '/users/:id', controller: 'UserController', action: 'show'}
+}"
+$routes = parse_object($routes_str)
+
+puts "路由配置:"
+puts "  首页路由:", $routes.home.path, "->", $routes.home.controller .. ":" .. $routes.home.action
+puts "  用户列表:", $routes.users.path
+
+puts ""
+puts "=== 安全特性演示 ==="
+
+puts "parse_object() 会拒绝危险内容:"
+puts "  ✓ 拒绝函数调用: {x: delete_all_files()}"
+puts "  ✓ 拒绝变量引用: {y: $user_input}"
+puts "  ✓ 拒绝表达式: {z: 1 + 2}"
+
+puts ""
+puts "对比：eval() 的危险性（不要这样做!）"
+puts "  eval('{x: exit(1)}')      // 危险！会执行 exit(1)"
+puts "  parse_object('{x: exit(1)}') // 安全！会报错拒绝"
+
+puts ""
+puts "=== 支持的数据类型 ==="
+
+$types_demo = "{
+    str: 'Hello',
+    num: 42,
+    decimal: 3.14,
+    bool_true: true,
+    bool_false: false,
+    null_val: null,
+    arr: [1, 2, 3],
+    nested: {a: 1, b: 2}
+}"
+$types = parse_object($types_demo)
+
+puts "各种数据类型:"
+puts "  字符串:", $types.str
+puts "  整数:", $types.num
+puts "  浮点数:", $types.decimal
+puts "  布尔真:", $types.bool_true
+puts "  布尔假:", $types.bool_false
+puts "  null:", $types.null_val
+puts "  数组长度:", len($types.arr)
+puts "  嵌套对象.a:", $types.nested.a
+
+puts ""
+puts "=== parse_object() 演示完成 ==="
+puts "提示: parse_object() 是解析配置、API 响应的安全选择"
+puts "      永远不要使用 eval() 处理不可信的数据！"

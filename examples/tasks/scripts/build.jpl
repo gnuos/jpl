@@ -1,0 +1,16 @@
+// Build 脚本示例
+// 演示构建流程
+
+println "Building project..."
+
+// 模拟创建输出目录
+$buildDir = "build"
+println "  Creating output directory: #{$buildDir}"
+
+// 模拟编译过程
+$files = ["main.jpl", "utils.jpl", "config.jpl"]
+foreach ($files as $file) {
+    println "  Compiling #{$file}..."
+}
+
+println "Build completed successfully!"

@@ -1,0 +1,19 @@
+// 示例：使用本地模块
+// 演示 import 语句加载模块
+
+import "lib/math.jpl"
+import "lib/strings.jpl"
+
+// 使用 math 模块
+$result = Math.add(10, 20)
+println "10 + 20 = #{$result}"
+
+$avg = Math.avg([10, 20, 30, 40, 50])
+println "avg([10,20,30,40,50]) = #{$avg}"
+
+// 使用 strings 模块
+$greeting = Strings.capitalize("hello world")
+println "capitalize: #{$greeting}"
+
+$slug = Strings.slugify("Hello World! This is JPL.")
+println "slugify: #{$slug}"

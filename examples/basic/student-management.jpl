@@ -1,0 +1,244 @@
+// 综合示例：学生成绩管理系统
+// 展示 JPL 在实际场景中的应用
+
+println "========================================"
+println "      学生成绩管理系统 v1.0"
+println "========================================"
+println ""
+
+// 学生数据
+$students = [
+  {id: 1, name: "张三", scores: [85, 92, 78, 88, 95]},
+  {id: 2, name: "李四", scores: [72, 68, 85, 90, 88]},
+  {id: 3, name: "王五", scores: [90, 85, 92, 78, 85]},
+  {id: 4, name: "赵六", scores: [65, 70, 72, 68, 75]},
+  {id: 5, name: "钱七", scores: [88, 100, 90, 85, 79]}
+]
+
+// 课程名称
+$courses = ["数学", "英语", "物理", "化学", "生物"]
+
+// ============ 核心函数 ============
+
+// 计算平均分
+fn calculateAverage($scores) {
+    if (len($scores) == 0) {
+        return 0
+    }
+    $sum = reduce($scores, ($acc, $s) -> $acc + $s, 0)
+    return $sum / len($scores)
+}
+
+// 计算总分
+fn calculateTotal($scores) {
+    return reduce($scores, ($acc, $s) -> $acc + $s, 0)
+}
+
+// 计算排名
+fn calculateRank($studentId, $allStudents) {
+    $averages = map($allStudents, ($s) -> calculateAverage($s.scores))
+    $studentAvg = calculateAverage($allStudents[$studentId - 1].scores)
+    $rank = 1
+    foreach ($avg in $averages) { if ($avg > $studentAvg) { $rank += 1 } }
+    return $rank
+}
+
+// 评级
+fn getGrade($average) {
+    if ($average >= 90) {
+        return "A"
+    } else if ($average >= 80) {
+        return "B"
+    } else if ($average >= 70) {
+        return "C"
+    } else if ($average >= 60) {
+        return "D"
+    } else {
+        return "F"
+    }
+}
+
+// ============ 报表生成 ============
+
+println "一、学生成绩单"
+println "----------------------------------------"
+
+foreach ($student in $students) {
+    $avg = calculateAverage($student.scores)
+    $total = calculateTotal($student.scores)
+    $grade = getGrade($avg)
+    $rank = calculateRank($student.id, $students)
+    
+    println ""
+    println "学生: " .. $student.name .. " (ID: " .. $student.id .. ")"
+    println "----------------------------------------"
+    
+    // 各科成绩
+    for ($i = 0; $i < len($courses); $i += 1) {
+        $course = $courses[$i]
+        $score = $student.scores[$i]
+        println "  " .. padRight($course, 6, " ") .. ": " .. $score
+    }
+    
+    println "----------------------------------------"
+    println "  总分: " .. $total
+    println "  平均分: " .. formatNumber($avg, 2)
+    println "  评级: " .. $grade
+    println "  排名: 第 " .. $rank .. " 名"
+}
+
+println ""
+println "========================================"
+println "二、班级统计"
+println "========================================"
+println ""
+
+// 计算班级平均分
+$allAverages = map($students, ($s) -> calculateAverage($s.scores))
+$classAvg = calculateAverage($allAverages)
+
+println "班级平均分: " .. formatNumber($classAvg, 2)
+println "最高分: " .. max($allAverages)
+println "最低分: " .. min($allAverages)
+
+// 各科班级平均分
+println ""
+println "各科平均分:"
+for ($i = 0; $i < len($courses); $i += 1) {
+    $courseScores = map($students, ($s) -> $s.scores[$i])
+    $courseAvg = calculateAverage($courseScores)
+    println "  " .. $courses[$i] .. ": " .. formatNumber($courseAvg, 2)
+}
+
+// 评级分布
+println ""
+println "评级分布:"
+$grades = map($students, (s) -> getGrade(calculateAverage(s.scores)))
+$gradeCounts = {A: 0, B: 0, C: 0, D: 0, F: 0}
+
+foreach ($grade in $grades) {
+    $gradeCounts[$grade] = $gradeCounts[$grade] + 1
+}
+
+foreach (g => $count in $gradeCounts) {
+    $percentage = ($count / len($students)) * 100
+    println "  " .. g .. ": " .. $count .. " 人 (" .. formatNumber($percentage, 1) .. "%)"
+}
+
+println ""
+println "========================================"
+println "三、优秀学生"
+println "========================================"
+println ""
+
+// 平均分 > 85 的学生
+$excellentStudents = filter($students, (s) -> calculateAverage(s.scores) > 85)
+println "平均分 > 85 分的学生:"
+foreach (s in $excellentStudents) {
+    $avg = calculateAverage(s.scores)
+    println "  " .. s.name .. " (" ..formatNumber($avg, 2) .. " 分)"
+}
+
+// 单科满分
+println ""
+println "满分学生:"
+for ($i = 0; $i < len($courses); $i += 1) {
+    $courseScores = map($students, (s) -> s.scores[$i])
+    $maxScore = max($courseScores)
+
+    println $maxScore
+    
+    if ($maxScore == 100) {
+        // 查找获得满分的学生
+        foreach (s in $students) {
+            if (s.scores[$i] == 100) {
+                println "  " .. s.name .. " - " .. $courses[$i] .. " 满分"
+            }
+        }
+    }
+}
+
+// 进步最大（模拟上次成绩）
+println ""
+println "========================================"
+println "四、成绩分析"
+println "========================================"
+println ""
+
+// 找出最强科目
+$courseAvgs = []
+for ($i = 0; $i < len($courses); $i += 1) {
+    $scores = map($students, (s) -> s.scores[$i])
+    $avg = calculateAverage($scores)
+    push($courseAvgs, {course: $courses[$i], avg: $avg})
+}
+
+$bestCourse = $courseAvgs[0]
+foreach (c in $courseAvgs) {
+    if (c.avg > $bestCourse.avg) {
+        $bestCourse = c
+    }
+}
+
+println "班级最强科目: " .. $bestCourse.course .. " (平均分: " .. formatNumber($bestCourse.avg, 2) .. ")"
+
+// 需要关注的学生
+println ""
+println "需要关注的学生（平均分 < 70）:"
+$needAttention = filter($students, (s) -> calculateAverage(s.scores) < 70)
+if (len($needAttention) > 0) {
+    foreach (s in $needAttention) {
+        $avg = calculateAverage(s.scores)
+        println "  " .. s.name .. " (" .. formatNumber($avg, 2) .. " 分)"
+    }
+} else {
+    println "  无"
+}
+
+println ""
+println "========================================"
+println "              报表生成完毕"
+println "========================================"
+
+// ============ 辅助函数 ============
+
+fn formatNumber($num, $decimals) {
+    $factor = power(10, $decimals)
+    $rounded = round($num * $factor) / $factor
+    return "" .. $rounded
+}
+
+fn power($base, $exponent) {
+    $result = 1
+    for ($i = 0; $i < $exponent; $i += 1) {
+        $result = $result * $base
+    }
+    return $result
+}
+
+fn round(num) {
+    if (num >= 0) {
+        return toInt(num + 0.5)
+    } else {
+        return toInt(num - 0.5)
+    }
+}
+
+fn toInt(num) {
+    return num - (num % 1)
+}
+
+fn padRight($str, $length, $char) {
+    $strLen = len($str)
+    if ($strLen >= $length) {
+        return $str
+    }
+    if (len($char) == 0) {
+        return $str
+    }
+    $padding = ""
+    for ($i = 0; $i < ($length - $strLen); $i += 1) {
+        $padding = $padding .. $char
+    }
+    return $str .. $padding
+}

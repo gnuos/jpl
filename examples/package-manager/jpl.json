@@ -1,0 +1,13 @@
+{
+    "name": "package-manager-demo",
+    "version": "0.1.0",
+    "description": "JPL 包管理器示例项目",
+    "dependencies": {
+        "utils": "https://github.com/user/jpl-utils.git",
+        "http": "https://github.com/user/jpl-http.git@^1.2.0"
+    },
+    "tasks": {
+        "start": "jpl run main.jpl",
+        "test": "jpl run lib/math.jpl"
+    }
+}

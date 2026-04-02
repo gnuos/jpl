@@ -1,0 +1,172 @@
+// 函数式编程示例
+// 展示 JPL 的函数式编程特性
+
+println "=== 纯函数 ==="
+// 纯函数：相同输入总是产生相同输出，无副作用
+fn addPure(a, b) {
+    return a + b
+}
+
+fn doublePure(x) {
+    return x * 2
+}
+
+println "addPure(3, 4) = " .. addPure(3, 4)
+println "doublePure(5) = " .. doublePure(5)
+
+println ""
+println "=== 函数组合 ==="
+// 函数组合：将多个函数串联起来
+$addOne = ($x) -> $x + 1
+$double = ($x) -> $x * 2
+
+// 手动组合：先 addOne 再 double
+$result1 = $double($addOne(5))
+println "double(addOne(5)) = " .. $result1  // (5+1)*2 = 12
+
+// 手动组合：先 double 再 addOne
+$result2 = $addOne($double(5))
+println "addOne(double(5)) = " .. $result2  // 5*2+1 = 11
+
+println ""
+println "=== 部分应用（Partial Application） ==="
+// 手动实现部分应用
+$add = ($a, $b) -> $a + $b
+$addFive = ($b) -> $add(5, $b)
+
+println "addFive(10) = " .. $addFive(10)  // 15
+println "addFive(3) = " .. $addFive(3)    // 8
+
+println ""
+println "=== 高阶函数：map/filter/reduce ==="
+$numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+println "原数组: " .. $numbers
+
+// map：转换每个元素
+$doubled = map($numbers, ($x) -> $x * 2)
+println "map x*2: " .. $doubled
+
+// filter：选择符合条件的元素
+$evens = filter($numbers, ($x) -> $x % 2 == 0)
+println "filter even: " .. $evens
+
+// reduce：归约为单一值
+$sum = reduce($numbers, ($acc, $x) -> $acc + $x, 0)
+$product = reduce($numbers, ($acc, $x) -> $acc * $x, 1)
+println "reduce sum: " .. $sum
+println "reduce product: " .. $product
+
+// reject：排除符合条件的元素
+$odd = reject($numbers, ($x) -> $x % 2 == 0)
+println "reject even: " .. $odd
+
+// partition：按条件分成两组
+$parts = partition($numbers, ($x) -> $x > 5)
+println "partition >5: " .. $parts
+
+println ""
+println "=== 数组集合操作 ==="
+
+// unique：去重
+$withDup = [1, 2, 2, 3, 3, 3, 4]
+println "with duplicates: " .. $withDup
+println "unique: " .. unique($withDup)
+
+// flattenDeep：深度展平
+$nested = [1, [2, [3, [4, [5]]]]]
+println "nested: " .. $nested
+println "flattenDeep: " .. flattenDeep($nested)
+
+// difference：差集
+$a = [1, 2, 3, 4, 5]
+$b = [2, 4, 6]
+println "difference([1-5], [2,4,6]): " .. difference($a, $b)
+
+// union：并集
+$c = [3, 4, 5]
+println "union([1-3], [3-5]): " .. union($a, $c)
+
+// zip：合并多个数组
+$names = ["Alice", "Bob", "Charlie"]
+$ages = [25, 30, 35]
+println "zip(names, ages): " .. zip($names, $ages)
+
+// unzip：拆分元组数组
+$tuples = [["Alice", 25], ["Bob", 30], ["Charlie", 35]]
+println "unzip(tuples): " .. unzip($tuples)
+
+println ""
+println "=== 复杂数据处理 ==="
+$users = [
+    {name: "Alice", age: 25, active: true},
+    {name: "Bob", age: 30, active: false},
+    {name: "Charlie", age: 35, active: true},
+    {name: "Diana", age: 28, active: true}
+]
+
+println "用户数据："
+foreach ($user in $users) {
+    println "  " .. $user.name .. " (" .. $user.age .. ")"
+}
+
+// 过滤活跃用户
+$activeUsers = filter($users, ($u) -> $u.active)
+println ""
+println "活跃用户: " .. len($activeUsers)
+
+// 提取姓名
+$activeNames = map($activeUsers, ($u) -> $u.name)
+println "活跃用户名: " .. $activeNames
+
+// 计算平均年龄
+$totalAge = reduce($users, ($acc, $u) -> $acc + $u.age, 0)
+$avgAge = $totalAge / len($users)
+println "平均年龄: " .. $avgAge
+
+// 查找特定用户
+$found = find($users, ($u) -> $u.age > 30)
+println "年龄>30的用户: " .. $found.name
+
+println ""
+println "=== 函数缓存（Memoization） ==="
+// 使用对象模拟缓存
+$fibCache = {}
+
+fn fibCached(n) {
+    $key = string(n)
+    if ($fibCache[$key] != null) {
+        return $fibCache[$key]
+    }
+    $result = n
+    if (n > 1) {
+        $result = fibCached(n - 1) + fibCached(n - 2)
+    }
+    $fibCache[$key] = $result
+    return $result
+}
+
+println "fib(20) = " .. fibCached(20)
+println "fib(30) = " .. fibCached(30)
+
+println ""
+println "=== 惰性求值（Lazy Evaluation）模式 ==="
+fn lazyRange(start, end) {
+    $current = $start
+    return () -> {
+        if ($current >= $end) {
+            return null
+        }
+        $value = $current
+        $current = $current + 1
+        return $value
+    }
+}
+
+$rangeGen = lazyRange(1, 5)
+println "惰性序列 1-5:"
+$val = $rangeGen()
+while ($val != null) {
+    println "  " .. $val
+    $val = $rangeGen()
+}

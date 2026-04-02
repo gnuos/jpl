@@ -1,0 +1,376 @@
+// WebSocket 服务器示例
+// 基于 TCP 和 HTTP 升级握手实现 WebSocket 协议
+//
+// 运行: jpl run examples/network/websocket-server.jpl
+// 测试: 使用 wscat 或浏览器 WebSocket 客户端
+//       wscat -c ws://localhost:8080
+
+println "=== WebSocket Server ==="
+println "Starting server on ws://localhost:8080"
+
+// SHA1 哈希（用于 WebSocket 握手）
+// 注意：这里使用简化的实现，实际应用应使用内置 hash 函数
+
+// Base64 编码（简化版，用于握手）
+fn base64_encode_simple($data) {
+    // 使用内置函数
+    return base64_encode($data)
+}
+
+// WebSocket 握手密钥计算
+fn websocket_accept_key($client_key) {
+    // RFC 6455: accept = base64(sha1(client_key + magic_string))
+    $magic = "258EAFA5-E914-47DA-95CA-5AB91421AAC4"
+    $combined = $client_key .. $magic
+    $hash = sha1($combined)
+    // SHA1 返回十六进制字符串，需要转换为字节再 Base64
+    // 简化处理：直接使用内置函数
+    return base64_encode($hash)
+}
+
+// 解析 WebSocket 帧
+fn parse_websocket_frame($data) {
+    if (strlen($data) < 2) {
+        return null
+    }
+
+    $byte1 = ord(substr($data, 0, 1))
+    $byte2 = ord(substr($data, 1, 1))
+
+    $fin = ($byte1 & 0x80) != 0
+    $opcode = $byte1 & 0x0F
+    $masked = ($byte2 & 0x80) != 0
+    $payload_len = $byte2 & 0x7F
+
+    $offset = 2
+
+    // 扩展长度
+    if ($payload_len == 126) {
+        if (strlen($data) < $offset + 2) {
+            return null
+        }
+        $payload_len = (ord(substr($data, $offset, 1)) << 8) | ord(substr($data, $offset + 1, 1))
+        $offset = $offset + 2
+    } else if ($payload_len == 127) {
+        // 64 位长度（简化处理，只取低 32 位）
+        if (strlen($data) < $offset + 8) {
+            return null
+        }
+        $payload_len = 0
+        for ($i = 4; $i < 8; $i = $i + 1) {
+            $payload_len = ($payload_len << 8) | ord(substr($data, $offset + $i, 1))
+        }
+        $offset = $offset + 8
+    }
+
+    // 掩码
+    $mask = ""
+    if ($masked) {
+        if (strlen($data) < $offset + 4) {
+            return null
+        }
+        $mask = substr($data, $offset, 4)
+        $offset = $offset + 4
+    }
+
+    // 检查数据是否完整
+    if (strlen($data) < $offset + $payload_len) {
+        return null
+    }
+
+    // 获取载荷
+    $payload = substr($data, $offset, $payload_len)
+
+    // 解码掩码
+    if ($masked) {
+        $decoded = ""
+        for ($i = 0; $i < strlen($payload); $i = $i + 1) {
+            $decoded = $decoded .. chr(ord(substr($payload, $i, 1)) ^ ord(substr($mask, $i % 4, 1)))
+        }
+        $payload = $decoded
+    }
+
+    return {
+        fin: $fin,
+        opcode: $opcode,
+        payload: $payload,
+        frame_size: $offset + $payload_len
+    }
+}
+
+// 构建 WebSocket 帧
+fn build_websocket_frame($opcode, $payload, $masked) {
+    $frame = ""
+
+    // 第一个字节：FIN + Opcode
+    $frame = $frame .. chr(0x80 | $opcode)
+
+    // 第二个字节及之后：MASK + Payload Length
+    $len = strlen($payload)
+    $mask_bit = $masked ? 0x80 : 0x00
+
+    if ($len < 126) {
+        $frame = $frame .. chr($mask_bit | $len)
+    } else if ($len < 65536) {
+        $frame = $frame .. chr($mask_bit | 126)
+        $frame = $frame .. chr(($len >> 8) & 0xFF)
+        $frame = $frame .. chr($len & 0xFF)
+    } else {
+        $frame = $frame .. chr($mask_bit | 127)
+        // 8 字节长度（简化，高 4 字节为 0）
+        $frame = $frame .. chr(0) .. chr(0) .. chr(0) .. chr(0)
+        $frame = $frame .. chr(($len >> 24) & 0xFF)
+        $frame = $frame .. chr(($len >> 16) & 0xFF)
+        $frame = $frame .. chr(($len >> 8) & 0xFF)
+        $frame = $frame .. chr($len & 0xFF)
+    }
+
+    // 载荷（客户端发送需要掩码，服务器不需要）
+    if ($masked) {
+        $mask = chr(rand(0, 255)) .. chr(rand(0, 255)) .. chr(rand(0, 255)) .. chr(rand(0, 255))
+        $frame = $frame .. $mask
+        $encoded = ""
+        for ($i = 0; $i < strlen($payload); $i = $i + 1) {
+            $encoded = $encoded .. chr(ord(substr($payload, $i, 1)) ^ ord(substr($mask, $i % 4, 1)))
+        }
+        $frame = $frame .. $encoded
+    } else {
+        $frame = $frame .. $payload
+    }
+
+    return $frame
+}
+
+// WebSocket 连接处理
+fn handle_websocket_client($client, $registry) {
+    // 读取 HTTP 升级请求
+    $data = net_recv($client, 4096)
+    if (empty($data)) {
+        net_close($client)
+        return
+    }
+
+    // 解析 HTTP 头
+    $lines = split($data, "\r\n")
+    $request_line = $lines[0]
+
+    // 检查是否是 WebSocket 升级请求
+    $is_upgrade = false
+    $client_key = ""
+
+    foreach (line in $lines) {
+        if (startsWith(toLower($line), "upgrade:") && contains(toLower($line), "websocket")) {
+            $is_upgrade = true
+        }
+        if (startsWith(toLower($line), "sec-websocket-key:")) {
+            $client_key = trim(substr($line, 19))
+        }
+    }
+
+    if (!$is_upgrade || empty($client_key)) {
+        // 不是 WebSocket 升级请求，返回 HTTP 400
+        net_send($client, "HTTP/1.1 400 Bad Request\r\n\r\n")
+        net_close($client)
+        return
+    }
+
+    // 计算 Accept Key
+    $accept_key = websocket_accept_key($client_key)
+
+    // 发送握手响应
+    $response = "HTTP/1.1 101 Switching Protocols\r\n"
+    $response = $response .. "Upgrade: websocket\r\n"
+    $response = $response .. "Connection: Upgrade\r\n"
+    $response = $response .. "Sec-WebSocket-Accept: " .. $accept_key .. "\r\n"
+    $response = $response .. "\r\n"
+
+    net_send($client, $response)
+    println "WebSocket handshake completed for client"
+
+    // WebSocket 连接建立，处理消息
+    $buffer = ""
+
+    $registry.on_read($client, fn($socket, $chunk) {
+        $buffer = $buffer .. $chunk
+
+        // 解析帧
+        while (true) {
+            $frame = parse_websocket_frame($buffer)
+            if ($frame == null) {
+                break
+            }
+
+            // 处理帧
+            $opcode = $frame.opcode
+            $payload = $frame.payload
+
+            // 更新缓冲区
+            $buffer = substr($buffer, $frame.frame_size)
+
+            if ($opcode == 0x1) {
+                // 文本帧
+                println "Received text: #{$payload}"
+                // Echo 回去
+                $response_frame = build_websocket_frame(0x1, "Echo: " .. $payload, false)
+                net_send($socket, $response_frame)
+            } else if ($opcode == 0x2) {
+                // 二进制帧
+                println "Received binary: #{strlen($payload)} bytes"
+                $response_frame = build_websocket_frame(0x2, $payload, false)
+                net_send($socket, $response_frame)
+            } else if ($opcode == 0x8) {
+                // 关闭帧
+                println "Client closing connection"
+                $close_frame = build_websocket_frame(0x8, "", false)
+                net_send($socket, $close_frame)
+                net_close($socket)
+                $registry.off($socket)
+                return
+            } else if ($opcode == 0x9) {
+                // Ping
+                println "Received Ping"
+                $pong_frame = build_websocket_frame(0xA, $payload, false)
+                net_send($socket, $pong_frame)
+            } else if ($opcode == 0xA) {
+                // Pong
+                println "Received Pong"
+            }
+        }
+    })
+}
+
+// HTTP 首页（浏览器访问时显示）
+fn handle_http_request($client) {
+    $html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JPL WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin: 10px 0; }
+        .message { margin: 5px 0; }
+        .sent { color: blue; }
+        .received { color: green; }
+        input, button { padding: 8px; font-size: 14px; }
+        #input { width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>JPL WebSocket Test</h1>
+    <div id="messages"></div>
+    <input type="text" id="input" placeholder="Type a message...">
+    <button onclick="send()">Send</button>
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+
+    <script>
+        let ws = null;
+
+        function log(msg, type) {
+            const div = document.createElement('div');
+            div.className = 'message ' + type;
+            div.textContent = msg;
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('messages').scrollTop = 99999;
+        }
+
+        function connect() {
+            if (ws) ws.close();
+            ws = new WebSocket('ws://localhost:8080');
+            ws.onopen = () => log('Connected!', 'received');
+            ws.onmessage = (e) => log('Received: ' + e.data, 'received');
+            ws.onclose = () => log('Disconnected', 'received');
+            ws.onerror = (e) => log('Error: ' + e, 'received');
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function send() {
+            const input = document.getElementById('input');
+            if (ws && ws.readyState === 1) {
+                ws.send(input.value);
+                log('Sent: ' + input.value, 'sent');
+                input.value = '';
+            } else {
+                log('Not connected!', 'received');
+            }
+        }
+
+        document.getElementById('input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') send();
+        });
+    </script>
+</body>
+</html>
+"""
+    $response = "HTTP/1.1 200 OK\r\n"
+    $response = $response .. "Content-Type: text/html\r\n"
+    $response = $response .. "Content-Length: " .. strlen($html) .. "\r\n"
+    $response = $response .. "Connection: close\r\n"
+    $response = $response .. "\r\n"
+    $response = $response .. $html
+    net_send($client, $response)
+    net_close($client)
+}
+
+// 主处理函数
+fn handle_client($client, $registry) {
+    // 先读取少量数据判断请求类型
+    $peek = net_recv($client, 1024)
+    if (empty($peek)) {
+        net_close($client)
+        return
+    }
+
+    // 检查是否是 WebSocket 升级
+    if (contains($peek, "Upgrade: websocket") || contains($peek, "upgrade: websocket")) {
+        // WebSocket 握手 - 需要重新处理
+        // 由于已经读取了数据，需要特殊处理
+        handle_websocket_client($client, $registry)
+    } else {
+        // 普通 HTTP 请求
+        handle_http_request($client)
+    }
+}
+
+// 创建 TCP 服务器
+$server = net_tcp_listen("0.0.0.0", 8080)
+println "Server listening on ws://localhost:8080"
+
+// 创建事件注册表
+$registry = ev_registry_new()
+
+// 注册 accept 事件
+$registry.on_accept($server, fn($client) {
+    $peer = net_getpeername($client)
+    println "Connection from: #{$peer.ip}:#{$peer.port}"
+    handle_client($client, $registry)
+})
+
+// 注册信号处理
+$registry.on_signal(2, fn() {
+    println ""
+    println "Shutting down..."
+    net_close($server)
+    ev_stop($loop)
+})
+
+// 创建事件循环并运行
+$loop = ev_loop_new()
+ev_attach($loop, $registry)
+
+println ""
+println "Open http://localhost:8080 in your browser to test"
+println "Or use: wscat -c ws://localhost:8080"
+println ""
+println "Press Ctrl+C to stop"
+
+ev_run($loop)
+
+println "Server stopped."

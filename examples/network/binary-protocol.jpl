@@ -1,0 +1,143 @@
+// 二进制协议处理示例
+// 展示 pack/unpack 和 Buffer 在网络协议中的应用
+
+println "=== Binary Protocol Example ==="
+
+// ========================================
+// 1. 简单协议头打包
+// ========================================
+println ""
+println "1. Simple Protocol Header"
+
+// 协议格式: [magic:4][version:2][flags:2][length:4]
+// 使用 pack 函数
+$magic = 0x48454C50  // "HELP"
+$version = 1
+$flags = 0x0001
+$length = 256
+
+$header = pack("NSsN", $magic, $version, $flags, $length)
+println "Packed header (12 bytes): #{$header}"
+
+// 解包验证
+$unpacked = unpack("NSsN", $header)
+println "Unpacked: magic=#{$unpacked[0]}, version=#{$unpacked[1]}, flags=#{$unpacked[2]}, length=#{$unpacked[3]}"
+
+// ========================================
+// 2. Buffer 对象操作
+// ========================================
+println ""
+println "2. Buffer Object Operations"
+
+// 创建 Buffer（网络字节序 = 大端）
+$buf = buffer_new("big")
+
+// 写入协议头
+buffer_write_uint32($buf, 0x12345678)  // Magic
+buffer_write_uint16($buf, 1)            // Version
+buffer_write_uint8($buf, 0x01)          // Flags
+buffer_write_uint8($buf, 0x00)          // Reserved
+
+// 写入数据
+$payload = "Hello, Binary World!"
+buffer_write_uint32($buf, strlen($payload))  // Payload length
+buffer_write_string($buf, $payload)           // Payload data
+
+// 获取 Buffer 信息
+$buf_len = buffer_length($buf)
+$buf_pos = buffer_tell($buf)
+println "Buffer length: #{$buf_len} bytes"
+println "Current position: #{$buf_pos}"
+
+// 转换为字节数组（模拟网络发送）
+$bytes = buffer_to_bytes($buf)
+println "Bytes to send: #{$bytes}"
+
+// ========================================
+// 3. 字节序切换
+// ========================================
+println ""
+println "3. Byte Order Switching"
+
+// 大端 Buffer
+$buf_be = buffer_new("big")
+buffer_write_uint32($buf_be, 0x12345678)
+$bytes_be = buffer_to_bytes($buf_be)
+println "Big-endian: #{$bytes_be}"
+
+// 小端 Buffer
+$buf_le = buffer_new("little")
+buffer_write_uint32($buf_le, 0x12345678)
+$bytes_le = buffer_to_bytes($buf_le)
+println "Little-endian: #{$bytes_le}"
+
+// ========================================
+// 4. 复杂数据结构打包
+// ========================================
+println ""
+println "4. Complex Data Structure Packing"
+
+// 用户信息结构
+$user = {
+    id: 12345,
+    age: 25,
+    score: 95.5
+}
+
+// 打包用户数据
+$user_buf = buffer_new("big")
+buffer_write_uint32($user_buf, $user.id)
+buffer_write_uint8($user_buf, $user.age)
+buffer_write_float32($user_buf, $user.score)
+
+$user_bytes = buffer_to_bytes($user_buf)
+println "User packed: #{$user_bytes}"
+
+// 重置并读取
+buffer_reset($user_buf)
+buffer_write_bytes($user_buf, $user_bytes)
+buffer_seek($user_buf, 0)
+
+$read_id = buffer_read_uint32($user_buf)
+$read_age = buffer_read_uint8($user_buf)
+$read_score = buffer_read_float32($user_buf)
+
+println "Read back: id=#{$read_id}, age=#{$read_age}, score=#{$read_score}"
+
+// ========================================
+// 5. 网络协议示例：消息帧
+// ========================================
+println ""
+println "5. Network Message Frame"
+
+fn create_message_frame($msg_type, $payload) {
+    $frame = buffer_new("big")
+    
+    // 帧头
+    buffer_write_uint32($frame, 0xDEADBEEF)     // Magic
+    buffer_write_uint8($frame, 1)                  // Version
+    buffer_write_uint8($frame, $msg_type)        // Message type
+    
+    // 长度（payload + checksum）
+    $content_len = strlen($payload) + 4
+    buffer_write_uint16($frame, $content_len)
+    
+    // Payload
+    buffer_write_string($frame, $payload)
+    
+    // Checksum（简化：payload 长度 % 256）
+    $checksum = strlen($payload) % 256
+    buffer_write_uint32($frame, $checksum)
+    
+    return buffer_to_bytes($frame)
+}
+
+// 创建消息
+$msg1 = create_message_frame(0x01, "LOGIN:alice")
+$msg2 = create_message_frame(0x02, "DATA:Hello World")
+
+println "Message 1: #{$msg1}"
+println "Message 2: #{$msg2}"
+
+println ""
+println "Binary protocol example completed."

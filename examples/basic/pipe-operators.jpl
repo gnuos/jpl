@@ -1,0 +1,138 @@
+// 管道运算符示例
+// 展示正向管道 |> 和反向管道 <|
+//
+// 管道运算符将值传递给函数，使数据流处理更清晰
+// 正向管道 |>: 左侧值作为函数的首个参数
+// 反向管道 <|: 右侧值作为函数的末尾参数
+
+// ========================================
+// 1. 基本用法
+// ========================================
+println "=== 基本用法 ==="
+
+fn double(x) { return x * 2 }
+fn add(a, b) { return a + b }
+fn power(base, exp) { return pow(base, exp) }
+
+// 正向管道：左侧值作为首个参数
+println "5 |> double() = " .. (5 |> double())       // double(5) = 10
+println "10 |> add(20) = " .. (10 |> add(20))       // add(10, 20) = 30
+
+// 反向管道：右侧值作为末尾参数
+println "double() <| 7 = " .. (double() <| 7)       // double(7) = 14
+println "add(100) <| 50 = " .. (add(100) <| 50)    // add(100, 50) = 150
+
+// power 的区别
+println "2 |> power(10) = " .. (2 |> power(10))     // power(2, 10) = 1024
+println "power(2) <| 10 = " .. (power(2) <| 10)    // power(2, 10) = 1024
+
+println ""
+
+// ========================================
+// 2. 链式管道（左结合 vs 右结合）
+// ========================================
+println "=== 链式管道 ==="
+
+// 正向管道左结合：a |> f |> g = (a |> f) |> g = g(f(a))
+$result1 = 5 |> double() |> double()
+println "5 |> double() |> double() = " .. $result1  // double(double(5)) = 20
+
+// 反向管道右结合：f <| g <| a = f <| (g <| a) = f(g(a))
+$result2 = double() <| double() <| 3
+println "double() <| double() <| 3 = " .. $result2  // double(double(3)) = 12
+
+// 混合使用
+$result3 = 2 |> double() |> add(10)
+println "2 |> double() |> add(10) = " .. $result3   // add(double(2), 10) = 14
+
+println ""
+
+// ========================================
+// 3. 与内置函数配合
+// ========================================
+println "=== 与内置函数配合 ==="
+
+$nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// 使用函数引用（不带括号）进行管道
+$doubled = $nums |> map(double)
+println "map(double): " .. $doubled
+
+// 使用箭头函数
+$evens = $nums |> filter(($x) -> $x % 2 == 0)
+println "filter(even): " .. $evens
+
+// 链式管道（同一行）
+$squared_evens = $nums |> filter(($x) -> $x % 2 == 0) |> map(($x) -> $x * $x)
+println "filter |> map: " .. $squared_evens
+
+// 管道到 reduce
+$sum = $nums |> reduce(($acc, $x) -> $acc + $x, 0)
+println "reduce sum: " .. $sum
+
+println ""
+
+// ========================================
+// 4. 数据处理管道
+// ========================================
+println "=== 数据处理管道 ==="
+
+fn gt5(x) { return x > 5 }
+fn mul10(x) { return x * 10 }
+
+$data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// 过滤 > 5，乘以 10，求和（同一行链式调用）
+$result = $data |> filter(gt5) |> map(mul10) |> reduce(($acc, $x) -> $acc + $x, 0)
+println "filter>5 |> *10 |> sum = " .. $result  // 60+70+80+90+100 = 400
+
+// 字符串处理管道
+$words = ["hello", "world", "from", "jpl"]
+$sentence = $words |> map(toUpper) |> join("-")
+println "join: " .. $sentence  // "HELLO-WORLD-FROM-JPL"
+
+// 链式变换
+$processed = "  Hello, World!  " |> trim() |> toUpper()
+println "trim |> upper: '" .. $processed .. "'"
+
+println ""
+
+// ========================================
+// 5. 实际应用：数据清洗
+// ========================================
+println "=== 数据清洗管道 ==="
+
+$rawLines = ["  Alice, 25  ", "Bob, 30", "  Charlie, 35  ", "", "Diana, 28"]
+
+// 清洗：去空白、过滤空行
+$cleaned = $rawLines |> map(trim) |> filter(($line) -> strlen($line) > 0)
+println "清洗结果:"
+foreach ($line in $cleaned) {
+    $parts = split($line, ",")
+    println "  " .. trim($parts[0]) .. " - " .. trim($parts[1]) .. "岁"
+}
+
+println ""
+
+// ========================================
+// 6. 管道注意事项
+// ========================================
+println "=== 注意事项 ==="
+
+// 管道到函数引用（不带括号）返回函数本身
+$fnRef = 5 |> double
+println "5 |> double 返回函数引用: " .. typeof($fnRef)
+
+// 管道到函数调用（带括号）才会执行
+$result = 5 |> double()
+println "5 |> double() 返回结果: " .. $result
+
+// 不能跨行使用管道（必须在同一行）
+// 错误写法：
+//   $x = $data
+//     |> filter(...)
+// 正确写法：
+//   $x = $data |> filter(...)
+
+println ""
+println "管道运算符示例完成！"

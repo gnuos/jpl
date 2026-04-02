@@ -1,0 +1,112 @@
+# 编译生成的二进制文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+jpl
+cmd/jpl/jpl
+
+# 测试和覆盖率
+coverage.out
+coverage.html
+*.cover
+*.cov
+*.coverprofile
+*.prof
+
+# 依赖目录（如果使用 vendor）
+vendor/
+
+# IDE 和编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# 日志文件
+*.log
+*.logs
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.temp
+
+# 构建目录
+build/
+dist/
+bin/
+
+# 调试文件
+debug
+__debug_bin
+
+# 环境变量和配置文件（包含敏感信息）
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.crt
+
+# Go 工作区（如果使用）
+go.work
+go.work.sum
+
+# 文档生成（如果使用）
+docs/_book/
+docs/_site/
+
+# 包管理器
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 静态分析工具
+staticcheck.conf
+.golangci.yml
+.golangci.yaml
+
+# 本地开发
+.local/
+
+# 个人笔记和草稿
+*.draft
+*.draft.md
+TODO.local.md
+NOTES.local.md
+
+# 测试数据（大数据文件）
+testdata/
+*.testdata
+
+# 结构哈希文件（自动生成）
+.structure-hash
+*.bak
+*.orig
+*.rej
+.sass-cache
+*.pyc
+__pycache__/

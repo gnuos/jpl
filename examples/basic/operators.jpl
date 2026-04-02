@@ -1,0 +1,59 @@
+// 运算符示例
+// 展示各种运算符的使用
+
+println "=== 算术运算符 ==="
+$a = 10
+$b = 3
+
+println "a = 10, b = 3"
+println "a + b = " .. ($a + $b)     // 13
+println "a - b = " .. ($a - $b)     // 7
+println "a * b = " .. ($a * $b)     // 30
+println "a / b = " .. ($a / $b)     // 3.333...
+println "a % b = " .. ($a % $b)     // 1
+println "-a = " .. (-$a)           // -10
+
+// 整数除法
+println ""
+println "=== 整数除法 ==="
+println "5 / 2 = " .. (5 / 2)      // 2.5（返回浮点数）
+
+println ""
+println "=== 比较运算符 ==="
+$x = 5
+$y = 10
+
+println "x = 5, y = 10"
+println "x == y: " .. ($x == $y)   // false
+println "x != y: " .. ($x != $y)   // true
+println "x < y: " .. ($x < $y)     // true
+println "x > y: " .. ($x > $y)     // false
+println "x <= y: " .. ($x <= $y)   // true
+println "x >= y: " .. ($x >= $y)   // false
+
+println ""
+println "=== 逻辑运算符 ==="
+$p = true
+$q = false
+
+println "p = true, q = false"
+println "p && q: " .. ($p && $q)   // false
+println "p || q: " .. ($p || $q)   // true
+println "!p: " .. (!$p)           // false
+println "!q: " .. (!$q)           // true
+
+// 真值/假值
+println ""
+println "=== 真值/假值 ==="
+println "!!0: " .. (!!0)          // false
+println "!!1: " .. (!!1)          // true
+println "!!'': " .. (!!"")         // false
+println "!!'hello': " .. (!!"hello") // true
+println "!![]: " .. (!![])         // false（空数组为假）
+println "!![1]: " .. (!![1])       // true
+
+println ""
+println "=== 三元运算符 ==="
+$score = 85
+$grade = $score >= 90 ? "A" : ($score >= 60 ? "B" : "C")
+println "Score: #{$score}, Grade: #{$grade}"

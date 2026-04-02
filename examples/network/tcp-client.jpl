@@ -1,0 +1,43 @@
+// TCP 客户端示例
+// 连接到服务器并发送消息
+
+println "=== TCP Client ==="
+
+// 解析服务器地址
+$host = "localhost"
+$port = 8080
+
+println "Resolving #{$host}..."
+$ips = dns_resolve($host)
+println "Resolved to: #{$ips}"
+
+// 使用第一个 IP 连接
+$ip = dns_resolve_one($host)
+println "Connecting to #{$ip}:#{$port}..."
+
+// 建立连接
+$conn = net_tcp_connect($ip, $port)
+println "Connected!"
+
+// 发送多条消息
+$messages = ["Hello", "World", "How are you?", "quit"]
+
+foreach (msg in $messages) {
+    println ""
+    println "Sending: #{$msg}"
+    net_send($conn, $msg)
+    
+    // 接收响应
+    $response = net_recv($conn, 1024)
+    println "Received: #{$response}"
+    
+    // 如果是 quit，跳出循环
+    if ($msg == "quit") {
+        break
+    }
+}
+
+// 关闭连接
+net_close($conn)
+println ""
+println "Disconnected."

@@ -1,0 +1,143 @@
+// 数组操作示例
+// 展示数组的创建、访问、修改和函数式操作
+
+println "=== 数组创建 ==="
+$empty = []
+$numbers = [1, 2, 3, 4, 5]
+$mixed = [1, "hello", true, null, [1, 2], {a: 1}]
+
+println "空数组: " .. $empty
+println "数字数组: " .. $numbers
+println "混合数组: " .. $mixed
+
+println ""
+println "=== 索引访问 ==="
+$arr = [10, 20, 30, 40, 50]
+
+println "数组: " .. $arr
+println "第一个元素: " .. $arr[0]
+println "第三个元素: " .. $arr[2]
+
+// Python 风格负数索引
+println "最后一个元素: " .. $arr[-1]
+println "倒数第二个: " .. $arr[-2]
+
+// 动态索引
+$i = 3
+println "动态索引 arr[#{$i}]: " .. $arr[$i]
+
+println ""
+println "=== 数组修改 ==="
+$arr = [1, 2, 3]
+println "原数组:", $arr
+
+// 添加元素
+push($arr, 4)
+println "push 4:", $arr
+
+// 删除最后一个
+$last = pop($arr)
+println "pop: #{$last}, 数组:", $arr
+
+// 删除第一个
+$first = shift($arr)
+println "shift: #{$first}, 数组:", $arr
+
+// 添加到开头
+unshift($arr, 0)
+println "unshift 0:", $arr
+
+// 插入和删除
+$arr = [1, 2, 3, 4, 5]
+splice($arr, 2, 1, [99, 100])  // 从索引 2 删除 1 个，插入 99, 100
+println "splice 后:", $arr
+
+println ""
+println "=== 数组查询 ==="
+$fruits = ["apple", "banana", "cherry", "banana"]
+
+println "数组:", $fruits
+println "indexOf 'banana': " .. indexOf($fruits, "banana")      // 1
+println "lastIndexOf 'banana': " .. lastIndexOf($fruits, "banana")  // 3
+println "includes 'cherry': " .. includes($fruits, "cherry")   // true
+println "includes 'orange': " .. includes($fruits, "orange")   // false
+
+println ""
+println "=== 数组切片 ==="
+$nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+println "原数组: " .. $nums
+println "slice(2, 5): " .. slice($nums, 2, 5)   // [2, 3, 4]
+println "slice(0, 3): " .. slice($nums, 0, 3)  // [0, 1, 2]
+println "slice(7): " .. slice($nums, 7)        // [7, 8, 9]
+
+println ""
+println "=== 数组变换 ==="
+$nums = [3, 1, 4, 1, 5, 9, 2, 6]
+
+println "原数组: " .. $nums
+println "reverse: " .. array_reverse($nums)
+println "unique: " .. unique($nums)
+println "sort: " .. sort($nums)
+
+// 降序排序
+$sortedDesc = sort($nums, (a, b) -> b - a)
+println "sort desc: " .. $sortedDesc
+
+// flat 展平
+$nested = [1, [2, 3], [4, [5, 6]], 7]
+println "nested: " .. $nested
+println "flat: " .. flat($nested)
+
+println ""
+println "=== 数组统计 ==="
+$data = [10, 20, 30, 40, 50]
+
+println "数组: " .. $data
+println "length: " .. len($data)
+println "min: " .. min($data)
+println "max: " .. max($data)
+println "sum: " .. reduce($data, (acc, x) -> acc + x, 0)
+
+// 平均值
+$avg = reduce($data, (acc, x) -> acc + x, 0) / len($data)
+println "average: " .. $avg
+
+println ""
+println "=== 函数式编程 ==="
+$numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+println "原数组: " .. $numbers
+
+// map - 映射
+$doubled = map($numbers, (x) -> x * 2)
+println "map x*2: " .. $doubled
+
+// filter - 过滤
+$evens = filter($numbers, (x) -> x % 2 == 0)
+println "filter even: " .. $evens
+
+// reduce - 归约
+$sum = reduce($numbers, (acc, x) -> acc + x, 0)
+println "reduce sum: " .. $sum
+
+// find - 查找
+$found = find($numbers, (x) -> x > 5)
+println "find > 5: " .. $found
+
+// some - 任意满足
+$hasEven = some($numbers, (x) -> x % 2 == 0)
+println "some even: " .. $hasEven
+
+// every - 全部满足
+$allPositive = every($numbers, (x) -> x > 0)
+println "every positive: " .. $allPositive
+
+// 链式操作示例
+println ""
+println "=== 链式操作 ==="
+$result = filter(
+    map($numbers, (x) -> x * x),
+    (x) -> x > 10
+)
+println "squares > 10: " .. $result

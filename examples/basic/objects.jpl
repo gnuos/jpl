@@ -1,0 +1,107 @@
+// 对象操作示例
+// 展示对象的创建、访问和操作
+
+println "=== 对象创建 ==="
+$empty = {}
+$person = { name: "Alice", age: 30, email: "alice@example.com", active: true }
+
+println "空对象: " .. $empty
+println "人物对象: " .. $person
+
+println ""
+println "=== 属性访问 ==="
+println "name: " .. $person["name"]
+println "age: " .. $person["age"]
+println "email: " .. $person["email"]
+
+// 动态键访问
+$key = "name"
+println "动态访问 person[key]: " .. $person[$key]
+
+println ""
+println "=== 属性修改 ==="
+$person["age"] = 31
+$person["city"] = "Beijing"
+println "修改后: " .. $person
+
+println ""
+println "=== 对象遍历 ==="
+println "遍历所有属性："
+foreach ($key => $val in $person) {
+    println "  " .. $key .. ": " .. $val
+}
+
+println ""
+println "=== 嵌套对象 ==="
+$user = {
+    name: "Bob",
+    address: {
+        city: "Shanghai",
+        zip: "200000"
+    },
+    hobbies: ["reading", "coding", "gaming"]
+}
+
+println "用户信息: " .. $user
+println "城市: " .. $user["address"]["city"]
+println "第一个爱好: " .. $user["hobbies"][0]
+
+println ""
+println "=== 对象合并 ==="
+$defaults = { theme: "dark", lang: "en", notifications: true }
+$settings = { lang: "zh", fontSize: 14 }
+
+// 使用 + 合并（右侧覆盖左侧）
+$merged = $defaults + $settings
+println "合并结果: " .. $merged
+
+println ""
+println "=== 检查属性 ==="
+$config = {debug: true, port: 8080}
+
+println "config: " .. $config
+println "has 'debug': " .. ($config["debug"] != null)
+println "has 'host': " .. ($config["host"] != null)
+
+// 使用默认值
+$host = ($config["host"] != null) ? $config["host"] : "localhost"
+println "host (with default): " .. $host
+
+println ""
+println "=== 遍历提取键值 ==="
+$data = {a: 1, b: 2, c: 3}
+
+$allKeys = []
+$allValues = []
+foreach ($k => $v in $data) {
+    push($allKeys, $k)
+    push($allValues, $v)
+}
+
+println "原对象: " .. $data
+println "keys: " .. $allKeys
+println "values: " .. $allValues
+
+println ""
+println "=== 实用示例：配置管理 ==="
+fn createConfig(defaults, overrides) {
+    $result = {}
+
+    // 复制默认值
+    foreach ($key => $val in defaults) {
+        $result[$key] = $val
+    }
+
+    // 应用覆盖
+    foreach ($key => $val in overrides) {
+        $result[$key] = $val
+    }
+
+    return $result
+}
+
+$defaultConfig = { host: "localhost", port: 3000, debug: false }
+$userConfig = { port: 8080, debug: true }
+
+$finalConfig = createConfig($defaultConfig, $userConfig)
+println "最终配置: " .. $finalConfig

@@ -1,0 +1,21 @@
+// Lint 脚本示例
+// 演示代码检查流程
+
+println "Running linter..."
+
+// 模拟检查多个文件
+$files = ["main.jpl", "utils.jpl", "config.jpl"]
+$errors = 0
+
+foreach ($files as $file) {
+    println "  Checking #{$file}..."
+    // 模拟检查结果
+    println "    OK"
+}
+
+if ($errors == 0) {
+    println "Lint passed! No issues found."
+} else {
+    println "Lint failed with #{$errors} errors."
+    exit(1)
+}

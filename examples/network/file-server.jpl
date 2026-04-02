@@ -1,0 +1,235 @@
+// 文件上传服务器示例
+// 展示二进制协议处理和文件 IO
+//
+// 协议格式:
+//   Header (8 bytes):
+//     - Magic: 2 bytes (0x4A, 0x50) = "JP"
+//     - Version: 1 byte
+//     - Command: 1 byte (0x01=upload, 0x02=download, 0x03=list)
+//     - Filename Length: 2 bytes (big-endian)
+//     - File Size: 2 bytes (big-endian, max 64KB)
+//   Body:
+//     - Filename: variable
+//     - File Data: variable
+//
+// 运行: jpl run examples/network/file-server.jpl
+// 测试: 使用 file-client.jpl 或手动构造协议
+
+println "=== File Upload Server ==="
+println "Starting server on port 9001"
+
+// 上传目录
+$upload_dir = "/tmp/jpl_uploads"
+if (!exists($upload_dir)) {
+    mkdir($upload_dir)
+}
+
+// 解析文件头
+fn parse_header(data) {
+    if (strlen(data) < 8) {
+        return null
+    }
+
+    $magic = substr(data, 0, 2)
+    if ($magic != "JP") {
+        return null
+    }
+
+    $version = ord(substr(data, 2, 1))
+    $command = ord(substr(data, 3, 1))
+    $name_len = (ord(substr(data, 4, 1)) << 8) | ord(substr(data, 5, 1))
+    $file_size = (ord(substr(data, 6, 1)) << 8) | ord(substr(data, 7, 1))
+
+    return {
+        magic: $magic,
+        version: $version,
+        command: $command,
+        name_len: $name_len,
+        file_size: $file_size,
+        header_size: 8
+    }
+}
+
+// 构建响应头
+fn build_response_header(status, message) {
+    $msg_len = strlen(message)
+    $header = "JP"
+    $header = $header .. chr(1)
+    $header = $header .. chr(status)
+    $header = $header .. chr(($msg_len >> 8) & 0xFF)
+    $header = $header .. chr($msg_len & 0xFF)
+    $header = $header .. chr(0) .. chr(0)
+    return $header .. message
+}
+
+// 处理上传
+fn handle_upload(client, data) {
+    $header = parse_header(data)
+    if ($header == null) {
+        $resp = build_response_header(1, "Invalid header")
+        net_send(client, $resp)
+        return
+    }
+
+    $total_size = 8 + $header.name_len + $header.file_size
+    if (strlen(data) < $total_size) {
+        $resp = build_response_header(1, "Incomplete data")
+        net_send(client, $resp)
+        return
+    }
+
+    $filename = substr(data, 8, $header.name_len)
+    $file_data = substr(data, 8 + $header.name_len, $header.file_size)
+
+    if (strpos($filename, "..") >= 0) {
+        $resp = build_response_header(1, "Invalid filename")
+        net_send(client, $resp)
+        return
+    }
+
+    $filepath = joinPath($upload_dir, $filename)
+    println "Uploading: #{$filename} (#{$header.file_size} bytes)"
+
+    $ok = write($filepath, $file_data)
+    if ($ok) {
+        $resp = build_response_header(0, "File uploaded: #{$filename}")
+        net_send(client, $resp)
+        println "Upload successful: #{$filepath}"
+    } else {
+        $resp = build_response_header(1, "Failed to write file")
+        net_send(client, $resp)
+        println "Upload failed: #{$filepath}"
+    }
+}
+
+// 处理下载
+fn handle_download(client, data) {
+    $header = parse_header(data)
+    if ($header == null) {
+        $resp = build_response_header(1, "Invalid header")
+        net_send(client, $resp)
+        return
+    }
+
+    $filename = substr(data, 8, $header.name_len)
+
+    if (strpos($filename, "..") >= 0) {
+        $resp = build_response_header(1, "Invalid filename")
+        net_send(client, $resp)
+        return
+    }
+
+    $filepath = joinPath($upload_dir, $filename)
+    println "Downloading: #{$filename}"
+
+    if (!exists($filepath)) {
+        $resp = build_response_header(1, "File not found")
+        net_send(client, $resp)
+        return
+    }
+
+    $content = read($filepath)
+    $file_size = strlen($content)
+
+    $resp = "JP"
+    $resp = $resp .. chr(1)
+    $resp = $resp .. chr(0)
+    $resp = $resp .. chr(0) .. chr(0)
+    $resp = $resp .. chr(($file_size >> 8) & 0xFF)
+    $resp = $resp .. chr($file_size & 0xFF)
+    $resp = $resp .. $content
+
+    net_send(client, $resp)
+    println "Download complete: #{$file_size} bytes"
+}
+
+// 处理列表请求
+fn handle_list(client) {
+    $files = listDir($upload_dir)
+    $list = ""
+
+    foreach ($file in $files) {
+        if ($file != "." && $file != "..") {
+            $path = joinPath($upload_dir, $file)
+            if (isFile($path)) {
+                $size = fileSize($path)
+                $list = $list .. "#{$file} (#{$size} bytes)\n"
+            }
+        }
+    }
+
+    if (empty($list)) {
+        $list = "No files uploaded yet"
+    }
+
+    $resp = build_response_header(0, $list)
+    net_send(client, $resp)
+}
+
+// 处理客户端连接
+fn handle_client(client) {
+    $data = net_recv(client, 65536 + 1024)
+    if (empty($data)) {
+        net_close(client)
+        return
+    }
+
+    $header = parse_header($data)
+    if ($header == null) {
+        $resp = build_response_header(1, "Invalid protocol")
+        net_send(client, $resp)
+        net_close(client)
+        return
+    }
+
+    if ($header.command == 0x01) {
+        handle_upload(client, $data)
+    } else if ($header.command == 0x02) {
+        handle_download(client, $data)
+    } else if ($header.command == 0x03) {
+        handle_list(client)
+    } else {
+        $resp = build_response_header(1, "Unknown command")
+        net_send(client, $resp)
+    }
+
+    net_close(client)
+}
+
+// 创建 TCP 服务器
+$server = net_tcp_listen("0.0.0.0", 9001)
+println "File server listening on port 9001"
+println "Upload directory: #{$upload_dir}"
+
+// 创建事件注册表
+$registry = ev_registry_new()
+
+// 注册 accept 事件
+$registry.on_accept($server, fn($client) {
+    $peer = net_getpeername($client)
+    println "Connection from: #{$peer.ip}:#{$peer.port}"
+    handle_client($client)
+})
+
+// 信号处理
+$registry.on_signal(2, fn() {
+    println ""
+    println "Shutting down..."
+    net_close($server)
+    ev_stop($loop)
+})
+
+// 创建事件循环并运行
+$loop = ev_loop_new()
+ev_attach($loop, $registry)
+
+println ""
+println "File server running!"
+println "Upload: use file-client.jpl or custom client"
+println "List: send command 0x03"
+println ""
+println "Press Ctrl+C to stop"
+
+ev_run($loop)
+
+println "Server stopped."

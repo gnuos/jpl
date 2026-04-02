@@ -1,0 +1,45 @@
+// Go 集成示例 - 展示如何在 Go 中使用 JPL
+//
+// 这是一个演示文件，实际需要在 Go 环境中运行
+// 对应的 Go 代码在 integration_example.go 中
+
+// 这个文件展示 JPL 脚本可以如何与 Go 代码交互
+
+// 从 Go 传入的变量
+// $config （对象）- 配置信息
+// $apiEndpoint （字符串）- API 端点
+// $logger （函数）- 日志记录函数
+
+// 脚本入口
+fn main() {
+    println "=== JPL 脚本执行 ==="
+    println "配置: " + $config
+    println "API 端点: " + $apiEndpoint
+    
+    // 处理数据
+    $data = processData()
+    
+    // 调用 Go 函数
+    $logger("处理完成，结果: " + $data)
+    
+    return $data
+}
+
+fn processData() {
+    // 模拟数据处理
+    $items = [1, 2, 3, 4, 5]
+    $sum = reduce($items, 0, (acc, x) => acc + x)
+    return $sum
+}
+
+// 如果直接运行，显示提示
+println "这是一个 JPL 脚本示例"
+println "请在 Go 程序中加载并执行此脚本"
+println ""
+println "对应的 Go 代码示例："
+println ""
+println 'eng := jpl.NewEngine()'
+println 'eng.Set("config", jpl.NewObject(...))'
+println 'eng.RegisterFunc("logger", func(...) { ... })'
+println 'vm, _ := eng.Compile(script)'
+println 'vm.Execute()'

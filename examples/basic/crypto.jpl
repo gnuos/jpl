@@ -1,0 +1,186 @@
+// 加密模块示例
+// 展示 SHA 哈希、HMAC、AES 加密、Hex/Base64 编码
+//
+// 运行: jpl run examples/basic/crypto.jpl
+
+println "=== 加密模块 (crypto) ==="
+println ""
+
+// ========================================
+// 1. SHA 哈希
+// ========================================
+println "=== SHA 哈希 ==="
+
+// SHA-256
+$hash256 = sha256("Hello World")
+println "sha256('Hello World'):"
+println "  " .. $hash256
+println "  长度: " .. strlen($hash256) .. " 字符 (256位 = 64 hex)"
+
+// SHA-512
+$hash512 = sha512("Hello World")
+println ""
+println "sha512('Hello World'):"
+println "  " .. $hash512
+println "  长度: " .. strlen($hash512) .. " 字符 (512位 = 128 hex)"
+
+// 不同输入产生不同哈希
+println ""
+println "不同输入的哈希:"
+println "  sha256('abc'): " .. substr(sha256("abc"), 0, 16) .. "..."
+println "  sha256('abd'): " .. substr(sha256("abd"), 0, 16) .. "..."
+
+// 空字符串
+println ""
+println "  sha256(''): " .. sha256("")
+
+println ""
+
+// ========================================
+// 2. HMAC (基于哈希的消息认证码)
+// ========================================
+println "=== HMAC ==="
+
+$key = "my-secret-key"
+$message = "Hello, HMAC!"
+
+// HMAC-SHA256
+$mac256 = hmac_sha256($key, $message)
+println "hmac_sha256(key, msg):"
+println "  " .. $mac256
+
+// HMAC-SHA512
+$mac512 = hmac_sha512($key, $message)
+println ""
+println "hmac_sha512(key, msg):"
+println "  " .. $mac512
+
+// 不同的密钥产生不同的 HMAC
+println ""
+println "不同密钥的 HMAC:"
+println "  hmac('key1', msg): " .. substr(hmac_sha256("key1", $message), 0, 16) .. "..."
+println "  hmac('key2', msg): " .. substr(hmac_sha256("key2", $message), 0, 16) .. "..."
+
+// 实际应用：API 签名
+println ""
+println "API 签名示例:"
+$apiSecret = "api-secret-123"
+$requestBody = '{"user":"alice","action":"transfer","amount":100}'
+$signature = hmac_sha256($apiSecret, $requestBody)
+println "  请求体: " .. $requestBody
+println "  签名: " .. $signature
+
+println ""
+
+// ========================================
+// 3. AES-GCM 加密/解密
+// ========================================
+println "=== AES-256-GCM 加密 ==="
+
+// 密钥必须是 32 字节 (64 hex 字符)
+$key = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+println "密钥: " .. substr($key, 0, 16) .. "... (" .. strlen($key) .. " chars)"
+
+// 加密
+$plaintext = "这是一段秘密消息！"
+$encrypted = aes_encrypt($plaintext, $key)
+println ""
+println "原文: " .. $plaintext
+println "密文: " .. substr($encrypted, 0, 32) .. "..."
+
+// 解密
+$decrypted = aes_decrypt($encrypted, $key)
+println "解密: " .. $decrypted
+println "匹配: " .. ($decrypted == $plaintext)
+
+// 加密二进制数据
+println ""
+println "加密 JSON 配置:"
+$config = '{"db_host":"localhost","db_pass":"s3cret!"}'
+$enc_config = aes_encrypt($config, $key)
+println "  原文: " .. $config
+println "  密文: " .. substr($enc_config, 0, 32) .. "..."
+$dec_config = aes_decrypt($enc_config, $key)
+println "  解密: " .. $dec_config
+
+println ""
+
+// ========================================
+// 4. Hex 编码/解码
+// ========================================
+println "=== Hex 编码 ==="
+
+$text = "Hello, World!"
+$hex = hex_encode($text)
+println "原文: " .. $text
+println "Hex: " .. $hex
+println "解码: " .. hex_decode($hex)
+
+// 中文
+$cn = "你好世界"
+$cnHex = hex_encode($cn)
+println ""
+println "原文: " .. $cn
+println "Hex: " .. $cnHex
+println "解码: " .. hex_decode($cnHex)
+
+println ""
+
+// ========================================
+// 5. Base64 编码/解码
+// ========================================
+println "=== Base64 编码 ==="
+
+$text = "Hello, Base64!"
+$encoded = base64_encode($text)
+println "原文: " .. $text
+println "Base64: " .. $encoded
+println "解码: " .. base64_decode($encoded)
+
+// 中文
+$cn = "你好世界"
+$cnB64 = base64_encode($cn)
+println ""
+println "原文: " .. $cn
+println "Base64: " .. $cnB64
+println "解码: " .. base64_decode($cnB64)
+
+println ""
+
+// ========================================
+// 6. 实际应用：安全存储密码
+// ========================================
+println "=== 实际应用 ==="
+
+// 模拟密码存储（实际应用中使用 bcrypt）
+$password = "myP@ssw0rd"
+$hash = sha256($password)
+println "密码哈希存储:"
+println "  密码: " .. $password
+println "  哈希: " .. $hash
+println "  验证: " .. (sha256("myP@ssw0rd") == $hash)
+println "  错误: " .. (sha256("wrongpass") == $hash)
+
+// 模拟 API Token
+println ""
+println "API Token 生成:"
+$token_data = "user:alice:timestamp:" .. time()
+$token = hex_encode(hmac_sha256("server-secret", $token_data))
+println "  数据: " .. $token_data
+println "  Token: " .. $token
+
+// 模拟加密通信
+println ""
+println "加密通信模拟:"
+$sender_key = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+$message = "发送方：请转账 100 元到账户 A"
+
+$encrypted_msg = aes_encrypt($message, $sender_key)
+println "  原始消息: " .. $message
+println "  加密消息: " .. substr($encrypted_msg, 0, 20) .. "..."
+
+$decrypted_msg = aes_decrypt($encrypted_msg, $sender_key)
+println "  解密消息: " .. $decrypted_msg
+
+println ""
+println "加密模块示例完成！"

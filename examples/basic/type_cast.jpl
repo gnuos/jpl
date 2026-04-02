@@ -1,0 +1,98 @@
+// Go 风格类型转换语法演示
+//
+// JPL 支持 Go 风格的类型转换语法：int(x), float(x), string(x), bool(x)
+// 这比函数式转换（intval, floatval 等）更直观简洁
+//
+// 运行: jpl run examples/basic/type_cast.jpl
+
+puts "=== 基本类型转换 ==="
+
+// int() - 转换为整数
+puts "int() 转换:"
+puts "  int('42') =", int("42")           // 字符串转整数
+puts "  int(3.7) =", int(3.7)             // 浮点转整数（截断小数）
+puts "  int(-3.7) =", int(-3.7)           // 负数也截断
+puts "  int(true) =", int(true)           // 布尔转整数（true=1）
+puts "  int(false) =", int(false)         // false=0
+puts "  int(null) =", int(null)           // null=0
+
+puts ""
+puts "float() 转换:"
+puts "  float('3.14') =", float("3.14")   // 字符串转浮点
+puts "  float(42) =", float(42)           // 整数转浮点
+puts "  float(true) =", float(true)       // 布尔转浮点
+
+puts ""
+puts "string() 转换:"
+puts "  string(123) =", string(123)       // 整数转字符串
+puts "  string(3.14) =", string(3.14)     // 浮点转字符串
+puts "  string(true) =", string(true)      // 布尔转字符串
+puts "  string(null) =", "'" + string(null) + "'"  // null 转空字符串
+
+puts ""
+puts "bool() 转换:"
+puts "  bool(1) =", bool(1)               // 非零整数 = true
+puts "  bool(0) =", bool(0)               // 零 = false
+puts "  bool('hello') =", bool("hello")   // 非空字符串 = true
+puts "  bool('') =", bool("")             // 空字符串 = false
+puts "  bool([1,2]) =", bool([1, 2])      // 非空数组 = true
+puts "  bool([]) =", bool([])             // 空数组 = false
+puts "  bool(null) =", bool(null)         // null = false
+
+puts ""
+puts "=== 在表达式中使用 ==="
+
+// 类型转换可以直接在表达式中使用
+$sum = int("10") + 5
+puts "int('10') + 5 =", $sum
+
+// 嵌套转换
+$val = int(float("3.7"))
+puts "int(float('3.7')) =", $val, "(先转浮点 3.7，再截断为 3)"
+
+// 在条件中使用
+$score = "85"
+$pass = bool(int($score) >= 60)
+puts "Score:", $score, "Pass:", $pass
+
+puts ""
+puts "=== 对比：语法级 vs 函数级转换 ==="
+
+// 语法级（Go 风格）- 推荐
+$a = int("42")
+$b = float("3.14")
+
+// 函数级（PHP/Jx9 风格）- 兼容旧代码
+$c = intval("42")
+$d = floatval("3.14")
+
+puts "语法级: int('42') =", $a
+puts "函数级: intval('42') =", $c
+puts "两者结果相同，语法级更简洁现代"
+
+puts ""
+puts "=== 实际应用场景 ==="
+
+// 场景 1: 处理用户输入（字符串转数字）
+$user_input = "100"
+$quantity = int($user_input)
+puts "用户输入数量:", $quantity, "类型:", typeof($quantity)
+
+// 场景 2: 配置文件解析
+$config_value = "true"
+$enabled = bool($config_value)
+puts "配置启用状态:", $enabled
+
+// 场景 3: API 响应处理
+$price_str = "19.99"
+$price = float($price_str)
+$total = $price * 2
+puts "单价:", $price, "总价:", $total
+
+// 场景 4: 生成日志/报告
+$count = 42
+$message = "处理了 " + string($count) + " 条记录"
+puts $message
+
+puts ""
+puts "=== 类型转换演示完成 ==="

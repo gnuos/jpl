@@ -1,0 +1,42 @@
+// UDP 客户端-服务器示例
+// 无连接协议，适合轻量级通信
+
+println "=== UDP Example ==="
+
+// 创建 UDP 服务器（绑定端口）
+$server_port = 5353
+$server = net_udp_bind("0.0.0.0", $server_port)
+println "UDP server bound to port #{$server_port}"
+
+// 创建 UDP 客户端（自动分配端口）
+$client = net_udp_bind("0.0.0.0", 0)
+$client_addr = net_getsockname($client)
+println "UDP client on port #{$client_addr.port}"
+
+// 客户端发送消息到服务器
+$messages = ["Hello UDP", "How are you?", "Goodbye"]
+
+foreach (msg in $messages) {
+    println ""
+    println "Client sending: #{$msg}"
+    net_udp_sendto($client, $msg, "127.0.0.1", $server_port)
+    
+    // 服务器接收
+    [$data, $from_ip, $from_port] = net_udp_recvfrom($server, 512)
+    println "Server received from #{$from_ip}:#{$from_port}: #{$data}"
+    
+    // 服务器回复
+    $reply = "Server received: " .. $data
+    net_udp_sendto($server, $reply, $from_ip, $from_port)
+    
+    // 客户端接收回复
+    [$response] = net_udp_recvfrom($client, 512)
+    println "Client received: #{$response}"
+}
+
+// 关闭
+net_close($client)
+net_close($server)
+
+println ""
+println "UDP test completed."

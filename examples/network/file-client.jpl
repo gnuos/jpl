@@ -1,0 +1,198 @@
+// 文件上传客户端示例
+// 与 file-server.jpl 配合使用
+//
+// 运行: jpl run examples/network/file-client.jpl
+// 用法: 修改下方的 $action 变量选择操作
+
+// 服务器地址
+$server_host = "localhost"
+$server_port = 9001
+
+// 构建请求头
+fn build_request_header($command, $filename, $file_size) {
+    $name_len = strlen($filename)
+    $header = "JP"                           // Magic
+    $header = $header .. chr(1)              // Version
+    $header = $header .. chr($command)       // Command
+    $header = $header .. chr(($name_len >> 8) & 0xFF)
+    $header = $header .. chr($name_len & 0xFF)
+    $header = $header .. chr(($file_size >> 8) & 0xFF)
+    $header = $header .. chr($file_size & 0xFF)
+    return $header
+}
+
+// 解析响应
+fn parse_response($data) {
+    if (strlen($data) < 8) {
+        return null
+    }
+
+    $magic = substr($data, 0, 2)
+    if ($magic != "JP") {
+        return null
+    }
+
+    $version = ord(substr($data, 2, 1))
+    $status = ord(substr($data, 3, 1))
+    $msg_len = (ord(substr($data, 4, 1)) << 8) | ord(substr($data, 5, 1))
+    $data_len = (ord(substr($data, 6, 1)) << 8) | ord(substr($data, 7, 1))
+
+    $message = substr($data, 8, $msg_len)
+    $file_data = substr($data, 8 + $msg_len, $data_len)
+
+    return {
+        status: $status,
+        message: $message,
+        data: $file_data
+    }
+}
+
+// 上传文件
+fn upload_file($filepath) {
+    if (!exists($filepath)) {
+        println "Error: File not found: #{$filepath}"
+        return false
+    }
+
+    $filename = basename($filepath)
+    $content = read($filepath)
+    $file_size = strlen($content)
+
+    println "Uploading: #{$filename} (#{$file_size} bytes)"
+
+    // 构建请求
+    $request = build_request_header(0x01, $filename, $file_size)
+    $request = $request .. $filename
+    $request = $request .. $content
+
+    // 连接服务器
+    $conn = net_tcp_connect($server_host, $server_port)
+    if ($conn == null) {
+        println "Error: Cannot connect to server"
+        return false
+    }
+
+    // 发送请求
+    net_send($conn, $request)
+
+    // 接收响应
+    $response = net_recv($conn, 4096)
+    $parsed = parse_response($response)
+
+    if ($parsed != null) {
+        if ($parsed.status == 0) {
+            println "Success: #{$parsed.message}"
+        } else {
+            println "Error: #{$parsed.message}"
+        }
+    }
+
+    net_close($conn)
+    return $parsed != null && $parsed.status == 0
+}
+
+// 下载文件
+fn download_file($filename, $save_path) {
+    println "Downloading: #{$filename}"
+
+    // 构建请求
+    $request = build_request_header(0x02, $filename, 0)
+
+    // 连接服务器
+    $conn = net_tcp_connect($server_host, $server_port)
+    if ($conn == null) {
+        println "Error: Cannot connect to server"
+        return false
+    }
+
+    // 发送请求
+    net_send($conn, $request)
+
+    // 接收响应
+    $response = net_recv($conn, 65536 + 1024)
+    $parsed = parse_response($response)
+
+    if ($parsed != null) {
+        if ($parsed.status == 0) {
+            write($save_path, $parsed.data)
+            println "Saved to: #{$save_path} (#{strlen($parsed.data)} bytes)"
+        } else {
+            println "Error: #{$parsed.message}"
+        }
+    }
+
+    net_close($conn)
+    return $parsed != null && $parsed.status == 0
+}
+
+// 列出文件
+fn list_files() {
+    println "Listing files..."
+
+    // 构建请求（只有头部）
+    $request = build_request_header(0x03, "", 0)
+
+    // 连接服务器
+    $conn = net_tcp_connect($server_host, $server_port)
+    if ($conn == null) {
+        println "Error: Cannot connect to server"
+        return
+    }
+
+    // 发送请求
+    net_send($conn, $request)
+
+    // 接收响应
+    $response = net_recv($conn, 4096)
+    $parsed = parse_response($response)
+
+    if ($parsed != null) {
+        if ($parsed.status == 0) {
+            println "Files on server:"
+            println $parsed.message
+        } else {
+            println "Error: #{$parsed.message}"
+        }
+    }
+
+    net_close($conn)
+}
+
+// ========== 测试 ==========
+
+println "=== File Transfer Client ==="
+println ""
+
+// 创建测试文件
+$test_file = "/tmp/test_upload.txt"
+write($test_file, "Hello from JPL!\nThis is a test file.\nTimestamp: " .. time())
+println "Created test file: #{$test_file}"
+
+// 上传
+println ""
+println "--- Upload ---"
+upload_file($test_file)
+
+// 列表
+println ""
+println "--- List ---"
+list_files()
+
+// 下载
+println ""
+println "--- Download ---"
+download_file("test_upload.txt", "/tmp/test_download.txt")
+
+// 验证
+println ""
+println "--- Verify ---"
+$original = read($test_file)
+$downloaded = read("/tmp/test_download.txt")
+if ($original == $downloaded) {
+    println "Verification: PASS (files match)"
+} else {
+    println "Verification: FAIL (files differ)"
+}
+
+println ""
+println "Done!"

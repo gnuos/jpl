@@ -1,0 +1,175 @@
+// 控制流示例
+// 展示条件语句和循环
+
+println "=== if/else 语句 ==="
+$score = 85
+if ($score >= 90) {
+    println "优秀！"
+} else if ($score >= 80) {
+    println "良好"
+} else if ($score >= 60) {
+    println "及格"
+} else {
+    println "不及格"
+}
+
+// 单行 if，三元运算符
+println ""
+println "=== 简洁条件 ==="
+$age = 20
+$status = $age >= 18 ? "成年" : "未成年"
+println "年龄: " .. $age .. ", 状态: " .. $status
+
+println ""
+println "=== while 循环 ==="
+$i = 0
+while ($i < 5) {
+    println "当前: " .. $i
+    $i += 1
+}
+
+println ""
+println "=== for 循环 ==="
+for ($i = 0; $i < 5; $i += 1) {
+    println "迭代: " .. $i
+}
+
+println ""
+println "=== foreach 循环（对象） ==="
+$person = { name: "Alice", age: 30, city: "Beijing" }
+foreach ($key => $val in $person) {
+    println $key .. ": " .. $val
+}
+
+println ""
+println "=== foreach 循环（数组） ==="
+$colors = ["red", "green", "blue", "yellow"]
+foreach ($color in $colors) {
+    println "颜色: #{$color}"
+}
+
+println ""
+println "=== break 和 continue ==="
+println "打印 1-10 中的奇数，到 7 停止："
+for ($i = 1; $i <= 10; $i += 1) {
+    if ($i % 2 == 0) {
+        continue  // 跳过偶数
+    }
+    if ($i > 7) {
+        break     // 超过 7 停止
+    }
+    println $i
+}
+
+println ""
+println "=== 嵌套循环 ==="
+println "乘法表（1-5）："
+for ($i = 1; $i <= 5; $i += 1) {
+    $row = ""
+    for ($j = 1; $j <= 5; $j += 1) {
+        $product = $i * $j
+        if ($j > 1) {
+            $row = $row .. " "
+        }
+        $row = $row .. $product
+    }
+    println $row
+}
+
+// ========================================
+// Match/Case 语句示例
+// ========================================
+println ""
+println "=== Match/Case 语句 ==="
+println "Match/Case 语句提供了类似其他语言的模式匹配功能"
+
+$value = 42
+match ($value) {
+    case 0: {
+        println "值为零"
+    }
+    case 1: {
+        println "值为一"
+    }
+    case 2, 3, 5, 7, 11, 13, 17, 19: {
+        println "值是小于20的质数"
+    }
+    case 20...30: {
+        println "值在20到30之间（不包括边界）"
+    }
+    case 30..=50: {
+        println "值在30到50之间（包括边界）"
+    }
+    case $s if $s > 50: {
+        println "值大于50"
+    }
+    case _: {
+        println "其他值: " .. $value
+    }
+}
+
+// 字符串匹配示例
+println ""
+println "=== 字符串 Match/Case ==="
+$status = "active"
+match ($status) {
+    case "active": {
+        println "状态: 活跃"
+    }
+    case "inactive": {
+        println "状态: 未活跃"
+    }
+    case "pending": {
+        println "状态: 待处理"
+    }
+    case _: {
+        println "未知状态: " .. $status
+    }
+}
+
+// 带守卫条件的匹配（支持标识符绑定）
+println ""
+println "=== 带守卫条件的 Match/Case ==="
+$score = 85
+match ($score) {
+    case $s if $s >= 90: {
+        println "优秀 (>=90)"
+    }
+    case $s if $s >= 80: {
+        println "良好 (80-89)"
+    }
+    case $s if $s >= 70: {
+        println "中等 (70-79)"
+    }
+    case $s if $s >= 60: {
+        println "及格 (60-69)"
+    }
+    case $s if $s < 60: {
+        println "不及格 (<60)"
+    }
+}
+
+// 匹配表达式求值（返回结果值）
+println ""
+println "=== 表达式求值 Match/Case ==="
+$code = 200
+$result = match ($code) {
+    case 200: "success"
+    case 404: "not found"
+    case 500: "error"
+    case _: "unknown"
+}
+println "code=" .. $code .. " → " .. $result
+
+// OR 模式（多值匹配）
+println ""
+println "=== 多值匹配 Match/Case ==="
+$day = "Sunday"
+$day_type = match ($day) {
+    case "Saturday", "Sunday": "Weekend"
+    case _: "Weekday"
+}
+println "day=" .. $day .. " → " .. $day_type
+
+println ""
+println "Match/Case 示例完成！"

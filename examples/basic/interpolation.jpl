@@ -1,0 +1,84 @@
+// Phase 10.2 & 10.3 - String Interpolation Examples
+// Demonstrates Ruby-style #{...} interpolation syntax
+
+// 1. Basic variable interpolation
+$name = "World"
+$greeting = "Hello, #{$name}!"
+println "Basic interpolation: " . $greeting
+
+// 2. Object property access
+$user = {
+    name: "Alice",
+    age: 30,
+    email: "alice@example.com"
+}
+
+$msg = "User: #{$user.name}, Age: #{$user.age}"
+println "Object access: " . $msg
+
+// 3. Array index access
+$fruits = ["apple", "banana", "cherry"]
+$msg = "First: #{$fruits[0]}, Last: #{$fruits[2]}"
+println "Array index: " . $msg
+
+// 4. Arithmetic expressions
+$a = 10
+$b = 20
+$msg = "Sum: #{$a + $b}, Product: #{$a * $b}"
+println "Arithmetic: " . $msg
+
+// 5. Complex arithmetic
+$price = 100
+$tax = 0.08
+$total = $price * (1 + $tax)
+$msg = "Price: #{$price}, Tax: #{$tax * 100}%, Total: #{$total}"
+println "Complex arithmetic: " . $msg
+
+// 6. Chained property access
+$company = {
+    ceo: {
+        name: "John Doe",
+        email: "john@company.com"
+    }
+}
+$msg = "CEO: #{$company.ceo.name} (#{$company.ceo.email})"
+println "Chained access: " . $msg
+
+// 7. Nested array access
+$matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+$msg = "Matrix[1][2] = #{$matrix[1][2]}"
+println "Nested array: " . $msg
+
+// 8. Logical expressions
+$score = 85
+$passing = 60
+$msg = "Score: #{$score}, Result: #{$score >= $passing ? 'PASS' : 'FAIL'}"
+println "Ternary: " . $msg
+
+// 9. Multiple interpolations in one string
+$x = 1
+$y = 2
+$z = 3
+$msg = "#{$x} + #{$y} = #{$z}"
+println "Multiple interpolations: " . $msg
+
+// 10. String concatenation in interpolation
+$first = "Hello"
+$last = "World"
+$msg = "Greeting: #{$first .. ' ' .. $last}!"
+println "String concat: " . $msg
+
+// 11. Negative numbers
+$temperature = -10
+$msg = "Temperature: #{$temperature}°C"
+println "Negative number: " . $msg
+
+// 12. Boolean to string conversion
+$isActive = true
+$msg = "Status: #{$isActive ? 'Active' : 'Inactive'}"
+println "Boolean: " . $msg
+
+// 13. Function call (if supported)
+// $msg = "Random: #{rand(1, 100)}"
+
+println "\nAll interpolation examples completed!"

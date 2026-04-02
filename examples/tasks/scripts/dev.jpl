@@ -1,0 +1,19 @@
+// Dev 脚本示例
+// 演示开发服务器启动
+
+println "Starting development server..."
+println ""
+println "Server running at http://localhost:3000"
+println "Watching for changes..."
+println ""
+println "Press Ctrl+C to stop"
+
+// 模拟开发服务器
+$i = 0
+while (true) {
+    $i = $i + 1
+    sleep(1000)
+    if ($i % 5 == 0) {
+        println "  [watch] Checking for file changes..."
+    }
+}

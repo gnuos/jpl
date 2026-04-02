@@ -1,0 +1,25 @@
+// JPL Hello World 示例
+// 展示基本变量、字符串插值和输出
+
+$name = "JPL"
+$version = "1.0.0"
+
+// 字符串插值（Ruby 风格）
+println "Hello, #{$name}!"
+println "Welcome to JPL v#{$version}"
+
+// 多变量插值
+$year = 2026
+$message = "JPL #{$version} (#{$year})"
+println $message
+
+// 特殊变量 $_（最后一个表达式的结果）
+$sum = 10 + 20
+println "10 + 20 = #{$sum}"
+
+// 多行输出
+println ""
+println "Features:"
+println "- Dynamic typing"
+println "- First-class functions"
+println "- String interpolation"

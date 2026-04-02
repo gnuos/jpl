@@ -1,0 +1,83 @@
+// Phase 10.1 - Multiline String Examples
+// Demonstrates Python-style triple-quoted strings
+
+// 1. Single-quoted multiline (pure text, no interpolation)
+$json = '''
+{
+    "project": "JPL",
+    "version": "0.2.0",
+    "features": [
+        "multiline strings",
+        "string interpolation",
+        "expression evaluation"
+    ]
+}
+'''
+
+println "=== Single-quoted multiline (JSON) ==="
+println $json
+
+// 2. Double-quoted multiline (supports interpolation)
+$name = "JPL"
+$version = "0.2.0"
+
+$report = """
+Project Report
+==============
+Name: #{$name}
+Version: #{$version}
+Date: 2026-03-26 10:00:00
+
+This is a multiline string with interpolation.
+It preserves newlines and indentation.
+"""
+
+println "=== Double-quoted multiline (with interpolation) ==="
+println $report
+
+// 3. SQL query template
+$table = "users"
+$columns = ["id", "name", "email"]
+
+$sql = """
+SELECT
+    id,
+    name,
+    email
+FROM #{$table}
+WHERE status = 'active'
+ORDER BY created_at DESC;
+"""
+
+println "=== SQL Query Template ==="
+println $sql
+
+// 4. HTML template
+$title = "JPL Language"
+$content = "A high-performance scripting language"
+
+$html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>#{$title}</title>
+</head>
+<body>
+    <h1>#{$title}</h1>
+    <p>#{$content}</p>
+</body>
+</html>
+"""
+
+println "=== HTML Template ==="
+println $html
+
+// 5. Escapes in multiline strings
+$escaped = """
+Line 1\nLine 2 (with explicit newline)
+Tab\there (with explicit tab)
+Path: C:\\Users\\Name (with backslash)
+"""
+
+println "=== Escaped Characters ==="
+println $escaped

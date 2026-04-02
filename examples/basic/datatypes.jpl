@@ -1,0 +1,50 @@
+// 数据类型示例
+// 展示 JPL 支持的所有数据类型
+
+// 1. 基本类型
+$null_val = null
+$bool_true = true
+$bool_false = false
+$int_val = 42
+$float_val = 3.14159
+$str_val = "Hello, World!"
+
+println "=== 基本类型 ==="
+println "null: " .. $null_val
+println "bool (true): " .. $bool_true
+println "bool (false): " .. $bool_false
+println "int: " .. $int_val
+println "float: " .. $float_val
+println "string: " .. $str_val
+
+// 2. 复合类型
+$arr = [1, 2, 3, 4, 5]
+$obj = {
+    name: "Alice",
+    age: 30,
+    active: true
+}
+
+println ""
+println "=== 复合类型 ==="
+println "array: " .. $arr
+println "array length: " .. len($arr)
+println "object: " .. $obj
+
+// 3. 动态类型转换
+$x = 10
+println ""
+println "=== 动态类型 ==="
+println "x as int: " .. $x
+$x = "now I'm a string"
+println "x as string: " .. $x
+$x = [1, 2, 3]
+println "x as array: " .. $x
+
+// 4. 类型检查
+println ""
+println "=== 类型检查 ==="
+println "is_int(42): " .. is_int(42)
+println "is_string('hello'): " .. is_string("hello")
+println "is_array([1,2,3]): " .. is_array([1, 2, 3])
+println "is_object({a:1}): " .. is_object({a: 1})
