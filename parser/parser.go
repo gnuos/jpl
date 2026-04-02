@@ -53,33 +53,35 @@ type Precedence int
 const (
 	_ Precedence = iota
 	LOWEST
-	TERNARY_PREC     // ?: （最低优先级）
-	ASSIGN_PREC      // =
-	ARROW_PREC       // ->
-	PIPE_FWD_PREC    // |> 管道前向运算
-	PIPE_BWD_PREC    // <| 管道反向运算
-	OR_PREC          // ||
-	AND_PREC         // &&
-	EQUALITY_PREC    // ==
-	COMPARISON_PREC  // < > <= >=
-	CONCAT_PREC      // ..
-	RANGE_PREC       // ... ..= 范围运算符（优先级低于字符串连接）
-	BITWISE_OR_PREC  // |
-	BITWISE_XOR_PREC // ^
-	BITWISE_AND_PREC // &
-	SHIFT_PREC       // << >>
-	SUM_PREC         // + -
-	PRODUCT_PREC     // * / %
-	PREFIX_PREC      // -x !x ~x
-	CALL_PREC        // function(x)
-	INDEX_PREC       // array[index]
-	MEMBER_PREC      // object.member
+	TERNARY_PREC         // ?: （最低优先级）
+	ASSIGN_PREC          // =
+	ARROW_PREC           // ->
+	PIPE_FWD_PREC        // |> 管道前向运算
+	PIPE_BWD_PREC        // <| 管道反向运算
+	OR_PREC              // ||
+	AND_PREC             // &&
+	NULL_COALESCING_PREC // ??
+	EQUALITY_PREC        // ==
+	COMPARISON_PREC      // < > <= >=
+	CONCAT_PREC          // ..
+	RANGE_PREC           // ... ..= 范围运算符（优先级低于字符串连接）
+	BITWISE_OR_PREC      // |
+	BITWISE_XOR_PREC     // ^
+	BITWISE_AND_PREC     // &
+	SHIFT_PREC           // << >>
+	SUM_PREC             // + -
+	PRODUCT_PREC         // * / %
+	PREFIX_PREC          // -x !x ~x
+	CALL_PREC            // function(x)
+	INDEX_PREC           // array[index]
+	MEMBER_PREC          // object.member
 )
 
 // precedences Token 类型到优先级的映射
 var precedences = map[token.TokenType]Precedence{
 	token.OR:              OR_PREC,
 	token.AND:             AND_PREC,
+	token.NULL_COALESCING: NULL_COALESCING_PREC,
 	token.EQ:              EQUALITY_PREC,
 	token.NEQ:             EQUALITY_PREC,
 	token.LT:              COMPARISON_PREC,
@@ -196,6 +198,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 		token.GTE:             p.parseInfixExpression,
 		token.AND:             p.parseInfixExpression,
 		token.OR:              p.parseInfixExpression,
+		token.NULL_COALESCING: p.parseInfixExpression,
 		token.AMPERSAND:       p.parseInfixExpression,
 		token.PIPE:            p.parseInfixExpression,
 		token.CARET:           p.parseInfixExpression,

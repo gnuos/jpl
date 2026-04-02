@@ -4,10 +4,10 @@ import "runtime/debug"
 
 // 版本信息
 const (
-	Version      = "0.9.1"
+	Version      = "0.9.2"
 	VersionMajor = 0
 	VersionMinor = 9
-	VersionPatch = 0
+	VersionPatch = 2
 	ReleaseDate  = "2026-04-03"
 )
 

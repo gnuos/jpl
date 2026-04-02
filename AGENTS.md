@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Agent when working with code in this repository.
+此文件为 AI 编码助手提供 JPL 项目的工作指南。
 
 ## 项目概述
 
@@ -98,14 +98,14 @@ go run ./cmd/jpl repl
 **token/** - Token 定义
 - 所有 token 类型和常量定义
 
-**pkg/stdlib/** - 标准库
-- 包含约 260 个内置函数
-- 按功能模块组织（array.go, string.go, math.go, crypto.go 等）
-- 每个模块都有对应的测试文件
-
 **gc/** - 垃圾回收器
 - 引用计数 + 循环检测
 - 集成到 Value 类型系统
+
+**pkg/stdlib/** - 标准库
+- 包含 300 多个内置函数
+- 按功能模块组织（array.go, string.go, math.go, crypto.go 等）
+- 每个模块都有对应的测试文件
 
 **pkg/pm/** - 包管理器
 - `manifest.go`: jpl.json 清单文件管理
@@ -113,6 +113,12 @@ go run ./cmd/jpl repl
 - `resolver.go`: 依赖解析（传递依赖、循环检测）
 - `cache.go`: 全局包缓存（~/.jpl/packages/）
 - 支持版本约束（^, ~, >=, >, <, <=）
+
+**pkg/format/** - 代码格式化器
+- 将 JPL 代码格式化为标准格式（4 空格缩进）
+
+**pkg/lint/** - 静态分析器
+- 检测未使用变量、未定义变量、死代码
 
 **pkg/task/** - 任务系统
 - `task.go`: 任务定义和执行计划
@@ -130,12 +136,6 @@ go run ./cmd/jpl repl
 - `repl.go`: REPL 实现
 - `pm.go`: 包管理器命令（add/remove/install/list）
 - `task.go`: 任务系统命令
-
-**format/** - 代码格式化器
-- 将 JPL 代码格式化为标准格式（4 空格缩进）
-
-**lint/** - 静态分析器
-- 检测未使用变量、未定义变量、死代码
 
 ### 执行流程
 
@@ -170,8 +170,8 @@ go run ./cmd/jpl repl
 
 ### 变量命名规则
 - `$name`: 全局/局部变量（带 $ 前缀）
-- `name`: 全局/局部变量（省略 $）
-- `_private`: 私有变量
+- `name`: 全局/局部变量（和 $name 是不同的标识符）
+- `_private`: 私有变量（仅当前作用域可访问，不能被 global 声明）
 - `_`: 丢弃值占位符
 - `$_`: 执行结果保留变量
 
@@ -185,10 +185,65 @@ go run ./cmd/jpl repl
 - 支持箭头函数 `($x) -> $x * 2`
 - 支持函数重载（按参数数量）
 
+### Null 合并运算符
+- `??` 运算符：左侧为 null 时返回右侧值
+- 支持链式使用：`a ?? b ?? c`
+- 优先级高于 `||` 和 `&&`
+
+### 异常处理
+- try/catch/throw 语句
+- 支持多个 catch 分支
+- 支持 when 条件捕获：`catch ($e when $e.code == 404)`
+- 支持跨函数异常传播
+
+### 模式匹配
+- match/case 语句
+- 支持值匹配、范围匹配、正则匹配
+- 支持 OR 模式和解构绑定
+
 ### 依赖版本管理
 - 始终使用最新稳定版本
 - Go: 使用 `go get -u package-name`
 - 不使用固定版本号，除非用户明确要求
+
+## Go 代码风格
+
+### 导入规范
+- 标准库在前，空行分隔，然后是外部包，最后是内部包
+- 按字母顺序排列
+
+```go
+import (
+    "fmt"
+    "strings"
+
+    "github.com/gnuos/jpl/parser"
+    "github.com/gnuos/jpl/token"
+)
+```
+
+### 命名规范
+- 导出类型/函数：`PascalCase`（如 `CompileFunction`, `Value`）
+- 未导出：`camelCase`（如 `compileExpr`, `allocReg`）
+- 接口：名词或 `-er` 后缀（如 `Value`, `Iterator`）
+- 常量：`UPPER_SNAKE`（如 `OP_ADD`, `OP_JMP`）
+- 测试函数：`TestXxx`，优先使用表驱动测试
+
+### 错误处理
+- 所有公开 API 必须返回 error 并检查
+- 编译错误使用 `CompileError`（包含行号/列号）
+- 运行时错误使用 `RuntimeError`
+- compiler 中使用 panic + recover 传播错误
+
+### 注释规范
+- 使用 `//` 注释（中文注释可接受）
+- 使用 `// ============================================================================
+// 分区` 分隔主要代码段
+- 所有导出类型和函数必须有 godoc 注释
+
+### 线程安全
+- Engine 是线程安全的（使用 sync.RWMutex）
+- Compiler 不是线程安全的，同一时间只能编译一个程序
 
 ## 开发注意事项
 
@@ -204,6 +259,27 @@ go run ./cmd/jpl repl
 - 测试覆盖率通过 `make test-cover` 查看
 - 集成测试位于 `integration_test.go` 文件
 - 压力测试位于 `stress_test.go` 文件
+
+## 常见修改任务指南
+
+### 添加新操作码
+1. `engine/bytecode.go`: 添加操作码常量和指令格式
+2. `engine/vm.go`: 添加执行逻辑（switch case）
+3. `engine/compiler.go`: 添加编译生成逻辑
+
+### 添加内置函数
+1. `pkg/stdlib/`: 在对应模块文件中添加函数
+2. 注册到引擎的函数表中
+
+### 添加新语法
+1. `token/token.go`: 添加 token 类型
+2. `lexer/lexer.go`: 添加词法分析
+3. `parser/parser.go`: 添加语法解析
+4. `parser/ast.go`: 添加 AST 节点
+5. `engine/compiler.go`: 添加编译逻辑
+
+### 修改解析器
+- `parser/parser.go` 使用 Pratt 解析，优先级表定义在文件开头
 
 ## 文档资源
 

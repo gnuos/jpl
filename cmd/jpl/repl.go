@@ -12,8 +12,8 @@ import (
 	prompt "github.com/elk-language/go-prompt"
 	pstrings "github.com/elk-language/go-prompt/strings"
 	"github.com/gnuos/jpl"
-	"github.com/gnuos/jpl/pkg/stdlib"
 	"github.com/gnuos/jpl/engine"
+	"github.com/gnuos/jpl/pkg/stdlib"
 	"github.com/gnuos/jpl/token"
 	"github.com/spf13/cobra"
 )

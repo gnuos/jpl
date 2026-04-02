@@ -62,6 +62,9 @@ const (
 	OR  // ||
 	NOT // !
 
+	// 运算符 - null 合并
+	NULL_COALESCING // ??
+
 	// 运算符 - 赋值
 	ASSIGN       // =
 	PLUS_ASSIGN  // +=
@@ -321,6 +324,8 @@ func (t TokenType) String() string {
 		return "OR"
 	case NOT:
 		return "NOT"
+	case NULL_COALESCING:
+		return "NULL_COALESCING"
 	case ASSIGN:
 		return "ASSIGN"
 	case PLUS_ASSIGN:

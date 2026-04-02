@@ -908,6 +908,10 @@ func (l *Lexer) scanOperator(pos token.Position) token.Token {
 		}
 		return l.newToken(token.DOT, ".", pos)
 	case '?':
+		if l.current() == '?' {
+			l.advance()
+			return l.newToken(token.NULL_COALESCING, "??", pos)
+		}
 		return l.newToken(token.QUESTION, "?", pos)
 	case ':':
 		return l.newToken(token.COLON, ":", pos)

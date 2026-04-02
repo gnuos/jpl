@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/gnuos/jpl"
-	"github.com/gnuos/jpl/pkg/stdlib"
 	"github.com/gnuos/jpl/engine"
+	"github.com/gnuos/jpl/pkg/stdlib"
 )
 
 // TestEvalSimple 测试简单代码求值

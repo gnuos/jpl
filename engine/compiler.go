@@ -101,6 +101,9 @@ type Compiler struct {
 	// global 声明跟踪（PHP 风格的全局变量）
 	globalVars map[string]bool // 标记为 global 的变量名
 
+	// const 声明跟踪（不可变常量）
+	constVars map[string]bool // 标记为 const 的变量名
+
 	// static 声明跟踪（持久化变量）
 	staticVars map[string]*staticVarInfo // 标记为 static 的变量
 
@@ -158,6 +161,7 @@ func NewCompiler() *Compiler {
 		scopes:        []map[string]*Symbol{make(map[string]*Symbol)},
 		globalScope:   true,
 		globalVars:    make(map[string]bool),
+		constVars:     make(map[string]bool),
 		staticVars:    make(map[string]*staticVarInfo),
 		globalIndices: make(map[string]int),
 		globalNames:   &globalNames,
@@ -206,6 +210,7 @@ func NewCompilerWithGlobals(existingGlobals []string) *Compiler {
 		scopes:        []map[string]*Symbol{make(map[string]*Symbol)},
 		globalScope:   true,
 		globalVars:    make(map[string]bool),
+		constVars:     make(map[string]bool),
 		staticVars:    make(map[string]*staticVarInfo),
 		globalIndices: globalIndices,
 		globalNames:   &globalNames,
@@ -455,6 +460,7 @@ func (c *Compiler) newChild(name string) *Compiler {
 		funcName:      name,
 		functions:     c.functions,
 		globalVars:    make(map[string]bool),
+		constVars:     make(map[string]bool),
 		staticVars:    make(map[string]*staticVarInfo),
 		globalIndices: c.globalIndices, // 共享全局索引映射
 		globalNames:   c.globalNames,   // 共享全局名称切片
@@ -630,6 +636,16 @@ func (c *Compiler) compileStmt(stmt parser.Statement) {
 func (c *Compiler) compileVarDecl(decl *parser.VarDecl) {
 	name := decl.Name.Value
 
+	// 禁止修改运行时魔术常量
+	if name == "ARGV" || name == "ARGC" {
+		panic(fmt.Sprintf("cannot assign to constant %s", name))
+	}
+
+	// 禁止修改 const 声明的常量
+	if c.isConstVar(name) {
+		panic(fmt.Sprintf("cannot assign to constant %s", name))
+	}
+
 	// 检查是否为 global 声明的变量
 	if c.isGlobalVar(name) {
 		if decl.Value != nil {
@@ -710,6 +726,7 @@ func (c *Compiler) compileVarDecl(decl *parser.VarDecl) {
 func (c *Compiler) compileConstDecl(decl *parser.ConstDecl) {
 	name := decl.Name.Value
 	sym := c.declareVar(name)
+	c.constVars[name] = true // 标记为常量
 	c.compileExprToReg(decl.Value, sym.Index)
 }
 
@@ -1889,6 +1906,18 @@ func (c *Compiler) isGlobalVar(name string) bool {
 	return false
 }
 
+// isConstVar 检查变量是否被标记为 const
+func (c *Compiler) isConstVar(name string) bool {
+	if c.constVars[name] {
+		return true
+	}
+	// 检查父编译器
+	if c.parent != nil {
+		return c.parent.isConstVar(name)
+	}
+	return false
+}
+
 // isStaticVar 检查变量是否被标记为 static
 func (c *Compiler) isStaticVar(name string) bool {
 	key := c.funcName + "::" + name
@@ -1913,6 +1942,12 @@ func (c *Compiler) compileBinaryExpr(expr *parser.BinaryExpr, target int) {
 	// 短路求值 &&, ||
 	if expr.Operator == "&&" || expr.Operator == "||" {
 		c.compileShortCircuit(expr, target)
+		return
+	}
+
+	// null 合并运算符 ??
+	if expr.Operator == "??" {
+		c.compileNullCoalescing(expr, target)
 		return
 	}
 
@@ -2292,6 +2327,42 @@ func (c *Compiler) compileShortCircuit(expr *parser.BinaryExpr, target int) {
 	}
 }
 
+func (c *Compiler) compileNullCoalescing(expr *parser.BinaryExpr, target int) {
+	// left ?? right：left 为 null 则返回 right，否则返回 left
+	left := c.allocReg()
+	c.compileExprToReg(expr.Left, left)
+
+	// 先将 left 存到 target（如果 left 不是 null，target 应该是 left 的值）
+	if left != target {
+		c.emitABC(OP_LOAD, target, left, 0)
+	}
+
+	// 创建 null 值用于比较
+	nullReg := c.allocReg()
+	c.emitABC(OP_LOADNULL, nullReg, 0, 0)
+
+	// 检查 left 是否为 null
+	isNullReg := c.allocReg()
+	c.emitABC(OP_EQ, isNullReg, left, nullReg) // isNullReg = (left == null)
+	c.freeReg()                                // 释放 nullReg
+	c.freeReg()                                // 释放 left
+
+	// 跳过 right 的计算（如果 left 不是 null）
+	jump := c.currentPC()
+	c.emitAsBx(OP_JMPIFNOT, isNullReg, 0) // 如果 left 不是 null，跳过
+	c.freeReg()                           // 释放 isNullReg
+
+	// 计算 right
+	right := c.allocReg()
+	c.compileExprToReg(expr.Right, right)
+	if right != target {
+		c.emitABC(OP_LOAD, target, right, 0)
+	}
+	c.freeReg()
+
+	c.patchJump(jump)
+}
+
 func (c *Compiler) compileUnaryExpr(expr *parser.UnaryExpr, target int) {
 	// 常量折叠
 	if folded := c.tryFoldUnary(expr); folded != nil {
@@ -2524,6 +2595,11 @@ func (c *Compiler) compileAssign(left, right parser.Expression, target int) {
 
 		// 禁止修改运行时魔术常量
 		if name == "ARGV" || name == "ARGC" {
+			panic(fmt.Sprintf("cannot assign to constant %s", name))
+		}
+
+		// 禁止修改 const 声明的常量
+		if c.isConstVar(name) {
 			panic(fmt.Sprintf("cannot assign to constant %s", name))
 		}
 

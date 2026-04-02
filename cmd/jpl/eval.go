@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/gnuos/jpl"
-	"github.com/gnuos/jpl/pkg/stdlib"
 	"github.com/gnuos/jpl/engine"
+	"github.com/gnuos/jpl/pkg/stdlib"
 	"github.com/spf13/cobra"
 )
 
