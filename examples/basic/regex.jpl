@@ -185,7 +185,7 @@ println "HTML链接: " .. $hrefs
 
 // 验证配置
 $port = "8080"
-$validPort = re_match("^\\d{1,5}$", $port) and parseInt($port) <= 65535
+$validPort = re_match("^\\d{1,5}$", $port) && int($port) <= 65535
 println ""
 println "端口验证 '" .. $port .. "': " .. $validPort
 

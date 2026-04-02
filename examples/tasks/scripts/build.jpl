@@ -9,7 +9,7 @@ println "  Creating output directory: #{$buildDir}"
 
 // 模拟编译过程
 $files = ["main.jpl", "utils.jpl", "config.jpl"]
-foreach ($files as $file) {
+foreach ($file in $files) {
     println "  Compiling #{$file}..."
 }
 

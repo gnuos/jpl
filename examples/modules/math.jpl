@@ -44,7 +44,7 @@ fn sqrt(n) {
     if ($n == 0) {
         return 0
     }
-    
+
     $x = $n
     for ($i = 0; $i < 20; $i = $i + 1) {
         $x = ($x + $n / $x) / 2
@@ -54,18 +54,18 @@ fn sqrt(n) {
 
 // 统计函数
 fn sum(arr) {
-    return reduce($arr, 0, (acc, x) => acc + x)
+    return reduce($arr, (acc, x) -> acc + x, 0)
 }
 
 fn average(arr) {
-    if (# $arr == 0) {
+    if (len($arr) == 0) {
         return 0
     }
-    return sum($arr) / # $arr
+    return sum($arr) / len($arr)
 }
 
 fn min(arr) {
-    if (# $arr == 0) {
+    if (len($arr) == 0) {
         throw error("Cannot find min of empty array", 1003)
     }
     $min = $arr[0]
@@ -78,7 +78,7 @@ fn min(arr) {
 }
 
 fn max(arr) {
-    if (# $arr == 0) {
+    if (len($arr) == 0) {
         throw error("Cannot find max of empty array", 1004)
     }
     $max = $arr[0]
@@ -125,4 +125,4 @@ println "  统计: sum, average, min, max"
 println "  几何: circleArea, circleCircumference, rectangleArea, rectanglePerimeter"
 println "  转换: degreesToRadians, radiansToDegrees"
 println ""
-println "常量: PI = " + $PI + ", E = " + $E
+println "常量: PI = " .. $PI .. ", E = " .. $E

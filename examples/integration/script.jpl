@@ -28,7 +28,7 @@ fn main() {
 fn processData() {
     // 模拟数据处理
     $items = [1, 2, 3, 4, 5]
-    $sum = reduce($items, 0, (acc, x) => acc + x)
+    $sum = reduce($items, (acc, x) -> acc + x, 0)
     return $sum
 }
 

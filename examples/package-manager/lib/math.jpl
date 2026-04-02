@@ -14,7 +14,7 @@ $Math = {
     // 求最大值
     max: fn($arr) {
         $result = $arr[0]
-        foreach ($arr as $v) {
+        foreach ($v in $arr) {
             if ($v > $result) {
                 $result = $v
             }
@@ -25,7 +25,7 @@ $Math = {
     // 求最小值
     min: fn($arr) {
         $result = $arr[0]
-        foreach ($arr as $v) {
+        foreach ($v in $arr) {
             if ($v < $result) {
                 $result = $v
             }
@@ -36,7 +36,7 @@ $Math = {
     // 求平均值
     avg: fn($arr) {
         $sum = 0
-        foreach ($arr as $v) {
+        foreach ($v in $arr) {
             $sum = $sum + $v
         }
         return $sum / count($arr)
@@ -45,7 +45,7 @@ $Math = {
     // 求和
     sum: fn($arr) {
         $total = 0
-        foreach ($arr as $v) {
+        foreach ($v in $arr) {
             $total = $total + $v
         }
         return $total

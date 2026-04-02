@@ -12,74 +12,74 @@ println $double
 println ""
 println "=== 字符串长度 ==="
 $str = "Hello, World!"
-println "字符串: " + $str
-println "长度: " + strlen($str)
+println "字符串: " .. $str
+println "长度: " .. strlen($str)
 
 println ""
 println "=== 字符串索引 ==="
-println "charAt(0): " + charAt($str, 0)
-println "charAt(7): " + charAt($str, 7)
-println "charAt(-1): " + charAt($str, -1)
+println "charAt(0): " .. charAt($str, 0)
+println "charAt(7): " .. charAt($str, 7)
+println "charAt(-1): " .. charAt($str, -1)
 
 // substr
 println ""
 println "=== 子字符串 ==="
 $str = "Hello, World!"
-println "substr(0, 5): " + substr($str, 0, 5)     // "Hello"
-println "substr(7): " + substr($str, 7)          // "World!"
-println "substr(-6): " + substr($str, -6)         // "World!"
+println "substr(0, 5): " .. substr($str, 0, 5)     // "Hello"
+println "substr(7): " .. substr($str, 7)          // "World!"
+println "substr(-6): " .. substr($str, -6)         // "World!"
 
 println ""
 println "=== 字符串查找 ==="
 $text = "The quick brown fox jumps over the lazy dog"
-println "文本: " + $text
-println "strpos('fox'): " + strpos($text, "fox")           // 16
-println "strpos('cat'): " + strpos($text, "cat")           // -1（未找到）
-println "startsWith('The'): " + startsWith($text, "The")   // true
-println "endsWith('dog'): " + endsWith($text, "dog")       // true
+println "文本: " .. $text
+println "strpos('fox'): " .. strpos($text, "fox")           // 16
+println "strpos('cat'): " .. strpos($text, "cat")           // -1（未找到）
+println "startsWith('The'): " .. startsWith($text, "The")   // true
+println "endsWith('dog'): " .. endsWith($text, "dog")       // true
 
 println ""
 println "=== 字符串变换 ==="
 $message = "  Hello, World!  "
 
-println "原字符串: '" + $message + "'"
-println "trim: '" + trim($message) + "'"
-println "toUpper: " + toUpper($message)
-println "toLower: " + toLower($message)
+println "原字符串: '" .. $message .. "'"
+println "trim: '" .. trim($message) .. "'"
+println "toUpper: " .. toUpper($message)
+println "toLower: " .. toLower($message)
 
 // 替换
 $text = "The quick brown fox"
 println ""
-println "原字符串: " + $text
-println "replace 'brown' with 'red': " + str_replace($text, "brown", "red")
+println "原字符串: " .. $text
+println "replace 'brown' with 'red': " .. str_replace($text, "brown", "red")
 
 // 重复
 println ""
-println "repeat 'A' 5 times: " + repeat("A", 5)
+println "repeat 'A' 5 times: " .. repeat("A", 5)
 
 // 反转
-println "reverse 'Hello': " + reverse("Hello")
+println "reverse 'Hello': " .. reverse("Hello")
 
 println ""
 println "=== 字符串分割与连接 ==="
 $csv = "apple,banana,cherry,date"
 $fruits = split($csv, ",")
 
-println "CSV: " + $csv
-println "split: " + $fruits
-println "length: " + # $fruits
+println "CSV: " .. $csv
+println "split: " .. $fruits
+println "length: " .. len($fruits)
 
 // join
 $words = ["Hello", "World", "from", "JPL"]
 $sentence = join($words, " ")
 println ""
-println "数组: " + $words
-println "join: " + $sentence
+println "数组: " .. $words
+println "join: " .. $sentence
 
 // join with different separator
 $paths = ["home", "user", "documents"]
 $path = join($paths, "/")
-println "路径: /" + $path
+println "路径: /" .. $path
 
 println ""
 println "=== 字符串插值 ==="
@@ -95,8 +95,8 @@ println "=== 实用函数 ==="
 $empty = ""
 $whitespace = "   "
 
-println "is empty: " + ($empty == "")
-println "trimmed whitespace: " + (trim($whitespace) == "")
+println "is empty: " .. ($empty == "")
+println "trimmed whitespace: " .. (trim($whitespace) == "")
 
 // 数字转换
 $numStr = "42"
@@ -104,14 +104,14 @@ $floatStr = "3.14"
 
 println ""
 println "字符串转数字："
-println "parseInt('42'): " + parseInt($numStr)
-println "parseFloat('3.14'): " + parseFloat($floatStr)
+println "parseInt('42'): " .. parseInt($numStr)
+println "parseFloat('3.14'): " .. parseFloat($floatStr)
 
 // 格式化
 $number = 42
-$padded = $number < 10 ? "0" + $number : "" + $number
+$padded = $number < 10 ? "0" .. $number : "" .. $number
 println ""
-println "格式化数字（补零）: " + $padded
+println "格式化数字（补零）: " .. $padded
 
 println ""
 println "=== 字符串处理示例：CSV 解析 ==="
@@ -125,6 +125,6 @@ fn joinCSV(fields) {
 
 $csvLine = "John,30,Engineer,New York"
 $fields = parseCSV($csvLine)
-println "CSV 行: " + $csvLine
-println "解析为数组: " + $fields
-println "重新序列化: " + joinCSV($fields)
+println "CSV 行: " .. $csvLine
+println "解析为数组: " .. $fields
+println "重新序列化: " .. joinCSV($fields)
