@@ -25,6 +25,7 @@ type callFrame struct {
 	resultReg    int               // 返回值存储位置
 	registerBase int               // 调用者寄存器基址（兼容）
 	upvals       []*upvalue        // 调用者的 upvalue 列表
+	tryHandlers  []tryHandler      // 调用者的 try 处理器栈
 }
 
 // ============================================================================
@@ -1462,6 +1463,7 @@ func (vm *VM) opCall(ins Instruction) error {
 		resultReg:    a,
 		registerBase: vm.registerBase,
 		upvals:       vm.upvals,
+		tryHandlers:  vm.tryHandlers,
 	}
 	vm.callStack = append(vm.callStack, frame)
 	vm.callDepth++
@@ -1470,6 +1472,7 @@ func (vm *VM) opCall(ins Instruction) error {
 	vm.function = targetFunc
 	vm.ip = 0
 	vm.registerBase = 0
+	vm.tryHandlers = nil // 清空 try 处理器栈，新函数有自己的 try 块
 
 	// 追踪函数调用
 	vm.traceCall(targetFunc.Name, len(args))
@@ -1516,6 +1519,7 @@ func (vm *VM) opReturn(ins Instruction) {
 		vm.registers = frame.registers
 		vm.registerBase = frame.registerBase
 		vm.upvals = frame.upvals
+		vm.tryHandlers = frame.tryHandlers
 
 		// 存储返回值
 		vm.gcSetRegister(frame.resultReg, returnVal)
@@ -1539,12 +1543,14 @@ func (vm *VM) callClosure(cl *closure, args []Value, resultReg int) error {
 	savedRegs := vm.registers
 	savedRegBase := vm.registerBase
 	savedUpvals := vm.upvals
+	savedTryHandlers := vm.tryHandlers
 
 	// 设置新帧
 	vm.function = cl.function
 	vm.ip = 0
 	vm.registerBase = 0
 	vm.upvals = cl.upvals
+	vm.tryHandlers = nil // 清空 try 处理器栈，新函数有自己的 try 块
 
 	// 将旧帧保存到栈
 	frame := callFrame{
@@ -1554,6 +1560,7 @@ func (vm *VM) callClosure(cl *closure, args []Value, resultReg int) error {
 		resultReg:    resultReg,
 		registerBase: savedRegBase,
 		upvals:       savedUpvals,
+		tryHandlers:  savedTryHandlers,
 	}
 	vm.callStack = append(vm.callStack, frame)
 	vm.callDepth++
@@ -1730,6 +1737,22 @@ func (vm *VM) opTryEnd() {
 func (vm *VM) opThrow(ins Instruction) {
 	a := ins.A()
 	thrownValue := vm.registers[a]
+
+	// 查找 tryHandler，支持跨函数的异常传播
+	for len(vm.tryHandlers) == 0 && len(vm.callStack) > 0 {
+		// 当前函数没有 tryHandler，返回到调用者函数
+		frame := vm.callStack[len(vm.callStack)-1]
+		vm.callStack = vm.callStack[:len(vm.callStack)-1]
+		vm.callDepth--
+
+		// 恢复调用者状态
+		vm.ip = frame.ip
+		vm.function = frame.function
+		vm.registers = frame.registers
+		vm.registerBase = frame.registerBase
+		vm.upvals = frame.upvals
+		vm.tryHandlers = frame.tryHandlers
+	}
 
 	if len(vm.tryHandlers) == 0 {
 		// 没有 try 块，返回运行时错误

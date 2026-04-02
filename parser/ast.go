@@ -656,13 +656,32 @@ func (i *IncludeStmt) String() string {
 	return fmt.Sprintf("include %q", i.Source)
 }
 
+// CatchClause 单个 catch 分支
+type CatchClause struct {
+	CatchVar  *Identifier // catch 变量名
+	Condition Expression  // catch 条件（可选，when 后的表达式）
+	Body      *BlockStmt  // catch 块
+	Token     token.Token // catch Token
+}
+
+func (c *CatchClause) String() string {
+	var buf bytes.Buffer
+	buf.WriteString("catch (")
+	buf.WriteString(c.CatchVar.String())
+	if c.Condition != nil {
+		buf.WriteString(" when ")
+		buf.WriteString(c.Condition.String())
+	}
+	buf.WriteString(") ")
+	buf.WriteString(c.Body.String())
+	return buf.String()
+}
+
 // TryCatchStmt try/catch 语句
 type TryCatchStmt struct {
-	Token          token.Token // try Token
-	TryBody        *BlockStmt  // try 块
-	CatchVar       *Identifier // catch 变量名
-	CatchCondition Expression  // catch 条件（可选，when 后的表达式）
-	CatchBody      *BlockStmt  // catch 块
+	Token        token.Token    // try Token
+	TryBody      *BlockStmt     // try 块
+	CatchClauses []*CatchClause // catch 分支列表
 }
 
 func (t *TryCatchStmt) statementNode()      {}
@@ -671,14 +690,10 @@ func (t *TryCatchStmt) String() string {
 	var buf bytes.Buffer
 	buf.WriteString("try ")
 	buf.WriteString(t.TryBody.String())
-	buf.WriteString(" catch (")
-	buf.WriteString(t.CatchVar.String())
-	if t.CatchCondition != nil {
-		buf.WriteString(" when ")
-		buf.WriteString(t.CatchCondition.String())
+	for _, clause := range t.CatchClauses {
+		buf.WriteString(" ")
+		buf.WriteString(clause.String())
 	}
-	buf.WriteString(") ")
-	buf.WriteString(t.CatchBody.String())
 	return buf.String()
 }
 

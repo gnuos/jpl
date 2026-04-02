@@ -404,14 +404,16 @@ func (f *Formatter) writeTryCatchStmt(tc *parser.TryCatchStmt) {
 	f.writeIndent()
 	f.write("try ")
 	f.writeBlock(tc.TryBody)
-	f.write(" catch (")
-	f.write(tc.CatchVar.Value)
-	if tc.CatchCondition != nil {
-		f.write(" when ")
-		f.writeExpr(tc.CatchCondition)
+	for _, clause := range tc.CatchClauses {
+		f.write(" catch (")
+		f.write(clause.CatchVar.Value)
+		if clause.Condition != nil {
+			f.write(" when ")
+			f.writeExpr(clause.Condition)
+		}
+		f.write(") ")
+		f.writeBlock(clause.Body)
 	}
-	f.write(") ")
-	f.writeBlock(tc.CatchBody)
 }
 
 func (f *Formatter) writeGlobalDecl(g *parser.GlobalDecl) {

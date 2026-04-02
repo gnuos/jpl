@@ -268,13 +268,15 @@ func (l *linter) analyzeStmt(stmt parser.Statement) {
 
 	case *parser.TryCatchStmt:
 		l.analyzeBlock(s.TryBody)
-		if s.CatchVar != nil {
-			l.declareVar(s.CatchVar.Value, s.CatchVar.Pos())
+		for _, clause := range s.CatchClauses {
+			if clause.CatchVar != nil {
+				l.declareVar(clause.CatchVar.Value, clause.CatchVar.Pos())
+			}
+			if clause.Condition != nil {
+				l.analyzeExpr(clause.Condition)
+			}
+			l.analyzeBlock(clause.Body)
 		}
-		if s.CatchCondition != nil {
-			l.analyzeExpr(s.CatchCondition)
-		}
-		l.analyzeBlock(s.CatchBody)
 
 	case *parser.GlobalDecl:
 		for _, name := range s.Names {

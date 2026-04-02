@@ -147,6 +147,7 @@ type Compiler struct {
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
+//
 // NewCompiler 创建新的编译器实例。
 //
 // 编译器用于将 AST 转换为字节码。每次调用创建一个独立的编译器，
@@ -1023,12 +1024,17 @@ func (c *Compiler) compileContinueStmt() {
 }
 
 func (c *Compiler) compileTryCatchStmt(stmt *parser.TryCatchStmt) {
-	// 预分配 catch 变量寄存器（在 try 块之前声明，确保位置固定）
-	catchSym := c.declareVar(stmt.CatchVar.Value)
+	if len(stmt.CatchClauses) == 0 {
+		return
+	}
 
-	// OP_TRY_BEGIN sBx, catchVarReg: sBx = catch 块跳转偏移
+	// 为第一个 catch 分支声明变量，所有分支复用同一个寄存器
+	catchVarReg := c.nextReg
+	catchSym := c.declareVar(stmt.CatchClauses[0].CatchVar.Value)
+
+	// OP_TRY_BEGIN sBx, catchVarReg: sBx = 第一个 catch 块跳转偏移
 	tryBeginPos := c.currentPC()
-	c.emitAsBx(OP_TRY_BEGIN, catchSym.Index, 0)
+	c.emitAsBx(OP_TRY_BEGIN, catchVarReg, 0)
 
 	// 编译 try 块
 	c.pushScope()
@@ -1038,32 +1044,75 @@ func (c *Compiler) compileTryCatchStmt(stmt *parser.TryCatchStmt) {
 	// OP_TRY_END: try 块结束
 	c.emitABC(OP_TRY_END, 0, 0, 0)
 
-	// 跳过 catch 块
-	jumpOverCatch := c.currentPC()
+	// 跳过所有 catch 块
+	jumpOverAllCatch := c.currentPC()
 	c.emitAsBx(OP_JMP, 0, 0)
 
-	// 修补 OP_TRY_BEGIN 的跳转偏移到 catch 块
+	// 修补 OP_TRY_BEGIN 的跳转偏移到第一个 catch 块
 	c.patchJump(tryBeginPos)
 
-	// 编译 catch 块：catch 变量已在 tryBegin 前声明，直接使用
-	c.pushScope()
+	// 编译所有 catch 块
+	var endJumpPositions []int
+	var skipToNextJump int = -1 // 条件不满足时跳到下一个 catch 的位置
 
-	// 可选的条件捕获：条件为 false 时 re-throw 到外层
-	if stmt.CatchCondition != nil {
-		condReg := c.allocReg()
-		c.compileExprToReg(stmt.CatchCondition, condReg)
-		skipReThrow := c.currentPC()
-		c.emitAsBx(OP_JMPIF, condReg, 0) // 条件为真跳过 re-throw
-		c.emitABC(OP_THROW, catchSym.Index, 0, 0)
-		c.patchJump(skipReThrow)
-		c.freeReg()
+	for i, clause := range stmt.CatchClauses {
+		// 修补跳到当前 catch 块的跳转
+		if skipToNextJump >= 0 {
+			c.patchJumpTo(skipToNextJump, c.currentPC())
+			skipToNextJump = -1
+		}
+
+		// 后续 catch 分支在作用域中注册变量，但复用第一个变量的寄存器
+		if i > 0 {
+			// 在当前作用域中注册 catch 变量，指向第一个变量的寄存器
+			c.scopes[len(c.scopes)-1][clause.CatchVar.Value] = catchSym
+		}
+
+		c.pushScope()
+
+		// 条件捕获：如果条件为 false 且还有下一个 catch，则跳到下一个 catch
+		if clause.Condition != nil {
+			condReg := c.allocReg()
+			c.compileExprToReg(clause.Condition, condReg)
+
+			// 条件为真时跳过 re-throw/跳到下一个 catch
+			skipAction := c.currentPC()
+			c.emitAsBx(OP_JMPIF, condReg, 0)
+			c.freeReg()
+
+			if i < len(stmt.CatchClauses)-1 {
+				// 还有下一个 catch 分支，条件不满足时跳到下一个
+				skipToNextJump = c.currentPC()
+				c.emitAsBx(OP_JMP, 0, 0)
+			} else {
+				// 最后一个 catch 分支，条件不满足时 re-throw
+				c.emitABC(OP_THROW, catchVarReg, 0, 0)
+			}
+			// 修补条件跳转（条件为真时执行当前 catch 体）
+			c.patchJump(skipAction)
+		} else if i < len(stmt.CatchClauses)-1 {
+			// 无条件 catch 但不是最后一个
+			// 无条件 catch 会捕获所有异常，所以不会执行到后续 catch
+			// 直接执行当前 catch 体
+		}
+
+		c.compileBlockStmtWithoutScope(clause.Body)
+		c.popScope()
+
+		// 跳过后续的 catch 块
+		if i < len(stmt.CatchClauses)-1 {
+			endJumpPositions = append(endJumpPositions, c.currentPC())
+			c.emitAsBx(OP_JMP, 0, 0)
+		}
 	}
 
-	c.compileBlockStmtWithoutScope(stmt.CatchBody)
-	c.popScope()
+	// 修补所有跳过后续 catch 块的跳转
+	for _, pos := range endJumpPositions {
+		c.patchJump(pos)
+	}
 
-	// 修补跳过 catch 块的跳转
-	c.patchJump(jumpOverCatch)
+	// 修补跳过所有 catch 块的跳转
+	c.patchJump(jumpOverAllCatch)
 }
 
 func (c *Compiler) compileMatchExpr(expr *parser.MatchStmt, target int) {
@@ -1379,6 +1428,14 @@ func (c *Compiler) compileThrowStmt(stmt *parser.ThrowStmt) {
 // 标记变量为全局变量，后续访问该变量时使用 GETGLOBAL/SETGLOBAL
 func (c *Compiler) compileGlobalDecl(stmt *parser.GlobalDecl) {
 	for _, name := range stmt.Names {
+		// 检查是否为私有变量（_ 前缀），私有变量不能声明为全局
+		if strings.HasPrefix(name.Value, "_") {
+			panic(&CompileError{
+				Message: fmt.Sprintf("私有变量 '%s' 不能声明为全局变量（_ 前缀变量只能在当前作用域访问）", name.Value),
+				Line:    name.Pos().Line,
+				Column:  name.Pos().Column,
+			})
+		}
 		// 标记为全局变量
 		c.globalVars[name.Value] = true
 		// 在当前作用域声明该变量（指向全局）
@@ -2873,6 +2930,7 @@ func (c *Compiler) compileTypeCast(expr *parser.TypeCast, target int) {
 //	if engine.IsRuntimeError(result) {
 //	    fmt.Println("执行出错:", result.Stringify())
 //	}
+//
 // IsRuntimeError 检查给定值是否为运行时错误。
 //
 // 返回 true 表示该值是一个运行时错误，可通过 vm.GetResult() 获取。

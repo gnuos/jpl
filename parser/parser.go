@@ -1010,22 +1010,38 @@ func (p *Parser) parseTryCatchStatement() Statement {
 
 	stmt.TryBody = p.parseBlockStatement()
 
+	// 解析第一个 catch 分支
 	if !p.expectPeek(token.CATCH) {
 		return nil
 	}
+
+	stmt.CatchClauses = append(stmt.CatchClauses, p.parseCatchClause())
+
+	// 循环解析后续的 catch 分支
+	for p.peekTokenIs(token.CATCH) {
+		p.nextToken() // consume CATCH
+		stmt.CatchClauses = append(stmt.CatchClauses, p.parseCatchClause())
+	}
+
+	return stmt
+}
+
+// parseCatchClause 解析单个 catch 分支
+func (p *Parser) parseCatchClause() *CatchClause {
+	clause := &CatchClause{Token: p.cur}
 
 	if !p.expectPeek(token.LPAREN) {
 		return nil
 	}
 
 	p.nextToken()
-	stmt.CatchVar = &Identifier{Token: p.cur, Value: p.cur.Literal}
+	clause.CatchVar = &Identifier{Token: p.cur, Value: p.cur.Literal}
 
 	// 可选的 when 条件
 	if p.peekTokenIs(token.WHEN) {
 		p.nextToken() // consume WHEN
 		p.nextToken() // move to condition expression
-		stmt.CatchCondition = p.parseExpression(LOWEST)
+		clause.Condition = p.parseExpression(LOWEST)
 	}
 
 	if !p.expectPeek(token.RPAREN) {
@@ -1036,9 +1052,9 @@ func (p *Parser) parseTryCatchStatement() Statement {
 		return nil
 	}
 
-	stmt.CatchBody = p.parseBlockStatement()
+	clause.Body = p.parseBlockStatement()
 
-	return stmt
+	return clause
 }
 
 // parseThrowStatement 解析 throw 语句

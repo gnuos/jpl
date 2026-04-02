@@ -4,7 +4,7 @@
 println "=== 基本异常处理 ==="
 
 fn divide(a, b) {
-    if ($b == 0) {
+    if (b == 0) {
         throw error("不能除以零", 1001)
     }
     return a / b
@@ -21,7 +21,7 @@ try {
 println ""
 println "=== 条件捕获 ==="
 
-fn riskyOperation(code) {
+fn riskyOperation($code) {
     if ($code == 1) {
         throw error("资源未找到", 404)
     } else if ($code == 2) {
@@ -73,7 +73,7 @@ try {
 println ""
 println "=== 异常类型 ==="
 
-fn validateUser(user) {
+fn validateUser($user) {
     if (!isset($user.name) || isEmpty($user.name)) {
         throw error("用户名不能为空", 4001, "ValidationError")
     }
@@ -107,7 +107,7 @@ try {
 println ""
 println "=== 资源清理模式 ==="
 
-fn safeFileOperation(filename) {
+fn safeFileOperation($filename) {
     $file = null
     $content = null
     
@@ -127,13 +127,14 @@ fn safeFileOperation(filename) {
         return $content
     } catch ($e) {
         println "操作失败: " + $e.message
-        throw $e
-    } finally {
+
         // 模拟清理（这里只是演示，JPL 不支持 finally 语法）
         if ($file != null && $file.open) {
             println "关闭文件: " + $filename
             $file.open = false
         }
+
+        throw $e
     }
 }
 
@@ -152,7 +153,7 @@ try {
 println ""
 println "=== 错误恢复 ==="
 
-fn parseNumber(str) {
+fn parseNumber($str) {
     $num = parseInt($str)
     if (isNaN($num)) {
         throw error("无法解析数字: " + $str, 1001)
@@ -165,14 +166,14 @@ fn safeAdd(a, b) {
     $numB = null
     
     try {
-        $numA = parseNumber($a)
+        $numA = parseNumber(a)
     } catch ($e) {
         println "警告: {$e.message}, 使用默认值 0"
         $numA = 0
     }
     
     try {
-        $numB = parseNumber($b)
+        $numB = parseNumber(b)
     } catch ($e) {
         println "警告: {$e.message}, 使用默认值 0"
         $numB = 0
@@ -188,13 +189,13 @@ println "safeAdd('xyz', '20') = " + safeAdd("xyz", "20")
 println ""
 println "=== 断言模式 ==="
 
-fn assert(condition, message) {
+fn assert($condition, $message) {
     if (!$condition) {
         throw error($message, 9000, "AssertionError")
     }
 }
 
-fn calculateArea(width, height) {
+fn calculateArea($width, $height) {
     assert($width > 0, "宽度必须大于 0")
     assert($height > 0, "高度必须大于 0")
     
@@ -211,7 +212,7 @@ try {
 println ""
 println "=== 综合示例：API 客户端 ==="
 
-fn apiRequest(endpoint, method) {
+fn apiRequest($endpoint, $method) {
     if (!isset($method)) {
         $method = "GET"
     }
@@ -232,7 +233,7 @@ fn apiRequest(endpoint, method) {
     return {status: 200, data: {id: 1, name: "Test"}}
 }
 
-fn fetchUser(userId) {
+fn fetchUser($userId) {
     try {
         $response = apiRequest("/users/" + $userId)
         return $response.data
