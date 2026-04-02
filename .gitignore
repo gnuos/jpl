@@ -6,8 +6,9 @@
 *.dylib
 *.test
 *.out
-jpl
-cmd/jpl/jpl
+
+/bin/
+/jpl
 
 # 测试和覆盖率
 coverage.out
