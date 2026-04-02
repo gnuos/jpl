@@ -231,7 +231,7 @@ func (g *GC) Sweep(providers ...RootProvider) Stats {
 // 统计查询
 // ============================================================================
 
-// Stats 返回当前 GC 统计信息
+// GetStats 返回当前 GC 统计信息
 func (g *GC) GetStats() Stats {
 	g.mu.Lock()
 	defer g.mu.Unlock()

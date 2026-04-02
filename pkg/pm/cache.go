@@ -238,9 +238,7 @@ func parseRepoURL(url string) (string, string) {
 	}
 
 	// 再移除 .git 后缀
-	if strings.HasSuffix(repo, ".git") {
-		repo = repo[:len(repo)-4]
-	}
+	repo = strings.TrimSuffix(repo, ".git")
 
 	return owner, repo
 }

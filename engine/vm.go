@@ -3405,9 +3405,6 @@ func (vm *VM) opImport(ins Instruction) error {
 		nsName := moduleName(source)
 		nsObj := make(map[string]Value)
 		maps.Copy(nsObj, cache.Exports)
-		for name, val := range cache.Exports {
-			nsObj[name] = val
-		}
 		vm.SetGlobal(nsName, NewObject(nsObj))
 	} else {
 		// A > 0，检查常量类型区分 from...import 和 import...as

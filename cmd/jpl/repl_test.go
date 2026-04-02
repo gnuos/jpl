@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gnuos/jpl/pkg/stdlib"
 	"github.com/gnuos/jpl/engine"
+	"github.com/gnuos/jpl/pkg/stdlib"
 )
 
 // ============================================================================
@@ -383,6 +383,8 @@ func TestREPLTryCatch(t *testing.T) {
 	output := captureOutput(func() {
 		r.ExecCode(`try { result = 1 / 0; } catch (e) { result = "error"; }`)
 	})
+
+	_ = output
 
 	// 检查结果
 	output = captureOutput(func() {

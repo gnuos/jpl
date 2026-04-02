@@ -691,10 +691,7 @@ func builtinStripos(ctx *engine.Context, args []engine.Value) (engine.Value, err
 		if args[2].Type() != engine.TypeInt {
 			return nil, fmt.Errorf("stripos() argument 3 must be an integer")
 		}
-		offset = int(args[2].Int())
-		if offset < 0 {
-			offset = 0
-		}
+		offset = max(int(args[2].Int()), 0)
 	}
 
 	if offset > len(haystack) {
@@ -1785,7 +1782,7 @@ func builtinQuotedPrintableEncode(ctx *engine.Context, args []engine.Value) (eng
 		char := input[i]
 		// 检查是否需要编码：不可打印字符、=、?、_、空格、制表符等
 		if char == '=' || char == '?' || char == '_' ||
-			(char >= 0 && char <= 32) || char >= 127 {
+			(char <= 32) || char >= 127 {
 			// 需要编码为 =XX 形式
 			result.WriteByte('=')
 			result.WriteByte(hexUpper[char>>4])

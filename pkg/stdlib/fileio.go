@@ -1311,7 +1311,7 @@ func builtinFgetcsv(ctx *engine.Context, args []engine.Value) (engine.Value, err
 	for {
 		n, err := sv.Read(buf)
 		if n > 0 {
-			for i := 0; i < n; i++ {
+			for i := range n {
 				if buf[i] == '\n' {
 					line = string(lineBuf)
 					// 回退多余读取的部分（将 \n 之后的内容放回）

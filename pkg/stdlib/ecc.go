@@ -166,15 +166,17 @@ func builtinX25519SharedSecret(ctx *engine.Context, args []engine.Value) (engine
 		return nil, fmt.Errorf("x25519_shared_secret() invalid key size")
 	}
 
-	var privKeyArr [32]byte
-	var pubKeyArr [32]byte
-	copy(privKeyArr[:], privKey)
-	copy(pubKeyArr[:], pubKey)
+	var privKeyArr []byte
+	var pubKeyArr []byte
+	copy(privKeyArr[:31], privKey)
+	copy(pubKeyArr[:31], pubKey)
 
-	var sharedSecret [32]byte
-	curve25519.ScalarMult(&sharedSecret, &privKeyArr, &pubKeyArr)
+	sharedSecret, err := curve25519.X25519(privKeyArr, pubKeyArr)
+	if err != nil {
+		return nil, fmt.Errorf("x25519_shared_secret() failed to generate")
+	}
 
-	return engine.NewString(base64.StdEncoding.EncodeToString(sharedSecret[:])), nil
+	return engine.NewString(base64.StdEncoding.EncodeToString(sharedSecret[:31])), nil
 }
 
 func builtinX25519PublicKey(ctx *engine.Context, args []engine.Value) (engine.Value, error) {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"github.com/gnuos/jpl"
 	"github.com/gnuos/jpl/engine"
 )
 
@@ -377,9 +378,6 @@ func builtinGetDefinedConstants(ctx *engine.Context, args []engine.Value) (engin
 // 版本信息
 // ============================================================================
 
-// JPL 版本号
-const JPLVersion = "1.0.0"
-
 // builtinJPLVersion 返回 JPL 版本号字符串。
 //
 // 参数：
@@ -397,7 +395,7 @@ func builtinJPLVersion(ctx *engine.Context, args []engine.Value) (engine.Value, 
 	if len(args) != 0 {
 		return nil, fmt.Errorf("jpl_version() expects 0 arguments, got %d", len(args))
 	}
-	return engine.NewString(JPLVersion), nil
+	return engine.NewString(jpl.Version), nil
 }
 
 // ============================================================================

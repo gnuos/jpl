@@ -283,8 +283,8 @@ func builtinTarCreate(ctx *engine.Context, args []engine.Value) (engine.Value, e
 		}
 
 		obj := entry.Object()
-		name, _ := obj["name"]
-		content, _ := obj["content"]
+		name := obj["name"]
+		content := obj["content"]
 
 		entryName := name.String()
 		entryContent := content.String()

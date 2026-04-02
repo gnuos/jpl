@@ -57,7 +57,7 @@ func (t TaskDef) MarshalJSON() ([]byte, error) {
 		Cmd  string   `json:"cmd"`
 		Deps []string `json:"deps"`
 	}
-	return json.Marshal(alias{Cmd: t.Cmd, Deps: t.Deps})
+	return json.Marshal(alias(t))
 }
 
 // ============================================================================
@@ -182,7 +182,7 @@ func (r *TaskRunner) isJPLCommand(cmdStr string) bool {
 }
 
 // runJPLCommand 执行 JPL 脚本命令（内部调用，无需子进程）
-func (r *TaskRunner) runJPLCommand(name, cmdStr string) error {
+func (r *TaskRunner) runJPLCommand(_, cmdStr string) error {
 	parts := strings.Fields(cmdStr)
 
 	var scriptPath string
@@ -227,7 +227,7 @@ func (r *TaskRunner) runJPLCommand(name, cmdStr string) error {
 }
 
 // runShellCommand 执行 shell 命令
-func (r *TaskRunner) runShellCommand(name, cmdStr string) error {
+func (r *TaskRunner) runShellCommand(_, cmdStr string) error {
 	cmd := exec.Command("sh", "-c", cmdStr)
 	cmd.Dir = r.ProjectDir
 	cmd.Stdout = os.Stdout

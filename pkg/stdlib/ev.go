@@ -660,7 +660,7 @@ func builtinRegistryOnTimer(ctx *engine.Context, args []engine.Value) (engine.Va
 		return nil, fmt.Errorf("on_timer() expects int microseconds, got %s", args[1].Type())
 	}
 
-	fn, ok := args[2].(engine.Value)
+	fn := args[2]
 	if !ok {
 		return nil, fmt.Errorf("on_timer() expects function handler, got %s", args[2].Type())
 	}
@@ -704,7 +704,7 @@ func builtinRegistryOnTimerOnce(ctx *engine.Context, args []engine.Value) (engin
 		return nil, fmt.Errorf("on_timer_once() expects int microseconds, got %s", args[1].Type())
 	}
 
-	fn, ok := args[2].(engine.Value)
+	fn := args[2]
 	if !ok {
 		return nil, fmt.Errorf("on_timer_once() expects function handler, got %s", args[2].Type())
 	}
@@ -746,7 +746,7 @@ func builtinRegistryOnSignal(ctx *engine.Context, args []engine.Value) (engine.V
 		return nil, fmt.Errorf("on_signal() expects int signal number, got %s", args[1].Type())
 	}
 
-	fn, ok := args[2].(engine.Value)
+	fn := args[2]
 	if !ok {
 		return nil, fmt.Errorf("on_signal() expects function handler, got %s", args[2].Type())
 	}
@@ -763,7 +763,7 @@ func builtinRegistryOnSignal(ctx *engine.Context, args []engine.Value) (engine.V
 }
 
 // builtinRegistryOffTimer 注销指定定时器
-func builtinRegistryOffTimer(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+func builtinRegistryOffTimer(_ *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) != 2 {
 		return nil, fmt.Errorf("off_timer() expects 2 arguments, got %d", len(args))
 	}
@@ -794,7 +794,7 @@ func builtinRegistryOffTimer(ctx *engine.Context, args []engine.Value) (engine.V
 }
 
 // builtinRegistryOffSignal 注销信号处理器
-func builtinRegistryOffSignal(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+func builtinRegistryOffSignal(_ *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) != 2 {
 		return nil, fmt.Errorf("off_signal() expects 2 arguments, got %d", len(args))
 	}

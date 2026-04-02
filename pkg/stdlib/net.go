@@ -1037,7 +1037,7 @@ func builtinNetOnAccept(ctx *engine.Context, args []engine.Value) (engine.Value,
 		return nil, fmt.Errorf("net_on_accept() expects NetSocketValue, got %s", args[1].Type())
 	}
 
-	fn, ok := args[2].(engine.Value)
+	fn := args[2]
 	if !ok {
 		return nil, fmt.Errorf("net_on_accept() expects function callback, got %s", args[2].Type())
 	}
@@ -1120,7 +1120,7 @@ func builtinNetOnRead(ctx *engine.Context, args []engine.Value) (engine.Value, e
 		return nil, fmt.Errorf("net_on_read() expects NetSocketValue, got %s", args[1].Type())
 	}
 
-	fn, ok := args[2].(engine.Value)
+	fn := args[2]
 	if !ok {
 		return nil, fmt.Errorf("net_on_read() expects function callback, got %s", args[2].Type())
 	}
@@ -1197,7 +1197,7 @@ func builtinNetOnWrite(ctx *engine.Context, args []engine.Value) (engine.Value, 
 		return nil, fmt.Errorf("net_on_write() expects NetSocketValue, got %s", args[1].Type())
 	}
 
-	fn, ok := args[2].(engine.Value)
+	fn := args[2]
 	if !ok {
 		return nil, fmt.Errorf("net_on_write() expects function callback, got %s", args[2].Type())
 	}
@@ -1221,7 +1221,7 @@ func builtinNetOnWrite(ctx *engine.Context, args []engine.Value) (engine.Value, 
 }
 
 // writeLoop 监听 socket 的可写事件
-func writeLoop(ctx context.Context, socket *NetSocketValue, callbackCtx *engine.Context, callback engine.Value) {
+func writeLoop(ctx context.Context, _ *NetSocketValue, _ *engine.Context, _ engine.Value) {
 	// 写事件通常不需要持续监听，只在需要时触发
 	// 这里简单实现：等待 context 取消后退出
 	<-ctx.Done()
