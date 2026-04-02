@@ -165,6 +165,7 @@ func (v *streamValue) Truncate(size int64) error {
 	return f.Truncate(size)
 }
 
+// NewStdinStream 创建标准输入流（stdin）的 Value 表示
 func NewStdinStream() Value {
 	return &streamValue{
 		mode:   StreamRead,
@@ -175,6 +176,7 @@ func NewStdinStream() Value {
 	}
 }
 
+// NewStdoutStream 创建标准输出流（stdout）的 Value 表示
 func NewStdoutStream() Value {
 	return &streamValue{
 		mode:   StreamWrite,
@@ -185,6 +187,7 @@ func NewStdoutStream() Value {
 	}
 }
 
+// NewStderrStream 创建标准错误流（stderr）的 Value 表示
 func NewStderrStream() Value {
 	return &streamValue{
 		mode:   StreamWrite,
@@ -195,6 +198,7 @@ func NewStderrStream() Value {
 	}
 }
 
+// NewFileStream 创建文件流，支持读、写或读写模式
 func NewFileStream(path string, mode StreamMode) Value {
 	var file *os.File
 	var err error
@@ -224,6 +228,7 @@ func NewFileStream(path string, mode StreamMode) Value {
 	}
 }
 
+// NewBufferStream 创建内存缓冲区流，支持读写操作
 func NewBufferStream(buf []byte) Value {
 	var r *bytes.Reader
 	if buf == nil {
@@ -246,6 +251,7 @@ func NewBufferStream(buf []byte) Value {
 	}
 }
 
+// StreamMeta 返回流的元数据信息，包括路径、模式、是否可读/可写等
 func StreamMeta(v Value) map[string]Value {
 	sv, ok := v.(*streamValue)
 	if !ok {
@@ -279,6 +285,7 @@ type streamWrapper struct {
 	stream *streamValue
 }
 
+// WrapStream 将 Value 包装为 streamWrapper，便于进行流操作
 func WrapStream(v Value) *streamWrapper {
 	if sv, ok := v.(*streamValue); ok {
 		return &streamWrapper{stream: sv}
@@ -313,11 +320,13 @@ func (w *streamWrapper) Close() error {
 
 type StreamValue = streamValue
 
+// IsStream 检查给定值是否为流类型
 func IsStream(v Value) bool {
 	_, ok := v.(*streamValue)
 	return ok
 }
 
+// ToStreamValue 将 Value 转换为 *streamValue，若不是流则返回 nil
 func ToStreamValue(v Value) *streamValue {
 	if sv, ok := v.(*streamValue); ok {
 		return sv

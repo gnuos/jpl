@@ -9,6 +9,21 @@ import (
 	"github.com/gnuos/jpl/engine"
 )
 
+// RegisterZip 将 zip 压缩函数注册到引擎。
+//
+// 注册的函数：
+//   - zip_open: 打开 zip 文件
+//   - zip_read: 读取 zip 条目
+//   - zip_entry_name: 获取 zip 条目名称
+//   - zip_entry_filesize: 获取 zip 条目原始大小
+//   - zip_entry_compressedsize: 获取 zip 条目压缩后大小
+//   - zip_entry_read: 读取 zip 条目内容
+//   - zip_entry_close: 关闭当前 zip 条目
+//   - zip_close: 关闭 zip 文件
+//   - zip_create: 创建 zip 文件
+//
+// 参数：
+//   - e: 引擎实例
 func RegisterZip(e *engine.Engine) {
 	e.RegisterFunc("zip_open", builtinZipOpen)
 	e.RegisterFunc("zip_read", builtinZipRead)
@@ -33,6 +48,10 @@ func RegisterZip(e *engine.Engine) {
 	})
 }
 
+// ZipNames 返回 zip 函数名称列表。
+//
+// 返回值：
+//   - []string: 函数名列表
 func ZipNames() []string {
 	return []string{
 		"zip_open",

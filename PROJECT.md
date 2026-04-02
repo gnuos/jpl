@@ -1,4 +1,4 @@
-# JPL - Jx9 Go Language
+# JPL - Jx9-like Programming Language
 
 > 高性能嵌入式脚本语言引擎，专为 Go 应用程序设计
 

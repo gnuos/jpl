@@ -257,6 +257,12 @@ func (r *TaskRunner) DryRun(plan *TaskExecutionPlan) {
 }
 
 // FormatTaskList 格式化输出任务列表
+// FormatTaskList 格式化输出任务列表（控制台显示）
+//
+// 遍历所有任务定义，输出每个任务的名称、描述和依赖。
+//
+// 参数：
+//   - tasks: 任务定义映射
 func FormatTaskList(tasks map[string]TaskDef) {
 	if len(tasks) == 0 {
 		fmt.Println("No tasks defined.")

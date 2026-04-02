@@ -9,6 +9,16 @@ import (
 	"github.com/gnuos/jpl/engine"
 )
 
+// RegisterZlib 将 zlib 压缩函数注册到引擎。
+//
+// 注册的函数：
+//   - zlib_encode: Zlib 压缩
+//   - zlib_decode: Zlib 解压
+//   - deflate: Deflate 压缩
+//   - inflate: Deflate 解压
+//
+// 参数：
+//   - e: 引擎实例
 func RegisterZlib(e *engine.Engine) {
 	e.RegisterFunc("zlib_encode", builtinZlibEncode)
 	e.RegisterFunc("zlib_decode", builtinZlibDecode)
@@ -23,6 +33,10 @@ func RegisterZlib(e *engine.Engine) {
 	})
 }
 
+// ZlibNames 返回 zlib 函数名称列表。
+//
+// 返回值：
+//   - []string: 函数名列表
 func ZlibNames() []string {
 	return []string{
 		"zlib_encode",

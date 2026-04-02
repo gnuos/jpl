@@ -147,6 +147,10 @@ type Compiler struct {
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
+// NewCompiler 创建新的编译器实例。
+//
+// 编译器用于将 AST 转换为字节码。每次调用创建一个独立的编译器，
+// 可以编译多个程序。编译器本身不是线程安全的。
 func NewCompiler() *Compiler {
 	globalNames := make([]string, 0, 256)
 	c := &Compiler{
@@ -2869,6 +2873,9 @@ func (c *Compiler) compileTypeCast(expr *parser.TypeCast, target int) {
 //	if engine.IsRuntimeError(result) {
 //	    fmt.Println("执行出错:", result.Stringify())
 //	}
+// IsRuntimeError 检查给定值是否为运行时错误。
+//
+// 返回 true 表示该值是一个运行时错误，可通过 vm.GetResult() 获取。
 func IsRuntimeError(v Value) bool {
 	_, ok := v.(*runtimeError)
 	return ok

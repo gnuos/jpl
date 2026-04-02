@@ -1,4 +1,4 @@
-# JPL - Jx9 Go Language
+# JPL 编程语言
 
 JPL（Jx9-like Programming Language）是一个**高性能、嵌入式脚本语言引擎**，专为 Go 应用程序设计。它提供了完整的脚本执行能力，支持函数式编程、闭包、异常处理和模块化编程。
 
@@ -770,8 +770,6 @@ jpl/
 ├── token/            # 词法单元
 ├── lexer/            # 词法分析器
 ├── parser/           # 语法分析器（Pratt Parser）
-├── format/           # 代码格式化器
-├── lint/             # 静态分析器
 ├── pkg/stdlib/       # 标准库内置函数
 │   ├── builtin.go    # 核心函数
 │   ├── string.go     # 字符串函数
@@ -784,6 +782,8 @@ jpl/
 │   └── ...
 │
 ├── pkg/              # 扩展包
+│   ├── lint/         # 静态分析器
+│   ├── format/       # 代码格式化器
 │   └── pm/           # 包管理器
 │       ├── manifest.go       # 清单文件读写
 │       ├── git.go            # Git 操作

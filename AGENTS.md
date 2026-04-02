@@ -4,7 +4,7 @@ This file provides guidance to Agent when working with code in this repository.
 
 ## 项目概述
 
-JPL（Jx9 Go Language）是一个高性能嵌入式脚本语言引擎，专为 Go 应用程序设计。它提供完整的脚本执行能力，包括编译器、虚拟机、包管理器和 CLI 工具链。
+JPL（Jx9-like Programming Language）是一个高性能嵌入式脚本语言引擎，专为 Go 应用程序设计。它提供完整的脚本执行能力，包括编译器、虚拟机、包管理器和 CLI 工具链。
 
 ## 常用命令
 

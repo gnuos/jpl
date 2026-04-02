@@ -18,7 +18,7 @@ type PackageCache struct {
 	cacheDir string // ~/.jpl/packages/
 }
 
-// NewPackageCache 创建包缓存
+// NewPackageCache 创建包缓存（使用默认 ~/.jpl/packages/ 目录）
 func NewPackageCache() (*PackageCache, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -33,7 +33,13 @@ func NewPackageCache() (*PackageCache, error) {
 	return &PackageCache{cacheDir: cacheDir}, nil
 }
 
-// NewPackageCacheWithDir 使用指定目录创建缓存
+// NewPackageCacheWithDir 使用指定目录创建包缓存
+//
+// 参数：
+//   - cacheDir: 自定义缓存目录路径
+//
+// 返回值：
+//   - *PackageCache: 包缓存实例
 func NewPackageCacheWithDir(cacheDir string) *PackageCache {
 	return &PackageCache{cacheDir: cacheDir}
 }

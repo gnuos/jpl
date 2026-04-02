@@ -296,6 +296,16 @@ type InstalledPackage struct {
 }
 
 // ListInstalled 列出已安装的包
+// ListInstalled 列出已安装的包
+//
+// 扫描 modulesDir 目录，查找 manifest 中声明的依赖是否已安装。
+//
+// 参数：
+//   - manifest: 项目清单
+//   - modulesDir: 模块安装目录
+//
+// 返回值：
+//   - []InstalledPackage: 已安装的包列表
 func ListInstalled(manifest *Manifest, modulesDir string) ([]InstalledPackage, error) {
 	var packages []InstalledPackage
 
