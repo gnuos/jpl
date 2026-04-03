@@ -1,0 +1,79 @@
+// static 变量示例
+// static 变量在函数调用之间保持其值
+
+println "=== 基本静态变量 ==="
+
+fn counter() {
+    static $count = 0;
+    $count = $count + 1;
+    return $count;
+}
+
+println counter();  // 1
+println counter();  // 2
+println counter();  // 3
+
+println ""
+println "=== 无初始值的静态变量 ==="
+
+fn acc() {
+    static $sum;
+    $sum = $sum + 10;
+    return $sum;
+}
+
+println acc();  // 10 (null + 10)
+println acc();  // 20
+println acc();  // 30
+
+println ""
+println "=== 多个静态变量 ==="
+
+fn stats() {
+    static $total = 0;
+    static $count = 0;
+
+    return ($x) -> {
+        $total = $total + $x;
+        $count = $count + 1;
+        return "total=" .. $total .. ", count=" .. $count .. ", avg=" .. ($total / $count);
+    };
+}
+
+$record = stats();
+println $record(10);
+println $record(20);
+println $record(30);
+
+println ""
+println "=== 字符串静态变量 ==="
+
+fn greet() {
+    static $msg = "Hello";
+    $msg = $msg .. "!";
+    return $msg;
+}
+
+println greet();  // Hello!
+println greet();  // Hello!!
+println greet();  // Hello!!!
+
+println ""
+println "=== 独立函数的静态变量 ==="
+
+fn counterA() {
+    static $x = 0;
+    $x = $x + 1;
+    return $x;
+}
+
+fn counterB() {
+    static $x = 0;
+    $x = $x + 100;
+    return $x;
+}
+
+println "A: " .. counterA();  // 1
+println "B: " .. counterB();  // 100
+println "A: " .. counterA();  // 2
+println "B: " .. counterB();  // 200

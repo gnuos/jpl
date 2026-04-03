@@ -173,6 +173,110 @@ acc()`
 	}
 }
 
+func TestStaticVarMultipleFunctions(t *testing.T) {
+	// Each function has its own static variable namespace
+	script := `fn a() {
+	static $x = 0;
+	$x = $x + 1;
+	return $x;
+}
+fn b() {
+	static $x = 0;
+	$x = $x + 10;
+	return $x;
+}
+a();
+b();
+a();
+b()`
+
+	result, err := compileAndRunScope(script)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// a=2, b=20, result = 20
+	if result.Int() != 20 {
+		t.Errorf("expected 20, got %d", result.Int())
+	}
+}
+
+func TestStaticVarStringType(t *testing.T) {
+	// Static variables can hold non-numeric types
+	script := `fn greet() {
+	static $msg = "hello";
+	$msg = $msg .. "!";
+	return $msg;
+}
+greet()`
+
+	result, err := compileAndRunScope(script)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.String() != "hello!" {
+		t.Errorf("expected 'hello!', got '%s'", result.String())
+	}
+}
+
+func TestStaticVarPersistenceAcrossCalls(t *testing.T) {
+	// Static variable should persist across multiple calls
+	script := `fn counter() {
+	static $count = 0;
+	$count = $count + 1;
+	return $count;
+}
+counter();
+counter();
+counter();
+counter()`
+
+	result, err := compileAndRunScope(script)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Int() != 4 {
+		t.Errorf("expected 4, got %d", result.Int())
+	}
+}
+
+func TestStaticVarInitializationOnlyOnce(t *testing.T) {
+	// Static variable should only be initialized once
+	script := `fn test() {
+	static $x = 0;
+	$x = $x + 1;
+	return $x;
+}
+test();
+test();
+test()`
+
+	result, err := compileAndRunScope(script)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Int() != 3 {
+		t.Errorf("expected 3, got %d", result.Int())
+	}
+}
+
+func TestStaticVarWithComplexExpression(t *testing.T) {
+	// Static variable with complex initial expression
+	script := `fn test() {
+	static $x = 10 * 2 + 5;
+	$x = $x + 1;
+	return $x;
+}
+test()`
+
+	result, err := compileAndRunScope(script)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Int() != 26 {
+		t.Errorf("expected 26, got %d", result.Int())
+	}
+}
+
 // ============================================================================
 // 辅助函数
 // ============================================================================
