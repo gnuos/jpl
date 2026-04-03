@@ -1,0 +1,58 @@
+// @member 闭包成员访问语法示例
+//
+// @member 语法允许在闭包内直接访问对象成员，类似 Ruby 的实例变量语法。
+// 在对象字面量方法内使用 @ 访问当前对象的成员。
+
+// 基本用法：在对象方法内使用 @ 访问成员
+$counter = {
+    count: 0,
+    increment: () -> {
+        @count = @count + 1
+        return @count
+    },
+    get: () -> {
+        return @count
+    }
+}
+
+println "=== @member 基本用法 ==="
+println "初始值: " .. $counter.get()
+println "increment: " .. $counter.increment()
+println "increment: " .. $counter.increment()
+println "increment: " .. $counter.increment()
+println "当前值: " .. $counter.get()
+
+// 更复杂的对象
+$person = {
+    name: "Alice",
+    age: 30,
+    greet: () -> {
+        return "Hello, I'm " .. @name .. ", age " .. @age
+    },
+    birthday: () -> {
+        @age = @age + 1
+        return "Happy birthday! Now I'm " .. @age
+    }
+}
+
+println ""
+println "=== @member 复杂对象 ==="
+println $person.greet()
+println $person.birthday()
+println $person.greet()
+
+// @ 绑定到最近一层的对象（静态作用域）
+$outer = {
+    value: "outer",
+    inner: {
+        value: "inner",
+        get: () -> {
+            return @value  // 绑定到 inner 的 value
+        }
+    }
+}
+
+println ""
+println "=== @ 嵌套作用域 ==="
+println "outer.value: " .. $outer.value
+println "inner.get(): " .. $outer.inner.get()

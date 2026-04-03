@@ -1,0 +1,71 @@
+// 进程 API 示例
+//
+// JPL 提供完整的系统进程管理 API，支持命令执行、环境变量、进程控制等。
+
+println "=== 命令执行 ==="
+
+// exec - 执行命令，返回输出
+$output = exec("echo Hello from JPL")
+println "exec 输出: " .. trim($output)
+
+// system - 执行命令，返回退出码
+$code = system("true")
+println "true 退出码: " .. $code
+
+// shell_exec - 执行命令，返回完整输出
+$whoami = shell_exec("whoami")
+println "当前用户: " .. trim($whoami)
+
+println ""
+println "=== 环境变量 ==="
+
+// 获取环境变量
+$home = getenv("HOME")
+println "HOME: " .. $home
+
+// 设置环境变量
+setenv("JPL_APP", "example")
+$app = getenv("JPL_APP")
+println "JPL_APP: " .. $app
+
+println ""
+println "=== 进程信息 ==="
+
+$pid = getpid()
+println "当前进程 ID: " .. $pid
+
+$ppid = getppid()
+println "父进程 ID: " .. $ppid
+
+$host = hostname()
+println "主机名: " .. $host
+
+$tmp = tmpdir()
+println "临时目录: " .. $tmp
+
+println ""
+println "=== 子进程管理 ==="
+
+// spawn - 创建子进程（不等待）
+$proc = spawn("echo", ["Hello from child"])
+println "子进程 PID: " .. $proc.pid
+
+// 等待子进程结束
+$exit_code = waitpid($proc)
+println "子进程退出码: " .. $exit_code
+
+println ""
+println "=== 进程管道 ==="
+
+// proc_open - 执行命令，返回进程管道对象
+$proc = proc_open("echo 'pipe test'", {})
+$code = proc_wait($proc)
+println "proc 退出码: " .. $code
+
+println ""
+println "=== 延时 ==="
+
+start = now()
+usleep(100000)  // 暂停 100 毫秒
+elapsed = now()
+println "usleep(100000) 耗时约 " .. (elapsed.millisecond - start.millisecond) .. " 毫秒"

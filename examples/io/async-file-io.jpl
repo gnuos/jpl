@@ -1,0 +1,49 @@
+// 异步文件 IO 示例
+//
+// JPL 提供 Python asyncio 风格的异步文件操作 API，
+// 避免阻塞事件循环，适合在服务器中处理文件 IO。
+
+import "ev"
+
+println "=== 异步文件 IO ==="
+
+$registry = ev_registry_new()
+
+// 异步写入文件
+file_put_async("async_test.txt", "Hello from async IO!", fn($success) {
+    if ($success) {
+        println "写入成功"
+    } else {
+        println "写入失败"
+    }
+})
+
+// 异步读取文件
+file_get_async("async_test.txt", fn($data) {
+    println "读取内容: " .. $data
+})
+
+// 逐行读取
+$content = "Line 1\nLine 2\nLine 3\nLine 4\n"
+file_put_async("async_lines.txt", $content, fn($success) {
+    file_read_lines("async_lines.txt", fn($line) {
+        println "行: " .. trim($line)
+    }, fn() {
+        println "读取完成"
+    })
+})
+
+// 定时器：给异步操作一些时间完成
+$registry.on_timer_once(2000000, fn() {
+    println ""
+    println "=== 清理 ==="
+    unlink("async_test.txt")
+    unlink("async_lines.txt")
+    println "临时文件已清理"
+
+    ev_stop($loop)
+})
+
+$loop = ev_loop_new()
+ev_attach($loop, $registry)
+ev_run($loop)

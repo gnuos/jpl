@@ -1,0 +1,78 @@
+// 压缩模块示例
+//
+// JPL 提供 gzip、zlib、brotli、zip、tar 等压缩格式支持。
+
+println "=== gzip 压缩 ==="
+
+$original = "Hello, World! This is a test string for compression."
+println "原始: " .. $original
+println "原始长度: " .. strlen($original)
+
+$compressed = gzencode($original)
+println "压缩长度: " .. strlen($compressed)
+
+$decompressed = gzdecode($compressed)
+println "解压: " .. $decompressed
+println "一致: " .. ($original == $decompressed)
+
+println ""
+println "=== zlib 压缩 ==="
+
+$zcompressed = zlib_encode($original)
+println "zlib 压缩长度: " .. strlen($zcompressed)
+
+$zdecompressed = zlib_decode($zcompressed)
+println "zlib 解压: " .. $zdecompressed
+
+println ""
+println "=== brotli 压缩 ==="
+
+$bcompressed = brotli_encode($original)
+println "brotli 压缩长度: " .. strlen($bcompressed)
+
+$bdecompressed = brotli_decode($bcompressed)
+println "brotli 解压: " .. $bdecompressed
+
+println ""
+println "=== 文件 gzip 压缩 ==="
+
+// 压缩文件
+write("test_compress.txt", "Hello, World!\nLine 2\nLine 3\n")
+$compressed_data = file_get_contents("test_compress.txt")
+$gz = gzencode($compressed_data)
+file_put_contents("test_compress.txt.gz", $gz)
+println "已创建 test_compress.txt.gz"
+
+// 解压文件
+$gz_data = file_get_contents("test_compress.txt.gz")
+$restored = gzdecode($gz_data)
+println "解压内容: " .. trim($restored)
+
+// 清理
+unlink("test_compress.txt")
+unlink("test_compress.txt.gz")
+
+println ""
+println "=== tar 归档 ==="
+
+// 创建多个文件
+mkdir("tar_test", true)
+file_put_contents("tar_test/a.txt", "content a")
+file_put_contents("tar_test/b.txt", "content b")
+
+// 创建 tar 归档
+$tar_data = tar_create("tar_test")
+file_put_contents("test.tar", $tar_data)
+println "已创建 test.tar"
+
+// 提取 tar 归档
+$tar_data = file_get_contents("test.tar")
+tar_extract($tar_data, "tar_extracted")
+println "已提取到 tar_extracted/"
+
+// 清理
+unlink("test.tar")
+unlink("tar_test/a.txt")
+unlink("tar_test/b.txt")
+rmdir("tar_test")
+rmdir("tar_extracted")

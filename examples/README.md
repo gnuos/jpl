@@ -10,8 +10,11 @@
 # 基础语法
 jpl run basic/hello.jpl
 jpl run basic/datatypes.jpl
+jpl run basic/operators.jpl
 jpl run basic/functions.jpl
 jpl run basic/arrays.jpl
+jpl run basic/objects.jpl
+jpl run basic/type_cast.jpl
 
 # 字符串处理
 jpl run basic/multiline.jpl
@@ -51,13 +54,14 @@ jpl run network/binary-protocol.jpl
 |------|------|
 | `hello.jpl` | Hello World + 字符串插值 `#{}` |
 | `datatypes.jpl` | 数据类型（null/bool/int/float/string/array/object） |
+| `bigint.jpl` | 大数运算 |
 | `operators.jpl` | 运算符（含 `..` 字符串连接） |
 | `control-flow.jpl` | 控制流（if/else/for/while/foreach/exit/die） |
 | `functions.jpl` | 函数定义、箭头函数、闭包、递归 |
+| `strings.jpl` | 字符串操作（trim/split/substr 等） |
 | `arrays.jpl` | 数组操作、函数式编程 |
 | `objects.jpl` | 对象操作、属性访问 |
-| `strings.jpl` | 字符串操作（trim/split/substr 等） |
-| `file-io.jpl` | 文件读写操作 |
+| `regex.jpl` | 正则表达式操作 |
 
 ### 2. Phase 10: 语法增强
 

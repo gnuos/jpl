@@ -1,0 +1,72 @@
+// BigInt/BigDecimal 高精度计算示例
+//
+// JPL 支持任意精度整数（BigInt）和小数（BigDecimal）。
+// BigInt: 超过 int64 范围的整数自动转为 BigInt
+// BigDecimal: 超过 float64 精度的小数自动转为 BigDecimal
+
+println "=== BigInt 任意精度整数 ==="
+
+// 超出 int64 范围的大整数（自动识别为 BigInt）
+$big = 999999999999999999999999999999
+println "大整数: " .. $big
+println "类型: " .. typeof($big)
+println "is_bigint: " .. is_bigint($big)
+
+// 大整数运算
+$a = 123456789012345678901234567890
+$b = 987654321098765432109876543210
+
+println ""
+println "=== 大整数运算 ==="
+println "a = " .. $a
+println "b = " .. $b
+println "a + b = " .. ($a + $b)
+println "a * b = " .. ($a * $b)
+println "b - a = " .. ($b - $a)
+
+// 阶乘计算（BigInt 的典型应用）
+fn factorial(n) {
+    if (n <= 1) {
+        $one = 1
+        // 小整数返回 Int，但乘法会自动提升
+        return $one
+    }
+    $next = n - 1
+    return n * factorial($next)
+}
+
+println ""
+println "=== BigInt 阶乘 ==="
+$n = 50
+$result = factorial($n)
+println "50! = " .. $result
+println "位数: " .. strlen(string($result))
+
+println ""
+println "=== BigDecimal 精确小数 ==="
+
+// 金融计算：超长小数自动转为 BigDecimal
+$price = 0.123456789012345678901234567890
+$quantity = 3
+$total = $price * $quantity
+
+println "单价: " .. $price
+println "数量: " .. $quantity
+println "总价: " .. $total
+println "类型: " .. typeof($price)
+
+// 对比 float64 的精度问题
+$float_result = 0.1 * 3
+println ""
+println "=== 精度对比 ==="
+println "float64:  0.1 * 3 = " .. $float_result
+println "BigDecimal: 0.123456789012345678901234567890 * 3 = " .. $total
+
+// 高精度除法
+$dividend = 1
+$divisor = 3
+$quotient = $dividend / $divisor
+
+println ""
+println "=== 除法 ==="
+println "1 / 3 = " .. $quotient
