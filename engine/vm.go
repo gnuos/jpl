@@ -1494,11 +1494,242 @@ func (vm *VM) opCall(ins Instruction) error {
 	return nil
 }
 
-// opTailCall 尾调用 — 目前实现为普通调用（简化版本）
+// opTailCall 尾调用优化 — 复用当前栈帧或执行调用并返回
+// 对自递归调用进行栈帧复用优化；对其他调用执行普通调用并立即返回结果
 func (vm *VM) opTailCall(ins Instruction) error {
-	// 暂时将 TAIL_CALL 视为普通 CALL
-	// 未来可优化为栈帧复用
-	return vm.opCall(ins)
+	a := ins.A()
+	c := ins.C()
+
+	funcVal := vm.registers[a]
+
+	// 收集参数
+	args := make([]Value, c-1)
+	for i := 0; i < c-1; i++ {
+		args[i] = vm.registers[a+1+i]
+	}
+
+	// 检查是否为自递归调用
+	isSelfRecursive := false
+
+	// 情况 1：通过函数名字符串调用
+	if funcVal.Type() == TypeString {
+		funcName := funcVal.String()
+		if funcName == vm.function.Name {
+			isSelfRecursive = true
+		}
+	}
+
+	// 情况 2：通过闭包调用（最常见的自递归形式）
+	if cl, ok := funcVal.(*closure); ok {
+		if cl.function == vm.function {
+			isSelfRecursive = true
+		}
+	}
+
+	if isSelfRecursive {
+		return vm.tailCallSelfFunction(args)
+	}
+
+	// 非自递归：执行调用并立即返回结果（模拟 OP_CALL + OP_RETURN 的语义）
+	return vm.tailCallOtherFunction(funcVal, args, a)
+}
+
+// tailCallSelfFunction 执行自递归尾调用优化
+// 复用当前寄存器窗口和调用帧，仅更新参数并跳转到函数开头
+func (vm *VM) tailCallSelfFunction(args []Value) error {
+	fn := vm.function
+
+	// 原地更新参数寄存器
+	paramCount := max(len(args), fn.Params)
+	for i := 0; i < len(args) && i < len(vm.registers); i++ {
+		vm.registers[i] = args[i]
+	}
+
+	// 清零剩余寄存器（避免残留临时值影响下一轮执行）
+	for i := paramCount; i < len(vm.registers); i++ {
+		vm.registers[i] = NewNull()
+	}
+
+	// 跳转到函数开头重新执行
+	vm.ip = 0
+
+	return nil
+}
+
+// tailCallOtherFunction 非自递归尾调用：执行调用并立即返回结果
+// 用于 return otherFn(args) 场景，语义等价于 OP_CALL + OP_RETURN
+func (vm *VM) tailCallOtherFunction(funcVal Value, args []Value, resultReg int) error {
+	// 闭包调用
+	if cl, ok := funcVal.(*closure); ok {
+		return vm.tailCallClosure(cl, args, resultReg)
+	}
+
+	// Go 函数调用
+	if funcVal.Type() == TypeFunc {
+		goFn, ok := funcVal.(*funcValue)
+		if !ok {
+			return NewRuntimeError("invalid function value")
+		}
+		ctx := &Context{engine: vm.engine, vm: vm}
+		result, err := goFn.fn(ctx, args)
+		if err != nil {
+			if _, ok := err.(*ExitError); ok {
+				return err
+			}
+			return NewRuntimeError(err.Error())
+		}
+		vm.gcSetRegister(resultReg, result)
+		// 立即返回
+		vm.returnFromCurrentFunction(resultReg)
+		return nil
+	}
+
+	// JPL 函数调用（通过名字）
+	if funcVal.Type() == TypeString {
+		funcName := funcVal.String()
+		targetFunc := vm.findFunction(funcName, len(args))
+
+		if targetFunc == nil && vm.engine != nil {
+			vm.engine.mu.RLock()
+			goFn, exists := vm.engine.functions[funcName]
+			vm.engine.mu.RUnlock()
+			if exists {
+				ctx := &Context{engine: vm.engine, vm: vm}
+				result, err := goFn(ctx, args)
+				if err != nil {
+					if _, ok := err.(*ExitError); ok {
+						return err
+					}
+					return NewRuntimeError(err.Error())
+				}
+				vm.gcSetRegister(resultReg, result)
+				vm.returnFromCurrentFunction(resultReg)
+				return nil
+			}
+		}
+
+		if targetFunc == nil {
+			return NewRuntimeError(fmt.Sprintf("undefined function: %s", funcVal.Stringify()))
+		}
+
+		return vm.tailCallJPLFunction(targetFunc, args, resultReg)
+	}
+
+	return NewRuntimeError(fmt.Sprintf("cannot call value of type %s", funcVal.Type()))
+}
+
+// tailCallClosure 尾调用闭包：创建新帧执行调用，返回时立即向上传递结果
+func (vm *VM) tailCallClosure(cl *closure, args []Value, resultReg int) error {
+	if vm.callDepth >= vm.maxCallDepth {
+		return ErrStackOverflow
+	}
+
+	savedIP := vm.ip
+	savedFunc := vm.function
+	savedRegs := vm.registers
+	savedRegBase := vm.registerBase
+	savedUpvals := vm.upvals
+	savedTryHandlers := vm.tryHandlers
+
+	vm.function = cl.function
+	vm.ip = 0
+	vm.registerBase = 0
+	vm.upvals = cl.upvals
+	vm.tryHandlers = nil
+
+	frame := callFrame{
+		ip:           savedIP,
+		function:     savedFunc,
+		registers:    savedRegs,
+		resultReg:    resultReg,
+		registerBase: savedRegBase,
+		upvals:       savedUpvals,
+		tryHandlers:  savedTryHandlers,
+	}
+	vm.callStack = append(vm.callStack, frame)
+	vm.callDepth++
+
+	vm.traceCall(cl.function.Name, len(args))
+
+	regCount := max(cl.function.Registers, cl.function.Params)
+	vm.registers = make([]Value, regCount)
+	for i := range vm.registers {
+		vm.registers[i] = NewNull()
+	}
+	for i := 0; i < len(args) && i < cl.function.Params; i++ {
+		vm.registers[i] = args[i]
+	}
+	vm.upvals = cl.upvals
+
+	return nil
+}
+
+// tailCallJPLFunction 尾调用 JPL 函数：创建新帧执行调用，返回时立即向上传递结果
+func (vm *VM) tailCallJPLFunction(targetFunc *CompiledFunction, args []Value, resultReg int) error {
+	if vm.callDepth >= vm.maxCallDepth {
+		return ErrStackOverflow
+	}
+
+	savedIP := vm.ip
+	savedFunc := vm.function
+	savedRegs := vm.registers
+	savedRegBase := vm.registerBase
+	savedUpvals := vm.upvals
+	savedTryHandlers := vm.tryHandlers
+
+	vm.function = targetFunc
+	vm.ip = 0
+	vm.registerBase = 0
+	vm.tryHandlers = nil
+
+	frame := callFrame{
+		ip:           savedIP,
+		function:     savedFunc,
+		registers:    savedRegs,
+		resultReg:    resultReg,
+		registerBase: savedRegBase,
+		upvals:       savedUpvals,
+		tryHandlers:  savedTryHandlers,
+	}
+	vm.callStack = append(vm.callStack, frame)
+	vm.callDepth++
+
+	vm.traceCall(targetFunc.Name, len(args))
+
+	regCount := max(targetFunc.Registers, targetFunc.Params)
+	vm.registers = make([]Value, regCount)
+	for i := range vm.registers {
+		vm.registers[i] = NewNull()
+	}
+	for i := 0; i < len(args) && i < targetFunc.Params; i++ {
+		vm.registers[i] = args[i]
+	}
+
+	return nil
+}
+
+// returnFromCurrentFunction 将寄存器中的值作为当前函数的返回值，并向调用者返回
+func (vm *VM) returnFromCurrentFunction(resultReg int) {
+	returnVal := vm.registers[resultReg]
+	vm.traceReturn(returnVal)
+
+	if len(vm.callStack) > 0 {
+		frame := vm.callStack[len(vm.callStack)-1]
+		vm.callStack = vm.callStack[:len(vm.callStack)-1]
+		vm.callDepth--
+
+		vm.ip = frame.ip
+		vm.function = frame.function
+		vm.registers = frame.registers
+		vm.registerBase = frame.registerBase
+		vm.upvals = frame.upvals
+		vm.tryHandlers = frame.tryHandlers
+
+		vm.gcSetRegister(frame.resultReg, returnVal)
+	} else {
+		vm.result = returnVal
+		vm.ip = len(vm.function.Bytecode)
+	}
 }
 
 // opReturn 从函数返回
@@ -1525,6 +1756,22 @@ func (vm *VM) opReturn(ins Instruction) {
 
 		// 存储返回值
 		vm.gcSetRegister(frame.resultReg, returnVal)
+
+		// 如果恢复后的 IP 已在函数末尾（尾调用优化场景），继续向上传递返回值
+		for vm.ip >= len(vm.function.Bytecode) && len(vm.callStack) > 0 {
+			parentFrame := vm.callStack[len(vm.callStack)-1]
+			vm.callStack = vm.callStack[:len(vm.callStack)-1]
+			vm.callDepth--
+
+			vm.ip = parentFrame.ip
+			vm.function = parentFrame.function
+			vm.registers = parentFrame.registers
+			vm.registerBase = parentFrame.registerBase
+			vm.upvals = parentFrame.upvals
+			vm.tryHandlers = parentFrame.tryHandlers
+
+			vm.gcSetRegister(parentFrame.resultReg, returnVal)
+		}
 	} else {
 		// 主函数返回
 		vm.result = returnVal

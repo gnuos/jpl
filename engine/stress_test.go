@@ -262,9 +262,12 @@ func TestStressDeepRecursion(t *testing.T) {
 }
 
 func TestStressStackOverflow(t *testing.T) {
+	// 非尾递归的函数会正常触发栈溢出
+	// 注意：尾递归调用现在会被优化（TCO），不会触发栈溢出
 	script := `
 		fn recurse($n) {
-			return recurse($n + 1)
+			$x = recurse($n + 1)
+			return $x
 		}
 		recurse(0)
 	`

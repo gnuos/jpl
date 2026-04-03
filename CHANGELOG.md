@@ -1,5 +1,72 @@
 # Changelog
 
+## v0.9.4 (Unreleased)
+
+### 新增
+
+#### 尾调用优化 (TCO)
+- 自递归尾调用栈帧复用，消除递归调用栈增长
+- 编译器自动检测尾位置调用（`return func(args)`），发出 `OP_TAIL_CALL` 指令
+- VM 通过闭包身份匹配检测自递归，原地更新参数并跳转执行
+- 非自递归尾调用（如 `return $fn($x)`）正确执行并返回结果
+- 支持 10000+ 深度递归不触发栈溢出
+- 新增 4 个深度递归测试用例（5000/10000 层、阶乘、Collatz）
+
+#### static 变量
+- 函数级持久化变量，调用之间保持其值
+- 语法：`static $var = initialValue;`
+- 初始值仅在首次调用时设置
+- 支持无初始值声明（默认为 null）
+- 每个函数的静态变量独立命名空间
+- 新增 5 个测试用例 + 示例文件
+
+### 改进
+- `opReturn` 增加尾调用返回传播，正确处理尾调用链
+- 编译器隐式 return 检查跳过 `TAIL_CALL` 后的代码
+- `TestStressStackOverflow` 更新为非尾递归函数
+
+---
+
+## v0.9.3 (2026-04-02)
+
+### 修复
+
+#### match/case 多行体支持
+- 修复 `case` 分支不支持多行语句的问题
+- 解析器现在支持 `:` 后的缩进语句块，直到下一个 `case` 或 `}`
+
+#### BigInt/BigDecimal 常量折叠
+- 修复 `tryEvalConstant` 未检查 token 类型导致 BigDecimal 被错误解析为 float
+- 常量折叠（`tryFoldAdd/Sub/Mul/Div`）增加数值类型检查，避免非数值类型被错误折叠为 0
+- 修复 `0.1d + 0.2d == 0.3d` 返回 false 的精度问题
+
+#### include 嵌套 bug
+- 修复嵌套 include 时函数索引错乱的问题
+- 根因：每个 include 文件独立编译，`globalNames` 映射不一致
+- 修复：编译期预编译 include 文件，合并函数定义和全局变量名到父编译器
+
+#### 特殊函数优先级
+- 修复 `println (a) * b` 被错误解析为 `(println(a)) * b` 的问题
+- 现在正确解析为 `println((a) * b)`
+- 同样修复了 `puts`、`pp` 等特殊函数
+
+### 新增
+
+#### 字符串插值格式化
+- 支持 `#{$value:.2f}`、`#{$num:05d}` 等格式化语法
+- 新增 `FormatExpr` AST 节点、`OP_FORMAT` 字节码指令
+
+#### BigInt/BigDecimal 字面量后缀
+- Lexer 支持 `n` 后缀显式声明 BigInt（如 `123n`）
+- Lexer 支持 `d` 后缀显式声明 BigDecimal（如 `0.1d`）
+
+### 改进
+- `Engine.Compile()` 修复：之前返回空 VM，现在正确调用 `CompileStringWithName`
+- `Engine.CompileFile()` 实现：之前是返回 `ErrCompileFailed` 的 stub
+- 移除 `pkg/stdlib/fileio.go` 中的 stub 注释
+
+---
+
 ## v0.9.0 (2026-04-02)
 
 > 项目进入维护模式，核心功能完整。

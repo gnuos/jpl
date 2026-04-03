@@ -8,6 +8,8 @@
 
 | 日期 | 阶段 | 任务 | 说明 |
 |------|------|------|------|
+| 2026-04-03 | 性能优化 | 尾调用优化 (TCO) | 自递归尾调用栈帧复用，支持 10000+ 深度递归不溢出；编译器 emit OP_TAIL_CALL，VM 自递归检测 + IP 跳转，opReturn 尾调用返回传播 |
+| 2026-04-03 | 语言特性 | static 变量 | 函数级持久化变量，调用间保持值；新增 5 个测试 + 示例文件 static-variables.jpl |
 | 2026-04-02 | Bug 修复 | 字符串插值解析修复 | parser isValueToken 添加 STRING_FRAG，修复插值后逗号分隔参数解析失败 |
 | 2026-04-02 | 类型系统 | BigInt/BigDecimal 独立类型 | 添加 TypeBigInt 枚举，编译器检查 token 类型，添加 is_bigint/is_bigdecimal 函数 |
 | 2026-04-02 | 示例修复 | control-flow.jpl 语法修复 | var 关键字改为 $ 前缀，添加未定义变量初始化 |
@@ -62,6 +64,8 @@
 **当前阶段**：功能完整，进入维护
 
 **已完成**：
+- 尾调用优化 (TCO) ✅ 完成（自递归栈帧复用，支持 10000+ 深度递归）
+- static 变量 ✅ 完成（函数级持久化变量）
 - Range 惰性加载优化 ✅ 100% 完成（使用 Go 1.25 iter.Seq2 原生泛型迭代器）
 - 正则字面量语法 ✅ 100% 完成（`#/pattern/flags#` + `=~` + match/case 正则模式 + `as $var` 捕获绑定）
 - 已知测试问题修复 ✅ 全部通过（5 个预存失败测试已修复）
@@ -89,7 +93,67 @@
 - LSP 支持 — 投入产出比低，lint + fmt 已覆盖核心价值
 - 调试器 (DAP) — 风险高，--debug + REPL 已提供基本调试能力
 
-**最后更新**：2026-04-02（任务系统 + 并行安装 + 示例项目完成）
+**最后更新**：2026-04-03（尾调用优化 + static 变量完成）
+
+---
+
+## 近期完成（2026-04-03）
+
+### 尾调用优化 (TCO) ✅
+
+**实现内容**：
+- 自递归尾调用栈帧复用，消除递归调用栈增长
+- 编译器检测尾位置调用（`return func(args)`），发出 `OP_TAIL_CALL` 指令
+- VM 自递归检测：通过闭包身份（`cl.function == vm.function`）或函数名匹配
+- 非自递归尾调用（如 `return $fn($x)`）正常执行并正确返回结果
+- `opReturn` 增加尾调用返回传播：当恢复帧的 IP 已在函数末尾时，继续向上传递返回值
+
+**改动文件**：
+- `engine/compiler.go` — `compileReturnStmt` 发出 `OP_TAIL_CALL` 替代 `OP_CALL` + `OP_RETURN`；隐式 return 检查跳过 `TAIL_CALL` 后的代码
+- `engine/vm.go` — 重写 `opTailCall`：自递归时原地更新参数 + 跳转 IP=0；非自递归时 `tailCallClosure`/`tailCallJPLFunction` 正常调用；`opReturn` 增加尾调用返回传播循环
+- `engine/stress_test.go` — 更新 `TestStressStackOverflow` 为非尾递归函数（尾递归不再溢出）
+- `engine/scope_test.go` — 新增 4 个深度递归测试：`TestTailCallDeepRecursion`(5000)、`TestTailCallVeryDeepRecursion`(10000)、`TestTailCallFactorialDeep`(20!)、`TestTailCallWithMultipleBranches`(Collatz)
+
+**验证结果**：
+```jpl
+sum(5000)    → 12502500  ✅ 无栈溢出
+counter(10000) → "done"  ✅ 无栈溢出
+fact(20, 1)  → 2432902008176640000  ✅
+collatz(27)  → 111  ✅
+apply($n -> $n * 3, 7) → 21  ✅ 非自递归尾调用正确
+```
+
+**设计要点**：
+- 仅优化自递归调用（调用自身），互递归和调用其他函数不优化
+- 自递归通过闭包身份比较检测，因为 JPL 函数以闭包形式存储
+- 编译器不再为 `TAIL_CALL` 后的函数体添加隐式 `LOADNULL` + `RETURN`
+
+### static 变量 ✅
+
+**实现内容**：
+- 函数级持久化变量，调用之间保持其值
+- 实现方式：静态变量存储在全局变量中，使用 `_static:funcName::varName` 前缀
+- 初始值仅在首次调用时设置，后续调用跳过初始化
+- 支持无初始值声明（默认为 null）
+- 每个函数的静态变量独立命名空间
+
+**改动文件**：
+- `engine/compiler.go` — `compileStaticDecl` 编译 static 声明，通过全局变量存储
+- `engine/scope_test.go` — 新增 5 个测试：多函数独立命名空间、字符串类型、持久化、初始化唯一性、复杂表达式
+- `examples/basic/static-variables.jpl` — 新增示例文件
+
+**使用示例**：
+```jpl
+fn counter() {
+    static $count = 0;
+    $count = $count + 1;
+    return $count;
+}
+
+counter()  // → 1
+counter()  // → 2
+counter()  // → 3
+```
 
 ---
 

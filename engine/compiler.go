@@ -993,7 +993,7 @@ func (c *Compiler) compileReturnStmt(stmt *parser.ReturnStmt) {
 	if stmt.Value != nil {
 		// 检查是否为尾调用（return func(args)）
 		if call, ok := stmt.Value.(*parser.CallExpr); ok {
-			// 尾调用：编译调用并发出 RETURN
+			// 尾调用优化：发出 OP_TAIL_CALL 复用当前栈帧
 			callee := c.allocReg()
 			c.compileExprToReg(call.Function, callee)
 
@@ -1005,8 +1005,7 @@ func (c *Compiler) compileReturnStmt(stmt *parser.ReturnStmt) {
 				c.compileExprToReg(arg, argReg)
 			}
 
-			c.emitABC(OP_CALL, callee, 0, len(call.Arguments)+1)
-			c.emitABC(OP_RETURN, callee, 0, 0)
+			c.emitABC(OP_TAIL_CALL, callee, 0, len(call.Arguments)+1)
 
 			for i := 0; i < len(call.Arguments); i++ {
 				c.freeReg()
@@ -1714,7 +1713,11 @@ func (c *Compiler) compileFunction(name string, params []*parser.Identifier, bod
 	}
 
 	// 如果没有显式 return，添加隐式 return null
-	if len(child.bytecode) == 0 || child.bytecode[len(child.bytecode)-1].OP() != OP_RETURN {
+	lastOp := OP_RETURN
+	if len(child.bytecode) > 0 {
+		lastOp = child.bytecode[len(child.bytecode)-1].OP()
+	}
+	if lastOp != OP_RETURN && lastOp != OP_TAIL_CALL {
 		r := child.allocReg()
 		child.emitABC(OP_LOADNULL, r, 0, 0)
 		child.emitABC(OP_RETURN, r, 0, 0)
