@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -560,9 +561,13 @@ func (e *Engine) Compile(script string) (*VM, error) {
 		return nil, ErrInvalidArg
 	}
 
-	// TODO: 实现编译器，将脚本编译为字节码
-	// 这里返回一个空的 VM 作为占位
-	return newVM(e), nil
+	prog, err := CompileStringWithName(script, "<script>")
+	if err != nil {
+		return nil, err
+	}
+
+	vm := NewVMWithProgram(e, prog)
+	return vm, nil
 }
 
 // CompileFile 编译 JPL 脚本文件，返回可执行的虚拟机实例。
@@ -599,8 +604,25 @@ func (e *Engine) Compile(script string) (*VM, error) {
 //	    log.Fatalf("执行失败: %v", err)
 //	}
 func (e *Engine) CompileFile(filename string) (*VM, error) {
-	// TODO: 读取文件并编译
-	return nil, ErrCompileFailed
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	if e.closed {
+		return nil, ErrEngineClosed
+	}
+
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %q: %w", filename, err)
+	}
+
+	prog, err := CompileStringWithName(string(content), filename)
+	if err != nil {
+		return nil, err
+	}
+
+	vm := NewVMWithProgram(e, prog)
+	return vm, nil
 }
 
 // GetLastError 获取引擎错误日志中的最后一个错误。

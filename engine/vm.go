@@ -632,6 +632,8 @@ func (vm *VM) run() error {
 			vm.opTypeOf(ins)
 		case OP_CAST:
 			vm.opCast(ins)
+		case OP_FORMAT:
+			vm.opFormat(ins)
 		case OP_NOP:
 			// 空操作
 		case OP_POP:
@@ -1823,6 +1825,42 @@ func (vm *VM) opCast(ins Instruction) {
 	default:
 		vm.gcSetRegister(a, NewInt(0))
 	}
+}
+
+// opFormat 执行 OP_FORMAT 指令 — 字符串格式化（用于插值格式化）
+// R[A] = sprintf(R[B], R[C])
+// B 寄存器包含格式字符串（如 "%.2f"），C 寄存器包含要格式化的值
+func (vm *VM) opFormat(ins Instruction) {
+	a := ins.A()
+	b := ins.B()
+	c := ins.C()
+
+	fmtStr := vm.registers[b].String()
+	val := vm.registers[c]
+
+	// 将值转为 Go 原生类型
+	var goVal any
+	switch val.Type() {
+	case TypeInt:
+		goVal = val.Int()
+	case TypeFloat:
+		goVal = val.Float()
+	case TypeString:
+		goVal = val.String()
+	case TypeBool:
+		goVal = val.Bool()
+	case TypeBigInt:
+		goVal = val.String() // BigInt 用字符串表示
+	case TypeBigDecimal:
+		goVal = val.String() // BigDecimal 用字符串表示
+	case TypeNull:
+		goVal = nil
+	default:
+		goVal = val.Stringify()
+	}
+
+	result := fmt.Sprintf(fmtStr, goVal)
+	vm.gcSetRegister(a, NewString(result))
 }
 
 // castToInt 将任意类型的值转换为整数

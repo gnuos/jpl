@@ -368,6 +368,18 @@ func (c *ConcatExpr) expressionNode()     {}
 func (c *ConcatExpr) Pos() token.Position { return c.Token.Pos }
 func (c *ConcatExpr) String() string      { return fmt.Sprintf("(%s .. %s)", c.Left, c.Right) }
 
+// FormatExpr 字符串格式化表达式（用于插值格式化）
+// 例如：#{$value:.2f} → FormatExpr{Expr: $value, Format: ".2f"}
+type FormatExpr struct {
+	Token  token.Token // : Token
+	Expr   Expression  // 要格式化的表达式
+	Format string      // 格式说明符（如 ".2f", "05d", "+.3e"）
+}
+
+func (f *FormatExpr) expressionNode()     {}
+func (f *FormatExpr) Pos() token.Position { return f.Token.Pos }
+func (f *FormatExpr) String() string      { return fmt.Sprintf("format(%s, %q)", f.Expr, f.Format) }
+
 // RangeExpr 范围表达式
 type RangeExpr struct {
 	Token     token.Token // ... 或 ..= Token

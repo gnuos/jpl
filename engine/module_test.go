@@ -377,7 +377,6 @@ func TestFromImportSymbolNotFound(t *testing.T) {
 // 预计修复工时：2-3 天
 // 优先级：低（不影响核心功能，单级 include 正常工作）
 func TestNestedInclude(t *testing.T) {
-	t.Skip("已知限制：嵌套 include 全局变量索引映射问题，待修复")
 	tmpDir, err := os.MkdirTemp("", "jpl-test-*")
 	if err != nil {
 		t.Fatalf("创建临时目录失败: %v", err)

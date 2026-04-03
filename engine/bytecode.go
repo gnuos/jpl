@@ -87,6 +87,7 @@ const (
 	// 参数: A=目标寄存器(存储结果), B=源寄存器(被转换值), C=转换类型
 	// C 值含义: 0=int, 1=float, 2=string, 3=bool
 	// 转换规则参见 vm.go 中的 castToInt/castToFloat 函数
+	OP_FORMAT // R[A] = sprintf(R[B], R[C]) 字符串格式化（用于插值格式化）
 
 	// 模块系统
 	OP_IMPORT  // 加载模块，Bx=源路径常量索引，B=1表示选择性导入
@@ -166,6 +167,7 @@ var opcodeNames = [...]string{
 	OP_DUP:             "DUP",
 	OP_TYPEOF:          "TYPEOF",
 	OP_CAST:            "CAST",
+	OP_FORMAT:          "FORMAT",
 	OP_IMPORT:          "IMPORT",
 	OP_INCLUDE:         "INCLUDE",
 	OP_BITAND:          "BITAND",

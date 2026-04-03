@@ -3,6 +3,8 @@ package engine
 import (
 	"fmt"
 	"math/big"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -1541,6 +1543,9 @@ func (c *Compiler) compileImportStmt(stmt *parser.ImportStmt) {
 }
 
 func (c *Compiler) compileIncludeStmt(stmt *parser.IncludeStmt) {
+	// 预编译 include 文件，合并其函数定义和全局变量名到当前编译器
+	c.precompileInclude(stmt.Source)
+
 	srcIdx := c.addConstant(NewString(stmt.Source))
 	once := 0
 	if stmt.Once {
@@ -1548,6 +1553,108 @@ func (c *Compiler) compileIncludeStmt(stmt *parser.IncludeStmt) {
 	}
 	// B=1 表示 include_once
 	c.emitABx(OP_INCLUDE, once, srcIdx)
+}
+
+// precompileInclude 预编译 include 文件，合并函数定义和全局变量名
+func (c *Compiler) precompileInclude(source string) {
+	// 解析文件路径
+	resolvedPath := c.resolveIncludePath(source)
+	if resolvedPath == "" {
+		return // 找不到文件，留到运行时报错
+	}
+
+	// 读取文件内容
+	content, err := os.ReadFile(resolvedPath)
+	if err != nil {
+		return // 读取失败，留到运行时报错
+	}
+
+	// 解析并编译
+	l := lexer.NewLexer(string(content), resolvedPath)
+	p := parser.NewParser(l)
+	ast := p.Parse()
+	if len(p.Errors()) > 0 {
+		return // 解析失败，留到运行时报错
+	}
+
+	// 创建子编译器（共享 globalNames）
+	sub := c.newChildForInclude(resolvedPath)
+	for _, stmt := range ast.Statements {
+		sub.compileStmt(stmt)
+	}
+
+	// 合并子编译器的函数到当前编译器
+	for _, fn := range sub.functions {
+		if fn.Name == "<main>" {
+			continue
+		}
+		c.functions = append(c.functions, fn)
+	}
+}
+
+// newChildForInclude 创建用于 include 预编译的子编译器
+func (c *Compiler) newChildForInclude(filename string) *Compiler {
+	sub := &Compiler{
+		parent:        c,
+		bytecode:      nil,
+		constants:     c.constants, // 共享常量池
+		nextReg:       0,
+		maxReg:        0,
+		scopes:        make([]map[string]*Symbol, 1),
+		scopeDepth:    0,
+		globalScope:   true,
+		funcName:      "<include>",
+		funcParams:    0,
+		upvals:        nil,
+		loops:         nil,
+		functions:     make([]*CompiledFunction, 0),
+		globalVars:    make(map[string]bool),
+		constVars:     make(map[string]bool),
+		staticVars:    make(map[string]*staticVarInfo),
+		globalIndices: c.globalIndices, // 共享全局变量索引
+		globalNames:   c.globalNames,   // 共享全局变量名列表
+		filename:      filename,
+		dirname:       getDirFromFilename(filename),
+		compileTime:   c.compileTime,
+		compileDate:   c.compileDate,
+		objectDepth:   0,
+		objectSelfSym: make(map[int]*Symbol),
+		sourceLines:   nil,
+		currentLine:   0,
+	}
+	sub.scopes[0] = make(map[string]*Symbol)
+	return sub
+}
+
+// resolveIncludePath 解析 include 文件路径
+func (c *Compiler) resolveIncludePath(source string) string {
+	dir := c.dirname
+	if dir == "" {
+		dir = "."
+	}
+
+	// 尝试相对路径
+	candidates := []string{source}
+	if !strings.HasSuffix(source, ".jpl") {
+		candidates = append(candidates, source+".jpl")
+	}
+
+	for _, name := range candidates {
+		path := filepath.Join(dir, name)
+		if fileExists(path) {
+			return path
+		}
+	}
+
+	// 尝试 jpl_modules
+	for _, name := range candidates {
+		path := filepath.Join(dir, "jpl_modules", name)
+		if fileExists(path) {
+			return path
+		}
+	}
+
+	return ""
 }
 
 func (c *Compiler) compileFuncDecl(decl *parser.FuncDecl) {
@@ -1681,6 +1788,8 @@ func (c *Compiler) compileExpr(expr parser.Expression, target int) int {
 		c.compileMemberExpr(e, target, false)
 	case *parser.ConcatExpr:
 		c.compileConcatExpr(e, target)
+	case *parser.FormatExpr:
+		c.compileFormatExpr(e, target)
 	case *parser.RangeExpr:
 		c.compileRangeExpr(e, target)
 	case *parser.AssignExpr:
@@ -2564,6 +2673,26 @@ func (c *Compiler) compileConcatExpr(expr *parser.ConcatExpr, target int) {
 
 	c.freeReg() // right
 	c.freeReg() // left
+}
+
+func (c *Compiler) compileFormatExpr(expr *parser.FormatExpr, target int) {
+	// 将格式说明符转为 Go fmt 格式（添加 % 前缀）
+	goFmt := "%" + expr.Format
+
+	// 编译内部表达式到寄存器
+	valReg := c.allocReg()
+	c.compileExprToReg(expr.Expr, valReg)
+
+	// 将格式字符串添加为常量并加载到寄存器
+	fmtIdx := c.addConstant(NewString(goFmt))
+	fmtReg := c.allocReg()
+	c.emitABx(OP_LOADK, fmtReg, fmtIdx)
+
+	// OP_FORMAT: R[A] = sprintf(R[B], R[C])
+	c.emitABC(OP_FORMAT, target, fmtReg, valReg)
+
+	c.freeReg() // fmtReg
+	c.freeReg() // valReg
 }
 
 func (c *Compiler) compileRangeExpr(expr *parser.RangeExpr, target int) {

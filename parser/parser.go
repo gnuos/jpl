@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gnuos/jpl/lexer"
 	"github.com/gnuos/jpl/token"
@@ -1364,6 +1365,7 @@ func (p *Parser) parseRegexLiteral() Expression {
 
 // parseInterpolatedString 解析插值字符串，构建 ConcatExpr 链
 // 处理："Hello #{$name}!" → ConcatExpr(ConcatExpr("Hello ", $name), "!")
+// 支持格式化："Pi: #{$x:.2f}" → ConcatExpr("Pi: ", FormatExpr($x, ".2f"))
 func (p *Parser) parseInterpolatedString(firstFrag *StringLiteral) Expression {
 	// 从第一个字符串片段开始构建连接表达式
 	var result Expression = firstFrag
@@ -1378,6 +1380,34 @@ func (p *Parser) parseInterpolatedString(firstFrag *StringLiteral) Expression {
 		// 解析任意表达式（对象访问、数组索引、算术运算等）
 		// 注意：INTERP_END (}) 会终止表达式解析
 		var expr = p.parseExpression(LOWEST)
+
+		// 检查是否有格式化说明符 :format
+		if p.curTokenIs(token.COLON) || p.peekTokenIs(token.COLON) {
+			if p.peekTokenIs(token.COLON) {
+				p.nextToken() // 消费到 COLON
+			}
+			// 此时 cur 是 COLON，peek 是格式说明符或 INTERP_END
+			colonToken := p.cur
+			p.nextToken() // 消费 COLON 后的 token
+
+			// 收集格式说明符（直到 INTERP_END）
+			var format strings.Builder
+			for !p.curTokenIs(token.INTERP_END) && !p.curTokenIs(token.EOF) {
+				format.WriteString(p.cur.Literal)
+				if p.peekTokenIs(token.INTERP_END) {
+					p.nextToken()
+					break
+				}
+				p.nextToken()
+			}
+
+			// 创建 FormatExpr
+			expr = &FormatExpr{
+				Token:  colonToken,
+				Expr:   expr,
+				Format: format.String(),
+			}
+		}
 
 		// 期望 INTERP_END (})
 		// parseExpression 可能在遇到 INTERP_END 前停止，所以检查 cur 和 peek
