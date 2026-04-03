@@ -2138,14 +2138,14 @@ func (c *Compiler) tryFoldBinary(expr *parser.BinaryExpr) Value {
 	case "+":
 		return tryFoldAdd(leftVal, rightVal)
 	case "-":
-		return tryFoldArith(leftVal, rightVal, func(a, b float64) float64 { return a - b })
+		return tryFoldSub(leftVal, rightVal)
 	case "*":
-		return tryFoldArith(leftVal, rightVal, func(a, b float64) float64 { return a * b })
+		return tryFoldMul(leftVal, rightVal)
 	case "/":
 		if isZero(rightVal) {
 			return nil // 除零不折叠，留到运行时
 		}
-		return tryFoldArith(leftVal, rightVal, func(a, b float64) float64 { return a / b })
+		return tryFoldDiv(leftVal, rightVal)
 	case "%":
 		if isZero(rightVal) {
 			return nil
@@ -2218,6 +2218,16 @@ func (c *Compiler) tryFoldBinary(expr *parser.BinaryExpr) Value {
 func (c *Compiler) tryEvalConstant(expr parser.Expression) Value {
 	switch e := expr.(type) {
 	case *parser.NumberLiteral:
+		switch e.Token.Type {
+		case token.BIGINT:
+			if bi, ok := new(big.Int).SetString(e.Value, 0); ok {
+				return NewBigInt(bi)
+			}
+		case token.BIGDECIMAL:
+			if br, ok := new(big.Rat).SetString(e.Value); ok {
+				return NewBigDecimal(br)
+			}
+		}
 		if n, err := strconv.ParseInt(e.Value, 0, 64); err == nil {
 			return NewInt(n)
 		}
@@ -2295,23 +2305,104 @@ func (c *Compiler) tryFoldConcat(expr *parser.ConcatExpr) Value {
 // 常量折叠辅助函数
 // ============================================================================
 
-// tryFoldAdd 处理加法（支持整数和字符串）
+// tryFoldAdd 处理加法（支持整数、BigDecimal 和字符串）
 func tryFoldAdd(left, right Value) Value {
+	// 整数
 	if left.Type() == TypeInt && right.Type() == TypeInt {
 		return NewInt(left.Int() + right.Int())
 	}
+	// BigInt
+	if left.Type() == TypeBigInt && right.Type() == TypeBigInt {
+		r := new(big.Int).Set(left.(*BigIntValue).value)
+		return NewBigInt(r.Add(r, right.(*BigIntValue).value))
+	}
+	// BigDecimal
+	if left.Type() == TypeBigDecimal && right.Type() == TypeBigDecimal {
+		r := new(big.Rat).Set(left.(*BigDecimalValue).value)
+		return NewBigDecimal(r.Add(r, right.(*BigDecimalValue).value))
+	}
+	// Float 回退
 	if left.Type() == TypeFloat || right.Type() == TypeFloat {
+		// 只有两个都是数值类型才折叠
+		if isNumeric(left) && isNumeric(right) {
+			return NewFloat(toFloat(left) + toFloat(right))
+		}
+		return nil
+	}
+	// 混合类型：Int + Float → Float（仅数值类型）
+	if isNumeric(left) && isNumeric(right) {
 		return NewFloat(toFloat(left) + toFloat(right))
 	}
 	return nil
 }
 
-// tryFoldArith 处理算术运算（-, *, /）
-func tryFoldArith(left, right Value, op func(float64, float64) float64) Value {
+func isNumeric(v Value) bool {
+	t := v.Type()
+	return t == TypeInt || t == TypeFloat || t == TypeBigInt || t == TypeBigDecimal
+}
+
+// tryFoldSub 处理减法（支持整数、BigDecimal）
+func tryFoldSub(left, right Value) Value {
 	if left.Type() == TypeInt && right.Type() == TypeInt {
-		return NewInt(int64(op(float64(left.Int()), float64(right.Int()))))
+		return NewInt(left.Int() - right.Int())
 	}
-	return NewFloat(op(toFloat(left), toFloat(right)))
+	if left.Type() == TypeBigInt && right.Type() == TypeBigInt {
+		r := new(big.Int).Set(left.(*BigIntValue).value)
+		return NewBigInt(r.Sub(r, right.(*BigIntValue).value))
+	}
+	if left.Type() == TypeBigDecimal && right.Type() == TypeBigDecimal {
+		r := new(big.Rat).Set(left.(*BigDecimalValue).value)
+		return NewBigDecimal(r.Sub(r, right.(*BigDecimalValue).value))
+	}
+	if isNumeric(left) && isNumeric(right) {
+		return NewFloat(toFloat(left) - toFloat(right))
+	}
+	return nil
+}
+
+// tryFoldMul 处理乘法（支持整数、BigDecimal）
+func tryFoldMul(left, right Value) Value {
+	if left.Type() == TypeInt && right.Type() == TypeInt {
+		return NewInt(left.Int() * right.Int())
+	}
+	if left.Type() == TypeBigInt && right.Type() == TypeBigInt {
+		r := new(big.Int).Set(left.(*BigIntValue).value)
+		return NewBigInt(r.Mul(r, right.(*BigIntValue).value))
+	}
+	if left.Type() == TypeBigDecimal && right.Type() == TypeBigDecimal {
+		r := new(big.Rat).Set(left.(*BigDecimalValue).value)
+		return NewBigDecimal(r.Mul(r, right.(*BigDecimalValue).value))
+	}
+	if isNumeric(left) && isNumeric(right) {
+		return NewFloat(toFloat(left) * toFloat(right))
+	}
+	return nil
+}
+
+// tryFoldDiv 处理除法（支持整数、BigDecimal）
+func tryFoldDiv(left, right Value) Value {
+	if left.Type() == TypeInt && right.Type() == TypeInt && right.Int() != 0 {
+		return NewInt(left.Int() / right.Int())
+	}
+	if left.Type() == TypeBigInt && right.Type() == TypeBigInt {
+		r := new(big.Int).Set(left.(*BigIntValue).value)
+		return NewBigInt(r.Div(r, right.(*BigIntValue).value))
+	}
+	if left.Type() == TypeBigDecimal && right.Type() == TypeBigDecimal {
+		r := new(big.Rat).Set(left.(*BigDecimalValue).value)
+		d := right.(*BigDecimalValue).value
+		if d.Sign() == 0 {
+			return nil
+		}
+		return NewBigDecimal(r.Quo(r, d))
+	}
+	if isNumeric(left) && isNumeric(right) {
+		if toFloat(right) == 0 {
+			return nil
+		}
+		return NewFloat(toFloat(left) / toFloat(right))
+	}
+	return nil
 }
 
 // tryFoldBitwise 处理位运算

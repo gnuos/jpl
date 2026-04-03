@@ -1135,15 +1135,61 @@ func (p *Parser) parseMatchCase() *MatchCase {
 		return nil
 	}
 
-	// 解析分支体
+	// 跳过换行
+	for p.peekTokenIs(token.NEWLINE) {
+		p.nextToken()
+	}
+
 	p.nextToken()
+
 	if p.curTokenIs(token.LBRACE) {
+		// 块体：{ ... }
 		caseNode.Body = p.parseBlockStatement()
 	} else {
-		// 表达式体
-		caseNode.Body = &ExprStmt{
-			Token:      p.cur,
-			Expression: p.parseExpression(LOWEST),
+		// 语句体：收集直到下一个 case/}/EOF 的所有语句
+		block := &BlockStmt{Token: p.cur}
+		block.Statements = []Statement{}
+
+		// 解析第一条语句
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
+
+		// 继续解析后续语句（跳过换行）
+		for {
+			// 跳过换行和注释
+			for p.peekTokenIs(token.NEWLINE) || p.peekTokenIs(token.COMMENT) || p.peekTokenIs(token.BLOCK_COMMENT) {
+				p.nextToken()
+			}
+
+			// 检查是否到达分支结束
+			if p.peekTokenIs(token.CASE) || p.peekTokenIs(token.RBRACE) || p.peekTokenIs(token.EOF) {
+				break
+			}
+
+			p.nextToken()
+			stmt = p.parseStatement()
+			if stmt != nil {
+				block.Statements = append(block.Statements, stmt)
+			}
+		}
+
+		// 如果只有一条语句且是表达式语句，简化为表达式
+		if len(block.Statements) == 1 {
+			if exprStmt, ok := block.Statements[0].(*ExprStmt); ok {
+				caseNode.Body = exprStmt
+			} else {
+				caseNode.Body = block
+			}
+		} else if len(block.Statements) > 0 {
+			caseNode.Body = block
+		} else {
+			// 空分支
+			caseNode.Body = &ExprStmt{
+				Token:      p.cur,
+				Expression: &NullLiteral{Token: p.cur},
+			}
 		}
 	}
 
@@ -1844,6 +1890,81 @@ func (p *Parser) parseInfixExpression(left Expression) Expression {
 
 // parseCallExpression 解析函数调用表达式
 func (p *Parser) parseCallExpression(left Expression) Expression {
+	// 特殊处理：如果函数是特例函数标识符，检查 ) 后是否有中缀运算符
+	// 如果有，将整个 (expr) * rest 作为参数传给特例函数
+	if ident, ok := left.(*Identifier); ok && specialFuncs[ident.Value] {
+		// 解析括号内的表达式
+		// p.cur 已经是 LPAREN，直接前进到内容
+		p.nextToken() // 消费 (
+
+		// 检查是否为空参数列表
+		if p.curTokenIs(token.RPAREN) {
+			// 空调用：print()
+			p.nextToken() // 消费 )
+			return &CallExpr{
+				Token:     p.cur,
+				Function:  left,
+				Arguments: []Expression{},
+			}
+		}
+
+		innerExpr := p.parseExpression(LOWEST)
+
+		// 检查是否有逗号（多参数调用）
+		if p.peekTokenIs(token.COMMA) {
+			// 多参数调用，回退到普通解析
+			args := []Expression{innerExpr}
+			for p.peekTokenIs(token.COMMA) {
+				p.nextToken() // 消费逗号
+				p.nextToken() // 前进到下一个表达式
+				args = append(args, p.parseExpression(LOWEST))
+			}
+			if !p.expectPeek(token.RPAREN) {
+				return nil
+			}
+			return &CallExpr{
+				Token:     p.cur,
+				Function:  left,
+				Arguments: args,
+			}
+		}
+
+		if !p.expectPeek(token.RPAREN) {
+			return nil
+		}
+
+		// 检查 ) 后面是否有中缀运算符
+		if !p.peekTokenIs(token.SEMICOLON) && !p.peekIsNewline() && !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.RBRACE) {
+			if infix, ok := p.infixParseFns[p.peek.Type]; ok {
+				// 有中缀运算符，继续解析完整表达式
+				p.nextToken()
+				fullExpr := infix(innerExpr)
+				for !p.peekTokenIs(token.SEMICOLON) && !p.peekIsNewline() && !p.peekTokenIs(token.EOF) && !p.peekTokenIs(token.RBRACE) {
+					if infix2, ok2 := p.infixParseFns[p.peek.Type]; ok2 {
+						p.nextToken()
+						fullExpr = infix2(fullExpr)
+					} else {
+						break
+					}
+				}
+				// 将完整表达式作为参数传给特例函数
+				return &CallExpr{
+					Token:     p.cur,
+					Function:  left,
+					Arguments: []Expression{fullExpr},
+				}
+			}
+		}
+
+		// 没有中缀运算符，正常作为函数调用
+		return &CallExpr{
+			Token:     p.cur,
+			Function:  left,
+			Arguments: []Expression{innerExpr},
+		}
+	}
+
+	// 普通函数调用
 	exp := &CallExpr{Token: p.cur, Function: left}
 	exp.Arguments = p.parseExpressionList(token.RPAREN)
 	return exp

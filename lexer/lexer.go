@@ -349,6 +349,20 @@ func (l *Lexer) scanNumber(pos token.Position) token.Token {
 
 	literal := sb.String()
 
+	// 检查显式类型后缀：n = BigInt, d = BigDecimal
+	if !l.atEnd() && (l.current() == 'n' || l.current() == 'd') {
+		suffix := l.current()
+		// 确保 n/d 后面不是标识符字符（避免匹配变量名如 "name"）
+		if l.atEnd() || !isIdentifierPart(l.peek()) {
+			l.advance() // 消费 n 或 d
+			if suffix == 'n' {
+				return l.newToken(token.BIGINT, literal, pos)
+			}
+			// suffix == 'd'
+			return l.newToken(token.BIGDECIMAL, literal, pos)
+		}
+	}
+
 	// 检查是否需要转为大数类型
 	if isFloat {
 		// 尝试解析为 float64
