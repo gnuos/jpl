@@ -33,8 +33,9 @@ $arr = [1, 2, 3, 4, 5]
 $obj = {name: "Alice", age: 30, active: true}
 
 // 大数（任意精度）
-$big_int = 123456789012345678901234567890n
-$big_decimal = 0.1d  // 精确小数，无浮点误差
+$big_int = 123456789012345678901234567890
+// 精确小数，无浮点误差
+$big_decimal = 0.123456789012345678901234567890
 
 // 动态类型
 $x = 10
@@ -59,7 +60,7 @@ $sum = int("10") + 5       // → 15
 基本运算符用法：
 
 ```jpl
-// 算术
+// 算术（自动支持大数运算）
 $a = 10 + 5   // 15
 $b = 10 - 5   // 5
 $c = 10 * 5   // 50
@@ -365,10 +366,11 @@ $msg = "#{$x} + #{$y} = #{$z}"
 - 变量：`#{$name}`
 - 对象属性：`#{$user.name}`
 - 数组索引：`#{$arr[0]}`, `#{$matrix[1][2]}`
-- 算术运算：`#{$a + $b}`, `#{$price * (1 + $tax)}` (尚未实现)
-- 三元表达式：`#{$score >= 60 ? 'Pass' : 'Fail'}` (尚未实现)
+- 算术运算：`#{$a + $b}`, `#{$price * (1 + $tax)}` ✅
+- 三元表达式：`#{$score >= 60 ? 'Pass' : 'Fail'}` ✅
 - 链式访问：`#{$company.ceo.email}`
-- 字符串拼接：`#{$first .. ' ' .. $last}` (尚未实现)
+- 字符串拼接：`#{$first .. ' ' .. $last}` ✅
+- 格式化：`#{$value:.2f}`, `#{$num:05d}`, `#{$name:10s}` ✅
 
 **注意事项**：
 - 单引号普通字符串 `'...'` 不支持插值
@@ -397,6 +399,43 @@ $name = "World"
 $msg = "Say \#{$name}, Hello #{$name}!"
 // → "Say #{$name}, Hello World!"
 ```
+
+#### 插值格式化
+
+在插值表达式中使用 `:` 后跟格式说明符，可以对值进行格式化输出。格式说明符遵循 Go 的 `fmt.Sprintf` 规范：
+
+```jpl
+// 浮点数精度
+$pi = 3.14159265
+println "Pi: #{$pi:.2f}"       // → Pi: 3.14
+println "Pi: #{$pi:.4f}"       // → Pi: 3.1416
+
+// 整数宽度补零
+$n = 42
+println "Num: #{$n:05d}"       // → Num: 00042
+
+// 字符串宽度对齐
+$name = "JPL"
+println "Hello #{$name:10s}!"  // → Hello        JPL!
+
+// 带符号
+$x = -3.14
+println "Val: #{$x:+.2f}"      // → Val: -3.14
+
+// 组合使用
+$val = 123.456
+println "Result: #{$val:010.2f}"  // → Result: 000123.46
+```
+
+常用格式说明符：
+
+| 格式 | 说明 | 示例 |
+|------|------|------|
+| `.2f` | 浮点数，2 位小数 | `3.14` |
+| `05d` | 整数，5 位宽，零填充 | `00042` |
+| `10s` | 字符串，10 位宽，右对齐 | `       JPL` |
+| `+.2f` | 浮点数，带符号 | `+3.14` |
+| `.3e` | 科学计数法，3 位小数 | `3.142e+00` |
 
 #### 字符串连接
 
@@ -538,6 +577,40 @@ foreach ($k => $v in $person) {
 $defaults = {theme: "dark", lang: "en"}
 $settings = {lang: "zh"}
 $merged = $defaults + $settings  // {theme: "dark", lang: "zh"}
+
+// @member 闭包成员访问
+// 在对象字面量的闭包方法内，使用 @ 访问当前对象的成员
+// @ 绑定到最近一层的对象（静态作用域）
+
+$counter = {
+    count: 0,
+    increment: () -> {
+        @count = @count + 1
+        return @count
+    },
+    get: () -> {
+        return @count
+    }
+}
+
+println $counter.get()       // → 0
+println $counter.increment() // → 1
+println $counter.increment() // → 2
+
+$person = {
+    name: "Alice",
+    age: 30,
+    greet: () -> {
+        return "Hello, I'm " .. @name .. ", age " .. @age
+    },
+    birthday: () -> {
+        @age = @age + 1
+        return "Now I'm " .. @age
+    }
+}
+
+println $person.greet()     // → Hello, I'm Alice, age 30
+println $person.birthday()  // → Now I'm 31
 ```
 
 #### 对象解析（安全）
