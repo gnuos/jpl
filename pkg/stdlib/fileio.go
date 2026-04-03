@@ -18,7 +18,7 @@ import (
 //   - 文件信息: stat, fileSize, isFile, isDir
 //   - 路径处理: dirname, basename, extname, joinPath, absPath, relPath, cwd, realpath, pathinfo
 //   - 文件系统: chdir, rename, unlink, is_readable, is_writable, chmod, scandir, glob
-//   - 流操作 (stub): fseek, ftell, rewind, ftruncate, fgetcsv
+//   - 流操作: fseek, ftell, rewind, ftruncate, fgetcsv
 //
 // 参数：
 //   - e: 引擎实例
@@ -67,7 +67,7 @@ func RegisterFileIO(e *engine.Engine) {
 	e.RegisterFunc("scandir", builtinScandir)
 	e.RegisterFunc("glob", builtinGlob)
 
-	// Phase 11.4: 流操作 stub（需要 Phase 8 流类型支持）
+	// Phase 11.4: 流操作（Phase 8 流类型已实现）
 	e.RegisterFunc("fseek", builtinFseek)
 	e.RegisterFunc("ftell", builtinFtell)
 	e.RegisterFunc("rewind", builtinRewind)
@@ -1152,21 +1152,19 @@ func builtinPathinfo(ctx *engine.Context, args []engine.Value) (engine.Value, er
 }
 
 // ============================================================================
-// Phase 11.4: 流操作 stub（需要 Phase 8 流类型支持）
+// Phase 11.4: 流操作（Phase 8 流类型已实现）
 // ============================================================================
 
-// builtinFseek 移动文件指针位置（stub）。
-//
-// 注意：此函数需要 Phase 8 流类型支持，当前为 stub 实现。
+// builtinFseek 移动文件指针位置。
 //
 // 参数：
 //   - ctx: 执行上下文
-//   - args[0]: 文件流（需要流类型）
+//   - args[0]: 文件流
 //   - args[1]: 偏移量（整数）
 //   - args[2]: 起始位置（整数，0=SEEK_SET, 1=SEEK_CUR, 2=SEEK_END）
 //
 // 返回值：
-//   - error: 需要流类型支持
+//   - 新位置（整数）
 func builtinFseek(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) < 3 {
 		return nil, fmt.Errorf("fseek() expects 3 arguments: stream, offset, whence")
@@ -1198,16 +1196,14 @@ func builtinFseek(ctx *engine.Context, args []engine.Value) (engine.Value, error
 	return engine.NewInt(pos), nil
 }
 
-// builtinFtell 获取文件指针当前位置（stub）。
-//
-// 注意：此函数需要 Phase 8 流类型支持，当前为 stub 实现。
+// builtinFtell 获取文件指针当前位置。
 //
 // 参数：
 //   - ctx: 执行上下文
-//   - args[0]: 文件流（需要流类型）
+//   - args[0]: 文件流
 //
 // 返回值：
-//   - error: 需要流类型支持
+//   - 当前位置（整数）
 func builtinFtell(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("ftell() expects 1 argument: stream")
@@ -1225,16 +1221,14 @@ func builtinFtell(ctx *engine.Context, args []engine.Value) (engine.Value, error
 	return engine.NewInt(pos), nil
 }
 
-// builtinRewind 重置文件指针到开头（stub）。
-//
-// 注意：此函数需要 Phase 8 流类型支持，当前为 stub 实现。
+// builtinRewind 重置文件指针到开头。
 //
 // 参数：
 //   - ctx: 执行上下文
-//   - args[0]: 文件流（需要流类型）
+//   - args[0]: 文件流
 //
 // 返回值：
-//   - error: 需要流类型支持
+//   - null
 func builtinRewind(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("rewind() expects 1 argument: stream")
@@ -1252,17 +1246,15 @@ func builtinRewind(ctx *engine.Context, args []engine.Value) (engine.Value, erro
 	return engine.NewNull(), nil
 }
 
-// builtinFtruncate 截断文件到指定大小（stub）。
-//
-// 注意：此函数需要 Phase 8 流类型支持，当前为 stub 实现。
+// builtinFtruncate 截断文件到指定大小。
 //
 // 参数：
 //   - ctx: 执行上下文
-//   - args[0]: 文件流（需要流类型）
+//   - args[0]: 文件流
 //   - args[1]: 新大小（整数）
 //
 // 返回值：
-//   - error: 需要流类型支持
+//   - bool: 是否成功
 func builtinFtruncate(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) < 2 {
 		return nil, fmt.Errorf("ftruncate() expects 2 arguments: stream, size")
@@ -1280,19 +1272,17 @@ func builtinFtruncate(ctx *engine.Context, args []engine.Value) (engine.Value, e
 	return engine.NewBool(true), nil
 }
 
-// builtinFgetcsv 从 CSV 文件读取一行（stub）。
-//
-// 注意：此函数需要 Phase 8 流类型支持，当前为 stub 实现。
+// builtinFgetcsv 从 CSV 文件读取一行。
 // 使用 csv.NewReader 读取 CSV 数据。
 //
 // 参数：
 //   - ctx: 执行上下文
-//   - args[0]: 文件流（需要流类型）
+//   - args[0]: 文件流
 //   - args[1]: 分隔符（可选，默认逗号）
 //   - args[2]: 包围符（可选，默认双引号）
 //
 // 返回值：
-//   - error: 需要流类型支持
+//   - 数组: CSV 字段数组
 func builtinFgetcsv(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("fgetcsv() expects at least 1 argument: stream")

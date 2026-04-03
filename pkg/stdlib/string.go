@@ -1,8 +1,10 @@
 package stdlib
 
 import (
+	"encoding/csv"
 	"fmt"
 	"html"
+	"net/url"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -88,6 +90,14 @@ func RegisterString(e *engine.Engine) {
 	e.RegisterFunc("nl2br", builtinNl2br)
 	e.RegisterFunc("bin2hex", builtinBin2hex)
 	e.RegisterFunc("hex2bin", builtinHex2bin)
+
+	// 新增函数
+	e.RegisterFunc("str_getcsv", builtinStrGetcsv)
+	e.RegisterFunc("levenshtein", builtinLevenshtein)
+	e.RegisterFunc("similar_text", builtinSimilarText)
+	e.RegisterFunc("strtok", builtinStrtok)
+	e.RegisterFunc("parse_str", builtinParseStr)
+	e.RegisterFunc("http_build_query", builtinHttpBuildQuery)
 
 	// Phase 11.1 字符串增强
 	e.RegisterFunc("substr_compare", builtinSubstrCompare)
@@ -1979,4 +1989,270 @@ func builtinNumberFormat(ctx *engine.Context, args []engine.Value) (engine.Value
 	}
 
 	return engine.NewString(result), nil
+}
+
+// ============================================================================
+// 新增字符串函数
+// ============================================================================
+
+// builtinStrGetcsv 解析 CSV 字符串为数组
+func builtinStrGetcsv(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 1 {
+		return nil, fmt.Errorf("str_getcsv() expects at least 1 argument: string")
+	}
+
+	input := args[0].String()
+	delimiter := ','
+
+	if len(args) >= 2 {
+		d := args[1].String()
+		if len(d) > 0 {
+			delimiter = rune(d[0])
+		}
+	}
+	if len(args) >= 3 {
+		e := args[2].String()
+		if len(e) > 0 {
+			_ = rune(e[0]) // enclosure reserved for future use
+		}
+	}
+
+	reader := csv.NewReader(strings.NewReader(input))
+	reader.Comma = delimiter
+	reader.LazyQuotes = true
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("str_getcsv(): %w", err)
+	}
+
+	if len(records) > 0 {
+		fields := make([]engine.Value, len(records[0]))
+		for i, f := range records[0] {
+			fields[i] = engine.NewString(f)
+		}
+		return engine.NewArray(fields), nil
+	}
+
+	return engine.NewArray([]engine.Value{}), nil
+}
+
+// builtinLevenshtein 计算两个字符串的编辑距离
+func builtinLevenshtein(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("levenshtein() expects 2 arguments")
+	}
+
+	s1 := args[0].String()
+	s2 := args[1].String()
+
+	r1 := []rune(s1)
+	r2 := []rune(s2)
+	m, n := len(r1), len(r2)
+
+	if m == 0 {
+		return engine.NewInt(int64(n)), nil
+	}
+	if n == 0 {
+		return engine.NewInt(int64(m)), nil
+	}
+
+	prev := make([]int, n+1)
+	curr := make([]int, n+1)
+
+	for j := 0; j <= n; j++ {
+		prev[j] = j
+	}
+
+	for i := 1; i <= m; i++ {
+		curr[0] = i
+		for j := 1; j <= n; j++ {
+			cost := 1
+			if r1[i-1] == r2[j-1] {
+				cost = 0
+			}
+			curr[j] = min3(curr[j-1]+1, prev[j]+1, prev[j-1]+cost)
+		}
+		prev, curr = curr, prev
+	}
+
+	return engine.NewInt(int64(prev[n])), nil
+}
+
+func min3(a, b, c int) int {
+	if a < b {
+		if a < c {
+			return a
+		}
+		return c
+	}
+	if b < c {
+		return b
+	}
+	return c
+}
+
+// builtinSimilarText 计算两个字符串的相似字符数
+func builtinSimilarText(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 2 {
+		return nil, fmt.Errorf("similar_text() expects at least 2 arguments")
+	}
+
+	s1 := args[0].String()
+	s2 := args[1].String()
+
+	similar := similarTextCount(s1, s2)
+
+	if len(args) >= 3 {
+		total := len(s1) + len(s2)
+		var percent float64
+		if total > 0 {
+			percent = float64(similar*2) / float64(total) * 100.0
+		}
+		_ = percent
+		return engine.NewFloat(percent), nil
+	}
+
+	return engine.NewInt(int64(similar)), nil
+}
+
+func similarTextCount(s1, s2 string) int {
+	r1 := []rune(s1)
+	r2 := []rune(s2)
+	l1, l2 := len(r1), len(r2)
+
+	if l1 == 0 || l2 == 0 {
+		return 0
+	}
+
+	max := 0
+	pos1, pos2 := 0, 0
+
+	for i := 0; i < l1; i++ {
+		for j := 0; j < l2; j++ {
+			length := 0
+			for (i+length < l1) && (j+length < l2) && r1[i+length] == r2[j+length] {
+				length++
+			}
+			if length > max {
+				max = length
+				pos1 = i
+				pos2 = j
+			}
+		}
+	}
+
+	if max == 0 {
+		return 0
+	}
+
+	return max + similarTextCount(string(r1[:pos1]), string(r2[:pos2])) +
+		similarTextCount(string(r1[pos1+max:]), string(r2[pos2+max:]))
+}
+
+// strtokState 保存 strtok 的分割状态
+var strtokState struct {
+	tokens []string
+}
+
+// builtinStrtok 字符串分割（状态保持）
+func builtinStrtok(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 1 {
+		return nil, fmt.Errorf("strtok() expects at least 1 argument")
+	}
+
+	if len(args) >= 2 {
+		str := args[0].String()
+		tokensStr := args[1].String()
+
+		var delimiters []string
+		for _, r := range tokensStr {
+			delimiters = append(delimiters, string(r))
+		}
+
+		result := []string{str}
+		for _, delim := range delimiters {
+			var newResult []string
+			for _, s := range result {
+				parts := strings.Split(s, delim)
+				newResult = append(newResult, parts...)
+			}
+			result = newResult
+		}
+
+		var filtered []string
+		for _, s := range result {
+			if s != "" {
+				filtered = append(filtered, s)
+			}
+		}
+
+		strtokState.tokens = filtered
+	}
+
+	if len(strtokState.tokens) == 0 {
+		return engine.NewNull(), nil
+	}
+
+	token := strtokState.tokens[0]
+	strtokState.tokens = strtokState.tokens[1:]
+	return engine.NewString(token), nil
+}
+
+// builtinParseStr 解析 URL 查询字符串为对象
+func builtinParseStr(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 1 {
+		return nil, fmt.Errorf("parse_str() expects at least 1 argument")
+	}
+
+	str := args[0].String()
+	result := make(map[string]engine.Value)
+
+	pairs := strings.Split(str, "&")
+	for _, pair := range pairs {
+		if pair == "" {
+			continue
+		}
+		kv := strings.SplitN(pair, "=", 2)
+		key := kv[0]
+		val := ""
+		if len(kv) == 2 {
+			val = kv[1]
+		}
+
+		decodedKey, _ := url.QueryUnescape(key)
+		decodedVal, _ := url.QueryUnescape(val)
+
+		result[decodedKey] = engine.NewString(decodedVal)
+	}
+
+	return engine.NewObject(result), nil
+}
+
+// builtinHttpBuildQuery 将对象构建为 URL 查询字符串
+func builtinHttpBuildQuery(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 1 {
+		return nil, fmt.Errorf("http_build_query() expects at least 1 argument")
+	}
+
+	var obj map[string]engine.Value
+	if args[0].Type() == engine.TypeObject {
+		obj = args[0].Object()
+	} else if args[0].Type() == engine.TypeArray {
+		arr := args[0].Array()
+		obj = make(map[string]engine.Value)
+		for i, v := range arr {
+			obj[fmt.Sprintf("%d", i)] = v
+		}
+	} else {
+		return nil, fmt.Errorf("http_build_query() argument must be an object or array")
+	}
+
+	var parts []string
+	for key, val := range obj {
+		encodedKey := url.QueryEscape(key)
+		encodedVal := url.QueryEscape(val.String())
+		parts = append(parts, encodedKey+"="+encodedVal)
+	}
+
+	return engine.NewString(strings.Join(parts, "&")), nil
 }

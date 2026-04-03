@@ -62,6 +62,8 @@ func RegisterArray(e *engine.Engine) {
 	e.RegisterFunc("array_fill_keys", builtinArrayFillKeys)
 	e.RegisterFunc("array_flip", builtinArrayFlip)
 	e.RegisterFunc("range", builtinRange)
+	e.RegisterFunc("array_column", builtinArrayColumn)
+	e.RegisterFunc("array_chunk", builtinArrayChunk)
 
 	// 模块注册 — import "arrays" 可用
 	e.RegisterModule("arrays", map[string]engine.GoFunction{
@@ -1431,4 +1433,135 @@ func builtinRange(ctx *engine.Context, args []engine.Value) (engine.Value, error
 	}
 
 	return engine.NewRange(start, end, inclusive), nil
+}
+
+// builtinArrayColumn 从多维数组中提取单列
+//
+// 用法: array_column($array, $column_key, $index_key)
+func builtinArrayColumn(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 2 {
+		return nil, fmt.Errorf("array_column() expects at least 2 arguments, got %d", len(args))
+	}
+
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("array_column() argument 1 must be an array")
+	}
+
+	arr := args[0].Array()
+	columnKey := args[1]
+	var indexKey engine.Value
+	if len(args) >= 3 {
+		indexKey = args[2]
+	}
+
+	result := make(map[string]engine.Value)
+	for _, item := range arr {
+		if item.Type() != engine.TypeObject && item.Type() != engine.TypeArray {
+			continue
+		}
+
+		var val engine.Value
+		if item.Type() == engine.TypeObject {
+			obj := item.Object()
+			key := columnKey.String()
+			if v, ok := obj[key]; ok {
+				val = v
+			} else {
+				continue
+			}
+		} else {
+			// Array type - try numeric index or string key
+			if columnKey.Type() == engine.TypeInt {
+				idx := columnKey.Int()
+				arrItems := item.Array()
+				if idx >= 0 && idx < int64(len(arrItems)) {
+					val = arrItems[idx]
+				} else {
+					continue
+				}
+			} else {
+				continue
+			}
+		}
+
+		if indexKey != nil {
+			var idx string
+			if item.Type() == engine.TypeObject {
+				obj := item.Object()
+				if v, ok := obj[indexKey.String()]; ok {
+					idx = v.String()
+				} else {
+					continue
+				}
+			} else {
+				arrItems := item.Array()
+				if indexKey.Type() == engine.TypeInt {
+					i := indexKey.Int()
+					if i >= 0 && i < int64(len(arrItems)) {
+						idx = arrItems[i].String()
+					} else {
+						continue
+					}
+				} else {
+					continue
+				}
+			}
+			result[idx] = val
+		} else {
+			result[fmt.Sprintf("%d", len(result))] = val
+		}
+	}
+
+	// Convert map to array preserving order
+	values := make([]engine.Value, 0, len(result))
+	for i := 0; i < len(result); i++ {
+		if v, ok := result[fmt.Sprintf("%d", i)]; ok {
+			values = append(values, v)
+		}
+	}
+
+	return engine.NewArray(values), nil
+}
+
+// builtinArrayChunk 将数组分割为多个指定大小的块
+//
+// 用法: array_chunk($array, $size, $preserve_keys)
+func builtinArrayChunk(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 2 {
+		return nil, fmt.Errorf("array_chunk() expects at least 2 arguments, got %d", len(args))
+	}
+
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("array_chunk() argument 1 must be an array")
+	}
+
+	size := args[1].Int()
+	if size <= 0 {
+		return nil, fmt.Errorf("array_chunk() size must be greater than 0")
+	}
+
+	preserveKeys := false
+	if len(args) >= 3 {
+		preserveKeys = args[2].Bool()
+	}
+
+	_ = preserveKeys // TODO: implement key preservation for object arrays
+
+	arr := args[0].Array()
+	chunks := make([]engine.Value, 0)
+
+	for i := int64(0); i < int64(len(arr)); i += size {
+		end := i + size
+		if end > int64(len(arr)) {
+			end = int64(len(arr))
+		}
+
+		chunk := make([]engine.Value, 0, end-i)
+		for j := i; j < end; j++ {
+			chunk = append(chunk, arr[j])
+		}
+		chunks = append(chunks, engine.NewArray(chunk))
+	}
+
+	return engine.NewArray(chunks), nil
 }

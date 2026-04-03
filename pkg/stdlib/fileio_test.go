@@ -1211,10 +1211,10 @@ func TestPathinfoNotString(t *testing.T) {
 }
 
 // ============================================================================
-// 流操作 stub 测试
+// 流操作参数校验测试
 // ============================================================================
 
-func TestFseekStub(t *testing.T) {
+func TestFseekInvalidArg(t *testing.T) {
 	// 非 stream 参数应报错
 	_, err := callBuiltin("fseek", engine.NewString("dummy"), engine.NewInt(0), engine.NewInt(0))
 	if err == nil {
@@ -1222,7 +1222,7 @@ func TestFseekStub(t *testing.T) {
 	}
 }
 
-func TestFtellStub(t *testing.T) {
+func TestFtellInvalidArg(t *testing.T) {
 	// 非 stream 参数应报错
 	_, err := callBuiltin("ftell", engine.NewString("dummy"))
 	if err == nil {
@@ -1230,7 +1230,7 @@ func TestFtellStub(t *testing.T) {
 	}
 }
 
-func TestRewindStub(t *testing.T) {
+func TestRewindInvalidArg(t *testing.T) {
 	// 非 stream 参数应报错
 	_, err := callBuiltin("rewind", engine.NewString("dummy"))
 	if err == nil {
@@ -1238,7 +1238,7 @@ func TestRewindStub(t *testing.T) {
 	}
 }
 
-func TestFtruncateStub(t *testing.T) {
+func TestFtruncateInvalidArg(t *testing.T) {
 	// 非 stream 参数应报错
 	_, err := callBuiltin("ftruncate", engine.NewString("dummy"), engine.NewInt(0))
 	if err == nil {
@@ -1246,7 +1246,7 @@ func TestFtruncateStub(t *testing.T) {
 	}
 }
 
-func TestFgetcsvStub(t *testing.T) {
+func TestFgetcsvInvalidArg(t *testing.T) {
 	// 非 stream 参数应报错
 	_, err := callBuiltin("fgetcsv", engine.NewString("dummy"))
 	if err == nil {
