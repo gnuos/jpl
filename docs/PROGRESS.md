@@ -8,6 +8,7 @@
 
 | 日期 | 阶段 | 任务 | 说明 |
 |------|------|------|------|
+| 2026-04-03 | 用户体验 | 更好的错误消息 | 运行时错误显示行号 + 源码上下文（箭头标记 + 前后 2 行），Program 存储源代码，RuntimeError 新增 FormatWithContext |
 | 2026-04-03 | 性能优化 | 尾调用优化 (TCO) | 自递归尾调用栈帧复用，支持 10000+ 深度递归不溢出；编译器 emit OP_TAIL_CALL，VM 自递归检测 + IP 跳转，opReturn 尾调用返回传播 |
 | 2026-04-03 | 语言特性 | static 变量 | 函数级持久化变量，调用间保持值；新增 5 个测试 + 示例文件 static-variables.jpl |
 | 2026-04-02 | Bug 修复 | 字符串插值解析修复 | parser isValueToken 添加 STRING_FRAG，修复插值后逗号分隔参数解析失败 |
@@ -93,11 +94,41 @@
 - LSP 支持 — 投入产出比低，lint + fmt 已覆盖核心价值
 - 调试器 (DAP) — 风险高，--debug + REPL 已提供基本调试能力
 
-**最后更新**：2026-04-03（尾调用优化 + static 变量完成）
+**最后更新**：2026-04-03（更好的错误消息 + 尾调用优化 + static 变量完成）
 
 ---
 
 ## 近期完成（2026-04-03）
+
+### 更好的错误消息 ✅
+
+**实现内容**：
+- 运行时错误现在显示行号 + 源码上下文（箭头标记 + 前后 2 行）
+- Program 结构体新增 `Source` 和 `SourceLines` 字段存储源代码
+- 编译器在编译时存储源代码到 Program
+- VM 在错误发生时自动从 `vm.currentLine` 附加行号到 RuntimeError
+- RuntimeError 新增 `FormatWithContext()` 方法，生成带上下文的格式化输出
+- CLI（run/eval/repl）全部更新为使用新的错误格式
+
+**改动文件**：
+- `engine/bytecode.go` — Program 添加 `Source` + `SourceLines` 字段
+- `engine/compiler.go` — Compiler 添加 `source` 字段；`CompileStringWithName`/`CompileStringWithGlobals`/`buildProgram` 存储源代码；新增 `CompileWithSource`
+- `engine/errors.go` — RuntimeError 新增 `FormatWithContext(sourceLines []string)` 方法
+- `engine/vm.go` — 新增 `enrichError()` 辅助方法；`run()` 主循环错误处理附加行号；`OP_CALL`/`OP_TAIL_CALL` 错误返回使用 `enrichError`
+- `cmd/jpl/run.go` — 错误显示改用 `FormatWithContext`
+- `cmd/jpl/eval.go` — 同上
+- `cmd/jpl/repl.go` — 新增 `Program` 字段；错误显示带源码上下文
+- `engine/vm_test.go` — 新增 3 个测试：`TestRuntimeErrorSourceContext`、`TestRuntimeErrorSourceContextMultiLine`、`TestRuntimeErrorFormatFallback`
+
+**输出示例**：
+```
+runtime error at line 3, column 0: something went wrong
+   1 | fn greet() {
+   2 |     $msg = "hello"
+ → 3 |     throw "something went wrong"
+   4 | }
+   5 | 
+```
 
 ### 尾调用优化 (TCO) ✅
 

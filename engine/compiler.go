@@ -124,8 +124,9 @@ type Compiler struct {
 	objectSelfSym map[int]*Symbol // 每层对象字面量的 self 符号 (depth -> symbol)
 
 	// 源码行号追踪（用于运行时错误定位）
-	sourceLines []int // 每条指令对应的源码行号
-	currentLine int   // 当前正在编译的源码行号
+	sourceLines []int  // 每条指令对应的源码行号
+	currentLine int    // 当前正在编译的源码行号
+	source      string // 原始源代码
 }
 
 // NewCompiler 创建新的字节码编译器实例。
@@ -512,7 +513,13 @@ func (c *Compiler) newChild(name string) *Compiler {
 //	    log.Fatal("执行错误:", err)
 //	}
 func Compile(program *parser.Program) (*Program, error) {
+	return CompileWithSource(program, "")
+}
+
+// CompileWithSource 编译 AST 为 Program，可选传入源代码文本用于错误上下文。
+func CompileWithSource(program *parser.Program, source string) (*Program, error) {
 	c := NewCompiler()
+	c.source = source
 
 	// 捕获编译 panic 并转换为 error
 	var compileErr error
@@ -538,25 +545,7 @@ func Compile(program *parser.Program) (*Program, error) {
 		return nil, compileErr
 	}
 
-	main := &CompiledFunction{
-		Name:       "<main>",
-		Params:     0,
-		Registers:  c.maxReg,
-		Bytecode:   c.bytecode,
-		Constants:  c.constants,
-		SourceLine: 0,
-		VarNames:   c.buildVarNames(),
-	}
-
-	allFuncs := []*CompiledFunction{main}
-	allFuncs = append(allFuncs, c.functions...)
-
-	return &Program{
-		Main:        main,
-		Functions:   allFuncs,
-		Constants:   c.constants,
-		GlobalNames: *c.globalNames,
-	}, nil
+	return c.buildProgram(), nil
 }
 
 func (c *Compiler) compileProgram(program *parser.Program) {
@@ -3311,20 +3300,7 @@ func DisassembleProgram(prog *Program) string {
 //	vm := engine.NewVMWithProgram(eng, compiled)
 //	vm.Execute()
 func CompileString(script string) (*Program, error) {
-	l := lexer.NewLexer(script, "<script>")
-	p := parser.NewParser(l)
-	program := p.Parse()
-
-	// 检查解析错误
-	if len(p.Errors()) > 0 {
-		msg := ""
-		for _, e := range p.Errors() {
-			msg += e + "\n"
-		}
-		return nil, &CompileError{Message: msg}
-	}
-
-	return Compile(program)
+	return CompileStringWithName(script, "<script>")
 }
 
 // CompileStringWithName 编译 JPL 源代码字符串（指定文件名）。
@@ -3384,6 +3360,7 @@ func CompileStringWithName(script string, filename string) (*Program, error) {
 	c := NewCompiler()
 	c.filename = filename
 	c.dirname = getDirFromFilename(filename)
+	c.source = script
 
 	// 捕获编译 panic 并转换为 error
 	var compileErr error
@@ -3462,6 +3439,7 @@ func CompileStringWithGlobals(script string, filename string, existingGlobals []
 	// Phase 7.8: 设置魔术常量所需信息
 	c.filename = filename
 	c.dirname = getDirFromFilename(filename)
+	c.source = script
 
 	// 捕获编译 panic 并转换为 error
 	var compileErr error
@@ -3553,11 +3531,15 @@ func (c *Compiler) buildProgram() *Program {
 	allFuncs := []*CompiledFunction{main}
 	allFuncs = append(allFuncs, c.functions...)
 
+	sourceLines := strings.Split(c.source, "\n")
+
 	return &Program{
 		Main:        main,
 		Functions:   allFuncs,
 		Constants:   c.constants,
 		GlobalNames: *c.globalNames,
+		Source:      c.source,
+		SourceLines: sourceLines,
 	}
 }
 

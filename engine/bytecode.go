@@ -272,6 +272,8 @@ type Program struct {
 	Functions   []*CompiledFunction // 所有函数（包括主函数）
 	Constants   []Value             // 全局常量池
 	GlobalNames []string            // 全局变量名列表（索引 -> 名称）
+	Source      string              // 原始源代码
+	SourceLines []string            // 按行分割的源代码
 }
 
 // ============================================================================

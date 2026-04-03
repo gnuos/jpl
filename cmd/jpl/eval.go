@@ -53,7 +53,11 @@ func evalCode(cmd *cobra.Command, args []string) {
 	vm.SetDebugMode(debug)
 	if err := vm.Execute(); err != nil {
 		if re, ok := err.(*engine.RuntimeError); ok {
-			fmt.Fprintf(os.Stderr, "运行时错误: %s\n", re.Message)
+			if re.Line > 0 {
+				fmt.Fprintf(os.Stderr, "%s", re.FormatWithContext(prog.SourceLines))
+			} else {
+				fmt.Fprintf(os.Stderr, "运行时错误: %s\n", re.Message)
+			}
 		} else {
 			fmt.Fprintf(os.Stderr, "运行时错误: %v\n", err)
 		}

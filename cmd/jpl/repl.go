@@ -24,6 +24,7 @@ const evalTimeout = 10 * time.Second
 type REPL struct {
 	Engine      *jpl.Engine
 	VM          *engine.VM
+	Program     *engine.Program
 	DebugMode   bool
 	HistoryFile string
 	CmdHistory  []string
@@ -231,6 +232,7 @@ func (r *REPL) ExecCode(input string) {
 
 	// 创建新 VM
 	r.VM = engine.NewVMWithProgram(r.Engine, prog)
+	r.Program = prog
 	r.VM.SetDebugMode(r.DebugMode)
 
 	// 带超时的执行
@@ -243,7 +245,11 @@ func (r *REPL) ExecCode(input string) {
 	case err := <-done:
 		if err != nil {
 			if re, ok := err.(*engine.RuntimeError); ok {
-				fmt.Printf("运行时错误: %s\n", re.Message)
+				if re.Line > 0 && r.Program != nil {
+					fmt.Printf("%s", re.FormatWithContext(r.Program.SourceLines))
+				} else {
+					fmt.Printf("运行时错误: %s\n", re.Message)
+				}
 			} else {
 				fmt.Printf("运行时错误: %v\n", err)
 			}

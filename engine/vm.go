@@ -582,29 +582,19 @@ func (vm *VM) run() error {
 		// 函数调用
 		case OP_CALL:
 			if err := vm.opCall(ins); err != nil {
-				// ExitError 处理：
-				// 当 exit() 或 die() 被调用时，它们返回 ExitError
-				// 这不是真正的错误，而是脚本请求正常终止的信号
-				// 我们需要：
-				// 1. 保存退出码到 vm.exitCode（供 CLI 获取）
-				// 2. 返回 nil（表示正常终止，不是错误）
-				// 3. 这会立即终止整个脚本的执行
 				if exitErr, ok := err.(*ExitError); ok {
 					vm.exitCode = exitErr.Code
 					return nil
 				}
-				return err
+				return vm.enrichError(err)
 			}
 		case OP_TAIL_CALL:
 			if err := vm.opTailCall(ins); err != nil {
-				// ExitError 处理（同上）：
-				// exit/die 函数通过尾调用优化路径时也会触发此处
-				// 处理方式与普通调用相同：保存退出码，正常终止
 				if exitErr, ok := err.(*ExitError); ok {
 					vm.exitCode = exitErr.Code
 					return nil
 				}
-				return err
+				return vm.enrichError(err)
 			}
 		case OP_RETURN:
 			vm.opReturn(ins)
@@ -700,11 +690,21 @@ func (vm *VM) run() error {
 				vm.exitCode = exitErr.Code
 				return nil
 			}
-			return vm.err
+			return vm.enrichError(vm.err)
 		}
 	}
 
 	return nil
+}
+
+// enrichError 为运行时错误附加当前行号信息
+func (vm *VM) enrichError(err error) error {
+	if re, ok := err.(*RuntimeError); ok {
+		if re.Line == 0 && vm.currentLine > 0 {
+			re.Line = vm.currentLine
+		}
+	}
+	return err
 }
 
 // ============================================================================

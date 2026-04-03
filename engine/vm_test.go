@@ -2,6 +2,7 @@ package engine
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -2792,5 +2793,115 @@ func TestNoLogErrorOnValidOperation(t *testing.T) {
 	logs := engine.GetErrorLog()
 	if len(logs) != 0 {
 		t.Errorf("expected no errors for valid operation, got %d", len(logs))
+	}
+}
+
+// ============================================================================
+// 错误消息源码上下文测试
+// ============================================================================
+
+func TestRuntimeErrorSourceContext(t *testing.T) {
+	script := `fn test() {
+    $x = 10
+    throw "boom"
+}
+test()`
+
+	prog, err := CompileString(script)
+	if err != nil {
+		t.Fatalf("compile error: %v", err)
+	}
+
+	vm := newVM(nil)
+	vm.program = prog
+	vm.buildFuncMap()
+
+	err = vm.Execute()
+	if err == nil {
+		t.Fatal("expected runtime error")
+	}
+
+	re, ok := err.(*RuntimeError)
+	if !ok {
+		t.Fatalf("expected RuntimeError, got %T", err)
+	}
+
+	// 验证行号被正确设置
+	if re.Line == 0 {
+		t.Error("expected line number to be set")
+	}
+
+	// 验证源码上下文格式化
+	formatted := re.FormatWithContext(prog.SourceLines)
+	if !strings.Contains(formatted, "boom") {
+		t.Errorf("expected formatted output to contain error message, got:\n%s", formatted)
+	}
+	if !strings.Contains(formatted, "throw") {
+		t.Errorf("expected formatted output to contain source line, got:\n%s", formatted)
+	}
+	if !strings.Contains(formatted, "→") {
+		t.Errorf("expected formatted output to contain arrow marker, got:\n%s", formatted)
+	}
+}
+
+func TestRuntimeErrorSourceContextMultiLine(t *testing.T) {
+	script := `fn greet() {
+    $msg = "hello"
+    throw "something went wrong"
+}
+
+greet()`
+
+	prog, err := CompileString(script)
+	if err != nil {
+		t.Fatalf("compile error: %v", err)
+	}
+
+	vm := newVM(nil)
+	vm.program = prog
+	vm.buildFuncMap()
+
+	err = vm.Execute()
+	if err == nil {
+		t.Fatal("expected runtime error")
+	}
+
+	re, ok := err.(*RuntimeError)
+	if !ok {
+		t.Fatalf("expected RuntimeError, got %T", err)
+	}
+
+	// 行号应该是 3（throw 所在行）
+	if re.Line != 3 {
+		t.Errorf("expected line 3, got %d", re.Line)
+	}
+
+	formatted := re.FormatWithContext(prog.SourceLines)
+
+	// 应该包含错误行前后的上下文
+	if !strings.Contains(formatted, "fn greet()") {
+		t.Errorf("expected context to show function definition, got:\n%s", formatted)
+	}
+	if !strings.Contains(formatted, "something went wrong") {
+		t.Errorf("expected context to show error message, got:\n%s", formatted)
+	}
+}
+
+func TestRuntimeErrorFormatFallback(t *testing.T) {
+	// 测试没有源码时的回退格式
+	re := NewRuntimeError("test error")
+	re.Line = 5
+
+	// 没有 sourceLines 时应回退到简单格式
+	formatted := re.FormatWithContext(nil)
+	if !strings.Contains(formatted, "test error") {
+		t.Errorf("expected simple format, got: %s", formatted)
+	}
+
+	// 行号为 0 时也应回退
+	re2 := NewRuntimeError("no line")
+	formatted2 := re2.FormatWithContext([]string{"line1", "line2"})
+	if !strings.Contains(formatted2, "no line") {
+		t.Errorf("expected simple format for zero line, got: %s", formatted2)
 	}
 }

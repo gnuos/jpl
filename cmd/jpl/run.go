@@ -102,8 +102,11 @@ func runScript(cmd *cobra.Command, args []string) {
 	if err := vm.Execute(); err != nil {
 		// 运行时错误
 		if re, ok := err.(*engine.RuntimeError); ok {
-			fmt.Fprintf(os.Stderr, "运行时错误: %s:%d:%d: %s\n",
-				re.File, re.Line, re.Column, re.Message)
+			if re.Line > 0 {
+				fmt.Fprintf(os.Stderr, "%s", re.FormatWithContext(prog.SourceLines))
+			} else {
+				fmt.Fprintf(os.Stderr, "运行时错误: %s\n", re.Message)
+			}
 		} else {
 			fmt.Fprintf(os.Stderr, "运行时错误: %v\n", err)
 		}

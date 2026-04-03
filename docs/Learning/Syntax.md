@@ -214,6 +214,41 @@ match ($value) {
 }
 ```
 
+#### 多行 case 体
+
+case 分支支持多行语句，使用缩进或 `{ }` 块：
+
+```jpl
+// 缩进多行 — case 后的缩进语句属于该分支
+match ($status) {
+    case 200:
+        puts "请求成功"
+        $data = parse_json($body)
+        process($data)
+    case 404:
+        puts "资源未找到"
+        log_error("404: " .. $url)
+    case 500:
+        puts "服务器错误"
+        retry($request)
+    case _:
+        puts "未知状态码"
+}
+
+// 块语法 — 使用 { } 包裹多行
+match ($event) {
+    case "click": {
+        $x = get_mouse_x()
+        $y = get_mouse_y()
+        handle_click($x, $y)
+    }
+    case "keydown": {
+        $key = get_key_code()
+        handle_key($key)
+    }
+}
+```
+
 #### 正则模式匹配
 
 使用正则字面量 `#/pattern/flags#` 在 `match/case` 中做模式匹配：
@@ -515,6 +550,25 @@ fn fib(n) {
 }
 
 puts fib(10)  // 55
+
+// static 变量 — 函数级持久化，调用间保持值
+fn counter() {
+    static $count = 0
+    $count = $count + 1
+    return $count
+}
+
+puts counter()  // 1
+puts counter()  // 2
+puts counter()  // 3
+
+// 尾调用优化 — 自递归尾调用复用栈帧，无深度限制
+fn sum($n, $acc) {
+    if ($n <= 0) return $acc
+    return sum($n - 1, $acc + $n)  // 尾调用，不会栈溢出
+}
+
+puts sum(10000, 0)  // 50005000
 ```
 
 ### 数组
@@ -693,6 +747,21 @@ try {
     println($e.type);       // → HttpError
 }
 ```
+
+#### 错误消息与源码上下文
+
+运行时错误会自动显示行号和源码上下文，便于快速定位问题：
+
+```
+runtime error at line 3: something went wrong
+   1 | fn greet() {
+   2 |     $msg = "hello"
+ → 3 |     throw "something went wrong"
+   4 | }
+   5 | 
+```
+
+箭头 `→` 标记了出错代码行，并显示前后各 2 行上下文。
 
 #### 条件捕获 (when)
 

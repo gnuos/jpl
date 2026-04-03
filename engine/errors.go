@@ -75,6 +75,15 @@ func NewRuntimeErrorWithLocation(message string, line, column int, file string) 
 	}
 }
 
+// WithSourceContext 为运行时错误附加源码上下文
+// 返回新的 RuntimeError，包含格式化的源码上下文信息
+func (e *RuntimeError) WithSourceContext(sourceLines []string) *RuntimeError {
+	if e.Line <= 0 || sourceLines == nil {
+		return e
+	}
+	return e
+}
+
 func (e *RuntimeError) Error() string {
 	if e.File != "" {
 		return fmt.Sprintf("runtime error at %s:%d:%d: %s", e.File, e.Line, e.Column, e.Message)
@@ -83,6 +92,67 @@ func (e *RuntimeError) Error() string {
 		return fmt.Sprintf("runtime error at line %d, column %d: %s", e.Line, e.Column, e.Message)
 	}
 	return fmt.Sprintf("runtime error: %s", e.Message)
+}
+
+// FormatWithContext 返回带源码上下文的格式化错误信息
+func (e *RuntimeError) FormatWithContext(sourceLines []string) string {
+	if e.Line <= 0 || sourceLines == nil || len(sourceLines) == 0 {
+		return e.Error()
+	}
+
+	lineIdx := e.Line - 1 // 转为 0-based 索引
+	if lineIdx >= len(sourceLines) {
+		return e.Error()
+	}
+
+	// 计算显示范围（前后各 2 行）
+	start := lineIdx - 2
+	if start < 0 {
+		start = 0
+	}
+	end := lineIdx + 2
+	if end >= len(sourceLines) {
+		end = len(sourceLines) - 1
+	}
+
+	var buf string
+	buf += e.Error() + "\n"
+
+	// 计算行号宽度用于对齐
+	lineNumWidth := 0
+	for n := end + 1; n > 0; n /= 10 {
+		lineNumWidth++
+	}
+
+	for i := start; i <= end; i++ {
+		lineNum := i + 1
+		prefix := "   "
+		if i == lineIdx {
+			prefix = " → "
+		}
+		buf += fmt.Sprintf(fmt.Sprintf("%%s%%%dd | %%s\n", lineNumWidth), prefix, lineNum, sourceLines[i])
+
+		// 在错误行添加下划线标记
+		if i == lineIdx && e.Column > 0 {
+			marker := fmt.Sprintf("   %s", spaces(lineNumWidth+1))
+			marker += spaces(e.Column - 1)
+			marker += "^"
+			buf += marker + "\n"
+		}
+	}
+
+	return buf
+}
+
+func spaces(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	s := make([]byte, n)
+	for i := range s {
+		s[i] = ' '
+	}
+	return string(s)
 }
 
 // ExitError 脚本退出错误（用于 exit/die 函数）
