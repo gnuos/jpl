@@ -1560,14 +1560,14 @@ puts `x      // → "hello"（`x → "b" → `b → "a" → "hello"）
 
 | 任务 | 说明 | 文件 | 状态 |
 |------|------|------|------|
-| BACKTICK token | 新增 `` ` `` token 类型 | `token/token.go` | 🔲 待实现 |
-| Lexer 识别 | 识别反引号字符 | `lexer/lexer.go` | 🔲 待实现 |
-| IndirectRef 节点 | AST 间接引用节点 | `parser/ast.go` | 🔲 待实现 |
-| 前缀解析 | Pratt parser 解析 `` `identifier`` | `parser/parser.go` | 🔲 待实现 |
-| OP_GET_INDIRECT | 新增间接查找操作码 | `engine/bytecode.go` | 🔲 待实现 |
-| 编译逻辑 | 编译间接引用为字节码 | `engine/compiler.go` | 🔲 待实现 |
-| VM 执行 | 运行时按名称查找变量 | `engine/vm.go` | 🔲 待实现 |
-| 单元测试 | 覆盖基本/链式/边界场景 | `engine/vm_test.go` | 🔲 待实现 |
+| BACKTICK token | 新增 `` ` `` token 类型 | `token/token.go` | ✅ 完成 |
+| Lexer 识别 | 识别反引号字符 | `lexer/lexer.go` | ✅ 完成 |
+| IndirectRef 节点 | AST 间接引用节点 | `parser/ast.go` | ✅ 完成 |
+| 前缀解析 | Pratt parser 解析 `` `identifier`` | `parser/parser.go` | ✅ 完成 |
+| OP_GET_INDIRECT | 新增间接查找操作码 | `engine/bytecode.go` | ✅ 完成 |
+| 编译逻辑 | 编译间接引用为字节码 | `engine/compiler.go` | ✅ 完成 |
+| VM 执行 | 运行时按名称查找变量 | `engine/vm.go` | ✅ 完成 |
+| 单元测试 | 覆盖基本/链式/边界场景 | `engine/vm_test.go` | ✅ 完成 |
 
 ### 20.3 设计要点
 
