@@ -2,7 +2,9 @@
 
 JPL（Jx9-like Programming Language）是一个**高性能、嵌入式脚本语言引擎**，专为 Go 应用程序设计。它提供了完整的脚本执行能力，支持函数式编程、闭包、异常处理和模块化编程。
 
-**本项目全程由 MiMo-V2-Pro 模型、MiniMax-M2.5 模型、Kimi-K2.5 模型生成代码与文档，当前文档经过了手动整理**
+**本项目全程由 MiMo-V2-Pro 模型、MiniMax-M2.5 模型、Kimi-K2.5 模型、Qwen3.6-Plus模型生成代码与文档**
+
+**当前文档经过了手动整理**
 
 [项目介绍](./PROJECT.md)
 

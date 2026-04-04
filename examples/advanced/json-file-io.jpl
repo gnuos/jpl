@@ -1,0 +1,97 @@
+// JSON File I/O
+// 演示 JSON 文件的读写操作
+
+// ============================================================================
+// 1. 写入 JSON 文件
+// ============================================================================
+
+$config = {
+    name: "MyApp",
+    version: "1.0.0",
+    database: {
+        host: "localhost",
+        port: 5432,
+        name: "myapp_db"
+    },
+    features: ["auth", "logging", "cache"],
+    debug: true
+}
+
+$configPath = "/tmp/app_config.json"
+write_json($configPath, $config, true)
+println "Config written to #{$configPath}"
+
+// ============================================================================
+// 2. 读取 JSON 文件
+// ============================================================================
+
+$loadedConfig = read_json($configPath)
+println "\nLoaded config:"
+println "  Name: #{$loadedConfig["name"]}"
+println "  Version: #{$loadedConfig["version"]}"
+println "  DB Host: #{$loadedConfig["database"]["host"]}"
+println "  Debug: #{$loadedConfig["debug"]}"
+
+// ============================================================================
+// 3. 修改并保存
+// ============================================================================
+
+$loadedConfig["version"] = "1.1.0"
+$loadedConfig["debug"] = false
+push($loadedConfig["features"], "metrics")
+
+write_json($configPath, $loadedConfig, true)
+println "\nUpdated config written"
+
+$updated = read_json($configPath)
+println "New version: #{$updated["version"]}"
+println "Features: #{$updated["features"]}"
+
+// ============================================================================
+// 4. 读取原始 JSON 文件
+// ============================================================================
+
+$rawJson = read($configPath)
+println "\nRaw JSON content:"
+println $rawJson
+
+// ============================================================================
+// 5. JSON 验证
+// ============================================================================
+
+$validJson = '{"name": "test", "value": 42}'
+$invalidJson = '{name: test, value:}'
+
+println "\nJSON validation:"
+println "Valid: #{json_validate($validJson)}"
+println "Invalid: #{json_validate($invalidJson)}"
+
+// ============================================================================
+// 6. 复杂数据结构
+// ============================================================================
+
+$users = [
+    {id: 1, name: "Alice", roles: ["admin", "user"]},
+    {id: 2, name: "Bob", roles: ["user"]},
+    {id: 3, name: "Charlie", roles: ["viewer"]}
+]
+
+$usersPath = "/tmp/users.json"
+write_json($usersPath, $users, true)
+println "\nUsers written to #{$usersPath}"
+
+$loadedUsers = read_json($usersPath)
+println "Loaded #{len($loadedUsers)} users"
+
+// ============================================================================
+// 7. 使用 json_pretty 美化输出
+// ============================================================================
+
+$compact = json_encode($config)
+$pretty = json_pretty($config)
+
+println "\nCompact JSON (#{strlen($compact)} chars):"
+println $compact
+
+println "\nPretty JSON (#{strlen($pretty)} chars):"
+println $pretty

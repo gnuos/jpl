@@ -1,0 +1,137 @@
+// Arrow Functions (Lambda Expressions)
+// 演示 JPL 的箭头函数语法
+
+// ============================================================================
+// 1. 基本箭头函数
+// ============================================================================
+
+// 单参数，单表达式
+$square = ($x) -> $x * $x
+println "square(5) = #{$square(5)}"  // 25
+
+$double = ($x) -> $x * 2
+println "double(7) = #{$double(7)}"  // 14
+
+// 多参数
+$add = ($a, $b) -> $a + $b
+println "add(3, 4) = #{$add(3, 4)}"  // 7
+
+$greet = ($name, $greeting) -> "#{$greeting}, #{$name}!"
+println $greet("Alice", "Hello")     // "Hello, Alice!"
+
+// ============================================================================
+// 2. 在函数式编程中使用
+// ============================================================================
+
+$numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// map: 每个元素平方
+$squares = map($numbers, ($x) -> $x * $x)
+println "Squares: #{$squares}"
+
+// filter: 只保留偶数
+$evens = filter($numbers, ($x) -> $x % 2 == 0)
+println "Evens: #{$evens}"
+
+// reduce: 求和
+$sum = reduce($numbers, ($acc, $x) -> $acc + $x, 0)
+println "Sum: #{$sum}"
+
+// 链式操作
+$result = reduce(
+    filter(map($numbers, ($x) -> $x * 2), ($x) -> $x > 10),
+    ($acc, $x) -> $acc + $x,
+    0
+)
+println "Sum of doubled numbers > 10: #{$result}"
+
+// ============================================================================
+// 3. 闭包与词法作用域
+// ============================================================================
+
+// 箭头函数可以捕获外部变量
+fn makeMultiplier($factor) {
+    return ($x) -> $x * $factor
+}
+
+$triple = makeMultiplier(3)
+println "triple(4) = #{$triple(4)}"  // 12
+
+$tenX = makeMultiplier(10)
+println "tenX(5) = #{$tenX(5)}"      // 50
+
+// ============================================================================
+// 4. 排序比较函数
+// ============================================================================
+
+$names = ["Charlie", "Alice", "Bob", "Diana"]
+
+// 按字符串长度排序
+$sorted = sort($names, ($a, $b) -> strlen($a) < strlen($b))
+println "Sorted by length: #{$sorted}"
+
+// 数字降序
+$nums = [5, 2, 8, 1, 9, 3]
+$desc = sort($nums, ($a, $b) -> $a > $b)
+println "Descending: #{$desc}"
+
+// ============================================================================
+// 5. 作为回调函数
+// ============================================================================
+
+fn processItems($items, $fn) {
+    return map($items, $fn)
+}
+
+$words = ["hello", "world", "jpl"]
+$uppercased = processItems($words, ($w) -> toUpper($w))
+println "Uppercased: #{$uppercased}"
+
+$lengths = processItems($words, ($w) -> strlen($w))
+println "Lengths: #{$lengths}"
+
+// ============================================================================
+// 6. 与 match/case 结合
+// ============================================================================
+
+fn applyOperation($op) {
+    return match ($op) {
+        case "add": ($a, $b) -> $a + $b
+        case "sub": ($a, $b) -> $a - $b
+        case "mul": ($a, $b) -> $a * $b
+        case "div": ($a, $b) -> $a / $b
+        case _: ($a, $b) -> null
+    }
+}
+
+$addFn = applyOperation("add")
+println "applyOperation('add')(10, 3) = #{$addFn(10, 3)}"  // 13
+
+$mulFn = applyOperation("mul")
+println "applyOperation('mul')(10, 3) = #{$mulFn(10, 3)}"  // 30
+
+// ============================================================================
+// 7. 函数组合
+// ============================================================================
+
+fn compose($f, $g) {
+    return ($x) -> $f($g($x))
+}
+
+$addOne = ($x) -> $x + 1
+$double = ($x) -> $x * 2
+
+$addOneThenDouble = compose($double, $addOne)
+println "compose(double, addOne)(5) = #{$addOneThenDouble(5)}"  // (5+1)*2 = 12
+
+// ============================================================================
+// 8. 柯里化（Currying）
+// ============================================================================
+
+fn curryAdd($a) {
+    return ($b) -> ($c) -> $a + $b + $c
+}
+
+$curried = curryAdd(1)
+$result = $curried(2)(3)
+println "curryAdd(1)(2)(3) = #{$result}"  // 6

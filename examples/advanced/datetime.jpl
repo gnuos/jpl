@@ -1,0 +1,117 @@
+// Date and Time Operations
+// 演示日期时间处理函数
+
+// ============================================================================
+// 1. 获取当前时间
+// ============================================================================
+
+$timestamp = time()
+println "Current timestamp: #{$timestamp}"
+
+$now = now()
+println "Current time object:"
+pp $now
+
+// 格式化输出
+println "Today: #{now("Y-m-d")}"
+println "Time: #{now("H:i:s")}"
+
+// ============================================================================
+// 2. 解析日期字符串 (strtotime)
+// ============================================================================
+
+$ts = strtotime("2026-04-04")
+println "strtotime('2026-04-04'): #{$ts}"
+
+$ts2 = strtotime("2026-04-04 15:30:00")
+println "strtotime('2026-04-04 15:30:00'): #{$ts2}"
+
+// ISO 8601 格式
+$ts3 = strtotime("2026-04-04T10:00:00Z")
+println "strtotime('2026-04-04T10:00:00Z'): #{$ts3}"
+
+// ============================================================================
+// 3. 相对时间
+// ============================================================================
+
+$now_ts = time()
+$tomorrow = strtotime("+1 day", $now_ts)
+println "Tomorrow: #{date("Y-m-d", $tomorrow)}"
+
+$nextWeek = strtotime("+1 week", $now_ts)
+println "Next week: #{date("Y-m-d", $nextWeek)}"
+
+$lastMonth = strtotime("-1 month", $now_ts)
+println "Last month: #{date("Y-m-d", $lastMonth)}"
+
+$in3Hours = strtotime("+3 hours", $now_ts)
+println "In 3 hours: #{date("Y-m-d H:i:s", $in3Hours)}"
+
+// ============================================================================
+// 4. 日期验证 (checkdate)
+// ============================================================================
+
+println "checkdate(2, 29, 2024): #{checkdate(2, 29, 2024)}"  // true (闰年)
+println "checkdate(2, 29, 2023): #{checkdate(2, 29, 2023)}"  // false (非闰年)
+println "checkdate(13, 1, 2026): #{checkdate(13, 1, 2026)}"  // false (月份无效)
+println "checkdate(4, 31, 2026): #{checkdate(4, 31, 2026)}"  // false (4月没有31日)
+println "checkdate(12, 31, 2026): #{checkdate(12, 31, 2026)}" // true
+
+// ============================================================================
+// 5. 日期格式化
+// ============================================================================
+
+$ts = strtotime("2026-04-04 15:30:45")
+println "date('Y-m-d H:i:s'): #{date("Y-m-d H:i:s", $ts)}"
+println "date('Y/m/d'): #{date("Y/m/d", $ts)}"
+println "date('m/d/Y'): #{date("m/d/Y", $ts)}"
+println "date('Y年m月d日'): #{date("Y年m月d日", $ts)}"
+
+// GMT 时间
+println "gmdate('Y-m-d H:i:s'): #{gmdate("Y-m-d H:i:s", $ts)}"
+
+// ============================================================================
+// 6. 日期信息
+// ============================================================================
+
+$dateInfo = getdate($ts)
+println "getdate:"
+pp $dateInfo
+
+// ============================================================================
+// 7. 生成时间戳
+// ============================================================================
+
+$ts = mktime(15, 30, 45, 4, 4, 2026)
+println "mktime(15, 30, 45, 4, 4, 2026): #{$ts}"
+println "Formatted: #{date("Y-m-d H:i:s", $ts)}"
+
+// ============================================================================
+// 8. 实用函数：计算两个日期之间的天数
+// ============================================================================
+
+fn daysBetween($date1, $date2) {
+    $ts1 = strtotime($date1)
+    $ts2 = strtotime($date2)
+    $diff = $ts2 - $ts1
+    if ($diff < 0) {
+        $diff = -$diff
+    }
+    return floor($diff / 86400)
+}
+
+$days = daysBetween("2026-01-01", "2026-12-31")
+println "Days between 2026-01-01 and 2026-12-31: #{$days}"
+
+// ============================================================================
+// 9. 实用函数：判断是否为闰年
+// ============================================================================
+
+fn isLeapYear($year) {
+    return checkdate(2, 29, $year)
+}
+
+println "2024 is leap year: #{isLeapYear(2024)}"
+println "2025 is leap year: #{isLeapYear(2025)}"
+println "2026 is leap year: #{isLeapYear(2026)}"
+println "2028 is leap year: #{isLeapYear(2028)}"

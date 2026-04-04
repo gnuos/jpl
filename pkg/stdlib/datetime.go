@@ -42,6 +42,12 @@ func RegisterDateTime(e *engine.Engine) {
 	e.RegisterFunc("localtime", builtinLocaltime)
 	e.RegisterFunc("mktime", builtinMktime)
 	e.RegisterFunc("gmmktime", builtinGmmktime)
+	e.RegisterFunc("strtotime", builtinStrtotime)
+	e.RegisterFunc("checkdate", builtinCheckdate)
+
+	// P1
+	e.RegisterFunc("date_diff", builtinDateDiff)
+	e.RegisterFunc("date_add", builtinDateAdd)
 
 	// 模块注册 — import "datetime" 可用
 	e.RegisterModule("datetime", map[string]engine.GoFunction{
@@ -58,6 +64,11 @@ func RegisterDateTime(e *engine.Engine) {
 		"localtime":    builtinLocaltime,
 		"mktime":       builtinMktime,
 		"gmmktime":     builtinGmmktime,
+		"strtotime":    builtinStrtotime,
+		"checkdate":    builtinCheckdate,
+		// P1
+		"date_diff": builtinDateDiff,
+		"date_add":  builtinDateAdd,
 	})
 }
 
@@ -70,6 +81,8 @@ func DateTimeNames() []string {
 		"time", "date", "now", "sleep", "microtime",
 		"getdate", "gettimeofday", "strftime", "gmdate",
 		"localtime", "mktime", "gmmktime",
+		"strtotime", "checkdate",
+		"date_diff", "date_add",
 	}
 }
 
@@ -634,14 +647,217 @@ func builtinGmmktime(ctx *engine.Context, args []engine.Value) (engine.Value, er
 	return engine.NewFloat(float64(t.Unix())), nil
 }
 
+// builtinStrtotime 解析日期时间字符串为 Unix 时间戳。
+// 支持多种常见格式：
+//   - "2006-01-02 15:04:05"
+//   - "2006-01-02"
+//   - "01/02/2006"
+//   - "Jan 2, 2006"
+//   - "2006-01-02T15:04:05Z" (ISO 8601)
+//   - 相对时间："+1 day", "-2 weeks", "+3 months", "+1 year"
+func builtinStrtotime(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 1 || len(args) > 2 {
+		return nil, fmt.Errorf("strtotime() expects 1-2 arguments, got %d", len(args))
+	}
+
+	if args[0].Type() != engine.TypeString {
+		return nil, fmt.Errorf("strtotime() argument 1 must be a string, got %s", args[0].Type())
+	}
+
+	str := args[0].String()
+
+	var base time.Time
+	if len(args) == 2 {
+		ts := args[1].Float()
+		sec := int64(ts)
+		nsec := int64((ts - float64(sec)) * 1e9)
+		base = time.Unix(sec, nsec)
+	} else {
+		base = time.Now()
+	}
+
+	// 尝试相对时间格式：+1 day, -2 weeks, +3 months, +1 year
+	if relTime, ok := parseRelativeTime(str, base); ok {
+		return engine.NewFloat(float64(relTime.Unix())), nil
+	}
+
+	// 尝试多种日期格式
+	formats := []string{
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05-07:00",
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02 15:04",
+		"2006-01-02",
+		"01/02/2006 15:04:05",
+		"01/02/2006",
+		"Jan 2, 2006 15:04:05",
+		"Jan 2, 2006",
+		"02-Jan-2006 15:04:05",
+		"02-Jan-2006",
+		"2006/01/02 15:04:05",
+		"2006/01/02",
+	}
+
+	for _, format := range formats {
+		if t, err := time.Parse(format, str); err == nil {
+			return engine.NewFloat(float64(t.Unix())), nil
+		}
+	}
+
+	return engine.NewNull(), nil
+}
+
+// parseRelativeTime 解析相对时间字符串
+func parseRelativeTime(str string, base time.Time) (time.Time, bool) {
+	str = strings.TrimSpace(strings.ToLower(str))
+	if !strings.HasPrefix(str, "+") && !strings.HasPrefix(str, "-") {
+		return base, false
+	}
+
+	parts := strings.Fields(str)
+	if len(parts) != 2 {
+		return base, false
+	}
+
+	sign := 1
+	numStr := parts[0]
+	if numStr[0] == '-' {
+		sign = -1
+		numStr = numStr[1:]
+	} else if numStr[0] == '+' {
+		numStr = numStr[1:]
+	}
+
+	num := 0
+	for _, c := range numStr {
+		if c < '0' || c > '9' {
+			return base, false
+		}
+		num = num*10 + int(c-'0')
+	}
+	num *= sign
+
+	unit := parts[1]
+	switch unit {
+	case "second", "seconds", "sec", "secs":
+		return base.Add(time.Duration(num) * time.Second), true
+	case "minute", "minutes", "min", "mins":
+		return base.Add(time.Duration(num) * time.Minute), true
+	case "hour", "hours", "hr", "hrs":
+		return base.Add(time.Duration(num) * time.Hour), true
+	case "day", "days":
+		return base.AddDate(0, 0, num), true
+	case "week", "weeks":
+		return base.AddDate(0, 0, num*7), true
+	case "month", "months":
+		return base.AddDate(0, num, 0), true
+	case "year", "years":
+		return base.AddDate(num, 0, 0), true
+	default:
+		return base, false
+	}
+}
+
+// builtinCheckdate 验证公历日期是否有效。
+func builtinCheckdate(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 3 {
+		return nil, fmt.Errorf("checkdate() expects 3 arguments (month, day, year), got %d", len(args))
+	}
+
+	month := int(args[0].Int())
+	day := int(args[1].Int())
+	year := int(args[2].Int())
+
+	if month < 1 || month > 12 {
+		return engine.NewBool(false), nil
+	}
+	if year < 1 || year > 32767 {
+		return engine.NewBool(false), nil
+	}
+
+	// 使用 time.Date 验证日期有效性
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	valid := t.Month() == time.Month(month) && t.Day() == day && t.Year() == year
+	return engine.NewBool(valid), nil
+}
+
 // DateTimeSigs returns function signatures for REPL :doc command.
+
+// builtinDateDiff 计算两个时间戳之间的差异。
+func builtinDateDiff(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("date_diff() expects 2 arguments, got %d", len(args))
+	}
+	ts1 := args[0].Float()
+	ts2 := args[1].Float()
+	diff := ts2 - ts1
+	if diff < 0 {
+		diff = -diff
+	}
+	result := map[string]engine.Value{
+		"seconds": engine.NewFloat(diff),
+		"minutes": engine.NewFloat(diff / 60),
+		"hours":   engine.NewFloat(diff / 3600),
+		"days":    engine.NewFloat(diff / 86400),
+	}
+	return engine.NewObject(result), nil
+}
+
+// builtinDateAdd 给时间戳添加时间。
+func builtinDateAdd(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("date_add() expects 2 arguments (timestamp, duration_str), got %d", len(args))
+	}
+	ts := args[0].Float()
+	durStr := args[1].String()
+
+	sec := int64(ts)
+	nsec := int64((ts - float64(sec)) * 1e9)
+	base := time.Unix(sec, nsec)
+
+	parts := strings.Fields(durStr)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("date_add() duration must be like '1 day', '2 hours'")
+	}
+	num := 0
+	for _, c := range parts[0] {
+		if c < '0' || c > '9' {
+			return nil, fmt.Errorf("date_add() invalid duration number")
+		}
+		num = num*10 + int(c-'0')
+	}
+
+	unit := strings.ToLower(parts[1])
+	var result time.Time
+	switch unit {
+	case "second", "seconds", "sec", "secs":
+		result = base.Add(time.Duration(num) * time.Second)
+	case "minute", "minutes", "min", "mins":
+		result = base.Add(time.Duration(num) * time.Minute)
+	case "hour", "hours", "hr", "hrs":
+		result = base.Add(time.Duration(num) * time.Hour)
+	case "day", "days":
+		result = base.AddDate(0, 0, num)
+	case "week", "weeks":
+		result = base.AddDate(0, 0, num*7)
+	case "month", "months":
+		result = base.AddDate(0, num, 0)
+	case "year", "years":
+		result = base.AddDate(num, 0, 0)
+	default:
+		return nil, fmt.Errorf("date_add() unknown unit: %s", unit)
+	}
+
+	return engine.NewFloat(float64(result.Unix())), nil
+}
 func DateTimeSigs() map[string]string {
 	return map[string]string{
 		"time":         "time() → float  — Current Unix timestamp (seconds)",
 		"now":          "now([format]) → object/string  — Current time or formatted string",
 		"date":         "date(format, [timestamp]) → string  — Format timestamp",
 		"sleep":        "sleep(ms) → null  — Sleep for milliseconds",
-		"usleep":       "usleep(us) → null  — Sleep for microseconds",
+		"microtime":    "microtime() → float  — High-precision timestamp",
 		"getdate":      "getdate([timestamp]) → object  — Get date info",
 		"gettimeofday": "gettimeofday() → object  — Get time info with microseconds",
 		"strftime":     "strftime(format, [timestamp]) → string  — Format with strftime",
@@ -649,5 +865,9 @@ func DateTimeSigs() map[string]string {
 		"localtime":    "localtime([timestamp], [is_assoc]) → array/object  — Local time info",
 		"mktime":       "mktime(hour, minute, second, month, day, year) → float  — Create timestamp",
 		"gmmktime":     "gmmktime(hour, minute, second, month, day, year) → float  — Create GMT timestamp",
+		"strtotime":    "strtotime(datetime_string, [base_timestamp]) → float  — Parse date string to timestamp",
+		"checkdate":    "checkdate(month, day, year) → bool  — Validate Gregorian date",
+		"date_diff":    "date_diff(ts1, ts2) → object  — Difference between two timestamps",
+		"date_add":     "date_add(timestamp, duration_str) → float  — Add time to timestamp",
 	}
 }

@@ -24,6 +24,10 @@ func RegisterRe(e *engine.Engine) {
 	// re_groups_raw(regexValue, subject) → object
 	e.RegisterFunc("re_groups_raw", builtinReGroupsRaw)
 
+	// P1
+	e.RegisterFunc("re_quote", builtinReQuote)
+	e.RegisterFunc("re_fullmatch", builtinReFullmatch)
+
 	// 模块注册 - import "re" 可用
 	e.RegisterModule("re", map[string]engine.GoFunction{
 		"match":   builtinReMatch,
@@ -32,6 +36,9 @@ func RegisterRe(e *engine.Engine) {
 		"sub":     builtinReSub,
 		"split":   builtinReSplit,
 		"groups":  builtinReGroups,
+		// P1
+		"quote":     builtinReQuote,
+		"fullmatch": builtinReFullmatch,
 	})
 }
 
@@ -40,6 +47,7 @@ func ReNames() []string {
 	return []string{
 		"re_match", "re_search", "re_findall",
 		"re_sub", "re_split", "re_groups",
+		"re_quote", "re_fullmatch",
 	}
 }
 
@@ -322,6 +330,28 @@ func builtinReGroupsRaw(ctx *engine.Context, args []engine.Value) (engine.Value,
 }
 
 // ReSigs returns function signatures for REPL :doc command.
+
+// builtinReQuote 转义正则特殊字符。
+func builtinReQuote(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("re_quote() expects 1 argument, got %d", len(args))
+	}
+	return engine.NewString(regexp.QuoteMeta(args[0].String())), nil
+}
+
+// builtinReFullmatch 检查是否完全匹配。
+func builtinReFullmatch(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("re_fullmatch() expects 2 arguments, got %d", len(args))
+	}
+	pattern := args[0].String()
+	str := args[1].String()
+	re, err := regexp.Compile("^" + pattern + "$")
+	if err != nil {
+		return nil, fmt.Errorf("re_fullmatch() invalid pattern: %v", err)
+	}
+	return engine.NewBool(re.MatchString(str)), nil
+}
 func ReSigs() map[string]string {
 	return map[string]string{
 		"re_match":      "re_match(pattern, str) → bool  — Check if pattern matches",
@@ -332,5 +362,6 @@ func ReSigs() map[string]string {
 		"re_groups":     "re_groups(pattern, str) → object  — Get capture groups",
 		"re_groups_raw": "re_groups_raw(regex, str) → object  — Get capture groups from regex value",
 		"re_quote":      "re_quote(str) → string  — Escape regex special characters",
+		"re_fullmatch":  "re_fullmatch(pattern, str) → bool  — Check full string match",
 	}
 }

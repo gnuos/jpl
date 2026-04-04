@@ -1203,3 +1203,421 @@ type TarEntry struct {
 	isdir  bool
 }
 ```
+
+---
+
+## 日期时间模块 API
+
+> 模块导入: `import "datetime"`
+
+### 时间获取
+
+```go
+// time 返回当前 Unix 时间戳（秒级 float64）
+// time() → float
+// 示例: time() → 1711209600.123456
+func builtinTime(ctx *Context, args []Value) (Value, error)
+
+// now 返回当前时间对象或格式化字符串
+// now([format]) → object/string
+// 示例: now() → {year: 2026, month: 3, ...}
+//       now("Y-m-d") → "2026-03-26"
+func builtinNow(ctx *Context, args []Value) (Value, error)
+
+// date 格式化时间戳
+// date(format, [timestamp]) → string
+// 示例: date("Y-m-d") → "2026-03-26"
+func builtinDate(ctx *Context, args []Value) (Value, error)
+
+// gmdate 格式化 GMT/UTC 时间
+// gmdate(format, [timestamp]) → string
+func builtinGmdate(ctx *Context, args []Value) (Value, error)
+
+// microtime 微秒级时间戳
+// microtime() → float
+func builtinMicrotime(ctx *Context, args []Value) (Value, error)
+```
+
+### 日期解析与验证
+
+```go
+// strtotime 解析日期时间字符串为 Unix 时间戳
+// strtotime(datetime_string, [base_timestamp]) → float | null
+// 支持格式:
+//   - "2006-01-02 15:04:05"
+//   - "2006-01-02"
+//   - "01/02/2006"
+//   - "Jan 2, 2006"
+//   - ISO 8601: "2006-01-02T15:04:05Z"
+//   - 相对时间: "+1 day", "-2 weeks", "+3 months", "+1 year"
+// 示例:
+//   strtotime("2026-03-26") → 1742947200
+//   strtotime("+1 day") → 明天此时的时间戳
+//   strtotime("-2 weeks") → 两周前的时间戳
+func builtinStrtotime(ctx *Context, args []Value) (Value, error)
+
+// checkdate 验证公历日期是否有效
+// checkdate(month, day, year) → bool
+// 示例:
+//   checkdate(2, 29, 2024) → true  (2024 是闰年)
+//   checkdate(2, 29, 2023) → false (2023 不是闰年)
+//   checkdate(13, 1, 2026) → false (月份无效)
+func builtinCheckdate(ctx *Context, args []Value) (Value, error)
+```
+
+### 睡眠
+
+```go
+// sleep 暂停执行指定毫秒数
+// sleep(ms) → null
+// 示例: sleep(1000)  // 暂停 1 秒
+func builtinSleep(ctx *Context, args []Value) (Value, error)
+
+// usleep 微秒级暂停（在 process 模块中定义）
+// usleep(microseconds) → null
+// 示例: usleep(500000)  // 暂停 0.5 秒
+func builtinUsleep(ctx *Context, args []Value) (Value, error)
+```
+
+### 日期信息
+
+```go
+// getdate 返回日期信息对象
+// getdate([timestamp]) → object
+func builtinGetdate(ctx *Context, args []Value) (Value, error)
+
+// gettimeofday 返回时间信息对象
+// gettimeofday() → object
+func builtinGettimeofday(ctx *Context, args []Value) (Value, error)
+
+// strftime 按 strftime 格式化
+// strftime(format, [timestamp]) → string
+func builtinStrftime(ctx *Context, args []Value) (Value, error)
+
+// localtime 返回本地时间信息
+// localtime([timestamp], [is_assoc]) → array/object
+func builtinLocaltime(ctx *Context, args []Value) (Value, error)
+
+// mktime 生成本地时间戳
+// mktime(hour, minute, second, month, day, year) → float
+func builtinMktime(ctx *Context, args []Value) (Value, error)
+
+// gmmktime 生成 GMT 时间戳
+// gmmktime(hour, minute, second, month, day, year) → float
+func builtinGmmktime(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## 字符串模块 API
+
+> 模块导入: `import "strings"`
+
+### 基础函数
+
+```go
+// strlen 字符串长度（字节数）
+// strlen(str) → int
+func builtinStrlen(ctx *Context, args []Value) (Value, error)
+
+// substr 截取子串
+// substr(str, start, [length]) → string
+func builtinSubstr(ctx *Context, args []Value) (Value, error)
+
+// strpos 查找子串位置
+// strpos(haystack, needle, [offset]) → int | -1
+func builtinStrpos(ctx *Context, args []Value) (Value, error)
+
+// str_replace 替换子串
+// str_replace(search, replace, subject) → string
+func builtinStrReplace(ctx *Context, args []Value) (Value, error)
+```
+
+### 大小写转换
+
+```go
+// toUpper 转大写
+// toUpper(str) → string
+func builtinToUpper(ctx *Context, args []Value) (Value, error)
+
+// toLower 转小写
+// toLower(str) → string
+func builtinToLower(ctx *Context, args []Value) (Value, error)
+
+// ucfirst 首字母大写
+// ucfirst(str) → string
+// 示例: ucfirst("hello world") → "Hello world"
+func builtinUcfirst(ctx *Context, args []Value) (Value, error)
+
+// ucwords 每个单词首字母大写
+// ucwords(str) → string
+// 示例: ucwords("hello world") → "Hello World"
+func builtinUcwords(ctx *Context, args []Value) (Value, error)
+```
+
+### 子串替换
+
+```go
+// substr_replace 替换指定位置的子串
+// substr_replace(str, replacement, start, [length]) → string
+// 示例:
+//   substr_replace("Hello World", "JPL", 6) → "Hello JPL"
+//   substr_replace("Hello World", "JPL", 6, 5) → "Hello JPL"
+//   substr_replace("Hello World", "JPL", -5) → "Hello JPL"
+func builtinSubstrReplace(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## I/O 模块 API
+
+> 模块导入: `import "io"`
+
+### 输出函数
+
+```go
+// print 输出到 stdout（无换行）
+// print(args...) → null
+func builtinPrint(ctx *Context, args []Value) (Value, error)
+
+// println 输出到 stdout（带换行）
+// println(args...) → null
+func builtinPrintln(ctx *Context, args []Value) (Value, error)
+
+// puts 输出到 stdout（不带引号，带换行）
+// puts(args...) → null
+func builtinPuts(ctx *Context, args []Value) (Value, error)
+
+// pp Pretty Print 格式化输出
+// pp(args...) → null
+func builtinPP(ctx *Context, args []Value) (Value, error)
+```
+
+### 输入函数
+
+```go
+// input 从标准输入读取一行（带可选提示）
+// input([prompt]) → string | null
+// 示例:
+//   $name = input("Enter your name: ")
+//   $line = input()  // 无提示，直接读取
+func builtinInput(ctx *Context, args []Value) (Value, error)
+
+// readline input 的别名
+// readline([prompt]) → string | null
+func builtinReadline(ctx *Context, args []Value) (Value, error)
+```
+
+### 字符串工具
+
+```go
+// echo 拼接参数为字符串（不输出）
+// echo(args...) → string
+func builtinEcho(ctx *Context, args []Value) (Value, error)
+
+// format 格式化字符串
+// format(template, args...) → string
+func builtinFormat(ctx *Context, args []Value) (Value, error)
+
+// assert 断言检查
+// assert(condition, [message]) → null
+func builtinAssert(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## 工具模块 API
+
+> 模块导入: `import "util"`（仅全局注册，无模块）
+
+```go
+// len 返回字符串、数组或对象的长度
+// len(value) → int
+// 示例: len([1, 2, 3]) → 3
+//       len("hello") → 5
+//       len({a: 1, b: 2}) → 2
+func builtinLen(ctx *Context, args []Value) (Value, error)
+
+// typeof 返回值的类型名称
+// typeof(value) → string
+// 返回值: "null", "bool", "int", "float", "string", "array", "object", "func", "bigint", "bigdecimal", "stream", "error", "range", "regex"
+// 示例:
+//   typeof(42) → "int"
+//   typeof("hello") → "string"
+//   typeof([1, 2, 3]) → "array"
+//   typeof({a: 1}) → "object"
+func builtinTypeof(ctx *Context, args []Value) (Value, error)
+
+// dump 返回值的详细调试信息
+// dump(value) → string
+// 示例:
+//   dump([1, {name: "Alice"}])
+//   // 输出:
+//   // [
+//   //   1,
+//   //   {
+//   //     name: "Alice"
+//   //   }
+//   // ]
+func builtinDump(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## IP 地址模块 API
+
+> 模块导入: `import "ip"`
+
+### 转换函数
+
+```go
+// ip2long IPv4 转整数
+// ip2long(ip) → int
+func builtinIP2Long(ctx *Context, args []Value) (Value, error)
+
+// long2ip 整数转 IPv4
+// long2ip(long) → string
+func builtinLong2IP(ctx *Context, args []Value) (Value, error)
+```
+
+### 验证与范围
+
+```go
+// ip_valid 验证 IP 地址
+// ip_valid(ip) → bool
+func builtinIPValid(ctx *Context, args []Value) (Value, error)
+
+// ip_version 检测 IP 版本
+// ip_version(ip) → int (4 or 6)
+func builtinIPVersion(ctx *Context, args []Value) (Value, error)
+
+// ip_in_range 检查 IP 是否在 CIDR 范围内
+// ip_in_range(ip, range) → bool
+// 示例:
+//   ip_in_range("192.168.1.100", "192.168.1.0/24") → true
+//   ip_in_range("10.0.0.1", "192.168.1.0/24") → false
+//   ip_in_range("127.0.0.1", "127.0.0.1") → true  (纯 IP 匹配)
+func builtinIPInRange(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## JSON 模块 API
+
+> 模块导入: `import "json"`
+
+```go
+// json_encode 序列化为 JSON
+// json_encode(value, [pretty]) → string
+func builtinJSONEncode(ctx *Context, args []Value) (Value, error)
+
+// json_decode 解析 JSON 字符串
+// json_decode(str) → value
+func builtinJSONDecode(ctx *Context, args []Value) (Value, error)
+
+// json_pretty 美化输出 JSON
+// json_pretty(value) → string
+func builtinJSONPretty(ctx *Context, args []Value) (Value, error)
+
+// json_validate 验证 JSON 是否合法（不返回解析结果）
+// json_validate(str) → bool
+// 示例:
+//   json_validate('{"name": "Alice"}') → true
+//   json_validate('{invalid}') → false
+func builtinJSONValidate(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## 数学模块增强 API
+
+> 模块导入: `import "math"`
+
+### 新增函数
+
+```go
+// cbrt 计算立方根
+// cbrt(n) → float
+// 示例: cbrt(27) → 3.0
+//       cbrt(-8) → -2.0
+func builtinCbrt(ctx *Context, args []Value) (Value, error)
+
+// log2 计算以 2 为底的对数
+// log2(n) → float
+// 示例: log2(1024) → 10.0
+func builtinLog2(ctx *Context, args []Value) (Value, error)
+
+// clamp 将值限制在 [min, max] 范围内
+// clamp(value, min, max) → number
+// 示例:
+//   clamp(5, 0, 10) → 5
+//   clamp(-5, 0, 10) → 0
+//   clamp(15, 0, 10) → 10
+func builtinClamp(ctx *Context, args []Value) (Value, error)
+
+// sign 返回数字的符号
+// sign(n) → int (-1, 0, 1)
+// 示例:
+//   sign(-42) → -1
+//   sign(0) → 0
+//   sign(42) → 1
+func builtinSign(ctx *Context, args []Value) (Value, error)
+
+// intdiv 整数除法
+// intdiv(a, b) → int
+// 示例:
+//   intdiv(7, 2) → 3
+//   intdiv(-7, 2) → -3
+func builtinIntDiv(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## 加密模块增强 API
+
+> 模块导入: `import "crypto"`
+
+### 新增函数
+
+```go
+// random_bytes 生成密码学安全的随机字节
+// random_bytes(length) → string
+// 示例:
+//   $bytes = random_bytes(32)  // 32 字节随机数据
+func builtinRandomBytes(ctx *Context, args []Value) (Value, error)
+
+// hash 通用 hash 函数
+// hash(algo, data, [raw_output]) → string
+// 支持的算法: md5, sha1, sha256, sha512
+// 示例:
+//   hash("sha256", "Hello") → "185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969"
+//   hash("md5", "Hello") → "8b1a9953c4611296a827abf8c47804d7"
+//   hash("sha256", "Hello", true) → 原始二进制字符串
+func builtinHash(ctx *Context, args []Value) (Value, error)
+```
+
+---
+
+## 文件 I/O 模块别名
+
+> 模块导入: `import "file"`
+
+### 新增别名
+
+```go
+// file_exists exists 的别名（PHP 风格）
+// file_exists(path) → bool
+// 等价于 exists(path)
+
+// is_file isFile 的别名（snake_case）
+// is_file(path) → bool
+// 等价于 isFile(path)
+
+// is_dir isDir 的别名（snake_case）
+// is_dir(path) → bool
+// 等价于 isDir(path)
+
+// file_size fileSize 的别名（snake_case）
+// file_size(path) → int
+// 等价于 fileSize(path)
+```

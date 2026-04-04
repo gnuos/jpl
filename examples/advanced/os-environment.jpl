@@ -1,0 +1,108 @@
+// OS and Environment
+// 演示系统信息和环境变量操作
+
+// ============================================================================
+// 1. 系统信息
+// ============================================================================
+
+$uname = uname()
+println "System Information:"
+println "  OS: #{$uname["os"]}"
+println "  Arch: #{$uname["arch"]}"
+println "  Hostname: #{$uname["hostname"]}"
+
+// ============================================================================
+// 2. CPU 信息
+// ============================================================================
+
+$cpus = cpu_count()
+println "\nCPU cores: #{$cpus}"
+
+// ============================================================================
+// 3. 内存信息
+// ============================================================================
+
+$mem = meminfo()
+println "\nMemory Information:"
+println "  Allocated: #{$mem["alloc"]} bytes"
+println "  Total allocated: #{$mem["total_alloc"]} bytes"
+println "  System: #{$mem["sys"]} bytes"
+println "  GC runs: #{$mem["num_gc"]}"
+println "  Goroutines: #{$mem["num_goroutine"]}"
+
+// ============================================================================
+// 4. 环境变量
+// ============================================================================
+
+$home = getenv("HOME")
+println "\nHOME: #{$home}"
+
+$path = getenv("PATH")
+if ($path != null) {
+    println "PATH length: #{strlen($path)} bytes"
+}
+
+$user = getenv("USER")
+println "USER: #{$user}"
+
+// ============================================================================
+// 5. 进程信息
+// ============================================================================
+
+$pid = getpid()
+println "\nProcess ID: #{$pid}"
+
+$ppid = getppid()
+println "Parent PID: #{$ppid}"
+
+$uid = getuid()
+println "User ID: #{$uid}"
+
+// ============================================================================
+// 6. 临时目录
+// ============================================================================
+
+$tmpDir = tmpdir()
+println "\nTemp directory: #{$tmpDir}"
+
+// ============================================================================
+// 7. 磁盘空间
+// ============================================================================
+
+$free = disk_free_space("/")
+$total = disk_total_space("/")
+println "\nDisk /:"
+println "  Free: #{floor($free / 1073741824)} GB"
+println "  Total: #{floor($total / 1073741824)} GB"
+
+// ============================================================================
+// 8. 当前工作目录
+// ============================================================================
+
+$cwd = cwd()
+println "\nCurrent directory: #{$cwd}"
+
+// ============================================================================
+// 9. 查找可执行文件（通过 PATH 搜索）
+// ============================================================================
+
+fn findInPath($cmd) {
+    $pathEnv = getenv("PATH")
+    if ($pathEnv == null) {
+        return null
+    }
+    $dirs = split($pathEnv, ":")
+    foreach ($dir in $dirs) {
+        $fullPath = joinPath($dir, $cmd)
+        if (exists($fullPath)) {
+            return $fullPath
+        }
+    }
+    return null
+}
+
+$goPath = findInPath("go")
+println "\nGo executable: #{$goPath}"
+
+$jplPath = findInPath("jpl")
+println "JPL executable: #{$jplPath}"

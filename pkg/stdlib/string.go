@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/gnuos/jpl/engine"
@@ -119,6 +120,17 @@ func RegisterString(e *engine.Engine) {
 	e.RegisterFunc("stripslashes", builtinStripslashes)
 	e.RegisterFunc("addcslashes", builtinAddcslashes)
 
+	// String P0: 缺失函数
+	e.RegisterFunc("ucfirst", builtinUcfirst)
+	e.RegisterFunc("ucwords", builtinUcwords)
+	e.RegisterFunc("substr_replace", builtinSubstrReplace)
+
+	// String P1: 常用函数
+	e.RegisterFunc("str_contains", builtinStrContains)
+	e.RegisterFunc("str_starts_with", builtinStrStartsWith)
+	e.RegisterFunc("str_ends_with", builtinStrEndsWith)
+	e.RegisterFunc("str_word_count", builtinStrWordCount)
+
 	// 模块注册 — import "strings" 可用
 	e.RegisterModule("strings", map[string]engine.GoFunction{
 		"strlen": builtinStrlen, "substr": builtinSubstr, "strpos": builtinStrpos,
@@ -149,6 +161,11 @@ func RegisterString(e *engine.Engine) {
 		"htmlentities":               builtinHtmlEntities,
 		"html_entity_decode":         builtinHtmlEntityDecode,
 		"get_html_translation_table": builtinGetHtmlTranslationTable,
+		// P1
+		"str_contains":    builtinStrContains,
+		"str_starts_with": builtinStrStartsWith,
+		"str_ends_with":   builtinStrEndsWith,
+		"str_word_count":  builtinStrWordCount,
 	})
 }
 
@@ -189,6 +206,8 @@ func StringNames() []string {
 		"quoted_printable_encode", "quoted_printable_decode",
 		// HTML实体编码函数
 		"htmlentities", "html_entity_decode", "get_html_translation_table",
+		// P1
+		"str_contains", "str_starts_with", "str_ends_with", "str_word_count",
 	}
 }
 
@@ -2311,3 +2330,112 @@ func builtinHttpBuildQuery(ctx *engine.Context, args []engine.Value) (engine.Val
 
 	return engine.NewString(strings.Join(parts, "&")), nil
 }
+
+// builtinUcfirst 将字符串首字母大写。
+func builtinUcfirst(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("ucfirst() expects 1 argument, got %d", len(args))
+	}
+	s := args[0].String()
+	if s == "" {
+		return engine.NewString(""), nil
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return engine.NewString(string(r)), nil
+}
+
+// builtinUcwords 将字符串中每个单词的首字母大写。
+func builtinUcwords(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("ucwords() expects 1 argument, got %d", len(args))
+	}
+	s := args[0].String()
+	result := []rune(s)
+	inWord := false
+	for i, r := range result {
+		if unicode.IsSpace(r) {
+			inWord = false
+		} else if !inWord {
+			result[i] = unicode.ToTitle(r)
+			inWord = true
+		}
+	}
+	return engine.NewString(string(result)), nil
+}
+
+// builtinSubstrReplace 替换字符串中指定位置的子串。
+func builtinSubstrReplace(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 3 || len(args) > 4 {
+		return nil, fmt.Errorf("substr_replace() expects 3-4 arguments (string, replacement, start, [length]), got %d", len(args))
+	}
+
+	str := args[0].String()
+	replacement := args[1].String()
+	start := int(args[2].Int())
+
+	strLen := utf8.RuneCountInString(str)
+	runes := []rune(str)
+
+	if start < 0 {
+		start = strLen + start
+	}
+	if start < 0 {
+		start = 0
+	}
+	if start > strLen {
+		start = strLen
+	}
+
+	length := len(runes) - start
+	if len(args) == 4 {
+		length = int(args[3].Int())
+		if length < 0 {
+			length = strLen + length - start
+		}
+		if length < 0 {
+			length = 0
+		}
+	}
+	if start+length > strLen {
+		length = strLen - start
+	}
+
+	result := string(runes[:start]) + replacement + string(runes[start+length:])
+	return engine.NewString(result), nil
+}
+
+// builtinStrContains 检查字符串是否包含子串。
+func builtinStrContains(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("str_contains() expects 2 arguments (haystack, needle), got %d", len(args))
+	}
+	return engine.NewBool(strings.Contains(args[0].String(), args[1].String())), nil
+}
+
+// builtinStrStartsWith 检查字符串是否以指定前缀开头。
+func builtinStrStartsWith(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("str_starts_with() expects 2 arguments (str, prefix), got %d", len(args))
+	}
+	return engine.NewBool(strings.HasPrefix(args[0].String(), args[1].String())), nil
+}
+
+// builtinStrEndsWith 检查字符串是否以指定后缀结尾。
+func builtinStrEndsWith(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("str_ends_with() expects 2 arguments (str, suffix), got %d", len(args))
+	}
+	return engine.NewBool(strings.HasSuffix(args[0].String(), args[1].String())), nil
+}
+
+// builtinStrWordCount 计算字符串中的单词数。
+func builtinStrWordCount(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("str_word_count() expects 1 argument, got %d", len(args))
+	}
+	words := strings.Fields(args[0].String())
+	return engine.NewInt(int64(len(words))), nil
+}
+
+// StringSigs returns function signatures for REPL :doc command.

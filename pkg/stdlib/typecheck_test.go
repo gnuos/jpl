@@ -25,6 +25,8 @@ func TestTypeCheckNames(t *testing.T) {
 		"is_regex",
 		// 大数类型检查
 		"is_bigint", "is_bigdecimal",
+		// 新增 P1
+		"is_error", "is_callable", "is_iterable",
 	}
 
 	if len(names) != len(expected) {

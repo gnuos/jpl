@@ -1,0 +1,128 @@
+// Utility Functions
+// 演示 keys, values, entries, has_key, clone, typeof, dump 等工具函数
+
+// ============================================================================
+// 1. keys() — 获取对象的键
+// ============================================================================
+
+$user = {
+    name: "Alice",
+    age: 30,
+    email: "alice@example.com",
+    active: true
+}
+
+$keys = keys($user)
+println "Object keys: #{$keys}"
+
+// 也可以获取数组的索引
+$arr = ["a", "b", "c"]
+$indices = keys($arr)
+println "Array indices: #{$indices}"
+
+// ============================================================================
+// 2. values() — 获取对象的值
+// ============================================================================
+
+$values = values($user)
+println "Object values: #{$values}"
+
+// ============================================================================
+// 3. entries() — 获取 [key, value] 对
+// ============================================================================
+
+$entries = entries($user)
+println "\nObject entries:"
+foreach ($entry in $entries) {
+    println "  #{$entry[0]}: #{$entry[1]}"
+}
+
+// ============================================================================
+// 4. has_key() — 检查键是否存在
+// ============================================================================
+
+println "\nKey checks:"
+println "has_key(user, 'name'): #{has_key($user, "name")}"
+println "has_key(user, 'phone'): #{has_key($user, "phone")}"
+println "has_key(user, 'age'): #{has_key($user, "age")}"
+
+// 安全访问模式
+fn safeGet($obj, $key, $default) {
+    if (has_key($obj, $key)) {
+        return $obj[$key]
+    }
+    return $default
+}
+
+println "safeGet(user, 'name', 'N/A'): #{safeGet($user, "name", "N/A")}"
+println "safeGet(user, 'phone', 'N/A'): #{safeGet($user, "phone", "N/A")}"
+
+// ============================================================================
+// 5. clone() — 深拷贝
+// ============================================================================
+
+$original = {
+    name: "Alice",
+    scores: [95, 87, 92],
+    meta: {
+        created: "2026-01-01",
+        tags: ["student", "active"]
+    }
+}
+
+$cloned = clone($original)
+
+// 修改克隆后的对象
+$cloned["name"] = "Bob"
+push($cloned["scores"], 100)
+$cloned["meta"]["tags"] = ["graduate"]
+
+println "\nOriginal name: #{$original["name"]}"
+println "Cloned name: #{$cloned["name"]}"
+
+println "Original scores: #{$original["scores"]}"
+println "Cloned scores: #{$cloned["scores"]}"
+
+println "Original tags: #{$original["meta"]["tags"]}"
+println "Cloned tags: #{$cloned["meta"]["tags"]}"
+
+// ============================================================================
+// 6. typeof() — 类型查询
+// ============================================================================
+
+println "\nType checks:"
+println "typeof(42): #{typeof(42)}"
+println "typeof(3.14): #{typeof(3.14)}"
+println "typeof('hello'): #{typeof("hello")}"
+println "typeof(true): #{typeof(true)}"
+println "typeof(null): #{typeof(null)}"
+$arr2 = [1, 2, 3]
+println "typeof([1, 2, 3]): #{typeof($arr2)}"
+$obj2 = {a: 1}
+println "typeof({a: 1}): #{typeof($obj2)}"
+
+// ============================================================================
+// 7. dump() — 调试输出
+// ============================================================================
+
+$data = {
+    users: [
+        {name: "Alice", age: 30},
+        {name: "Bob", age: 25}
+    ],
+    count: 2,
+    active: true
+}
+
+println "\nDebug dump:"
+println dump($data)
+
+// ============================================================================
+// 8. len() — 长度
+// ============================================================================
+
+println "\nLength checks:"
+println "len('hello'): #{len("hello")}"
+println "len([1, 2, 3]): #{len([1, 2, 3])}"
+$map = {a: 1, b: 2, c: 3}
+println "len(obj with 3 keys): #{len($map)}"

@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 
 	"github.com/gnuos/jpl/engine"
@@ -22,6 +23,10 @@ func RegisterTypeConvert(e *engine.Engine) {
 	e.RegisterFunc("floatval", builtinFloatval)
 	e.RegisterFunc("strval", builtinStrval)
 	e.RegisterFunc("boolval", builtinBoolval)
+
+	// P1
+	e.RegisterFunc("bigint", builtinBigInt)
+	e.RegisterFunc("bigdecimal", builtinBigDecimal)
 }
 
 // TypeConvertNames 返回类型转换函数名称列表。
@@ -29,7 +34,7 @@ func RegisterTypeConvert(e *engine.Engine) {
 // 返回值：
 //   - []string: 函数名列表 ["intval", "floatval", "strval", "boolval"]
 func TypeConvertNames() []string {
-	return []string{"intval", "floatval", "strval", "boolval"}
+	return []string{"intval", "floatval", "strval", "boolval", "bigint", "bigdecimal"}
 }
 
 // builtinIntval 将值转换为整数
@@ -230,6 +235,38 @@ func builtinBoolval(ctx *engine.Context, args []engine.Value) (engine.Value, err
 }
 
 // TypeConvertSigs returns function signatures for REPL :doc command.
+
+// builtinBigInt 转换为 BigInt。
+func builtinBigInt(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("bigint() expects 1 argument, got %d", len(args))
+	}
+	v := args[0]
+	if v.Type() == engine.TypeBigInt {
+		return v, nil
+	}
+	bi, ok := new(big.Int).SetString(v.String(), 10)
+	if !ok {
+		return nil, fmt.Errorf("bigint() cannot convert %s to BigInt", v.Type())
+	}
+	return engine.NewBigInt(bi), nil
+}
+
+// builtinBigDecimal 转换为 BigDecimal。
+func builtinBigDecimal(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("bigdecimal() expects 1 argument, got %d", len(args))
+	}
+	v := args[0]
+	if v.Type() == engine.TypeBigDecimal {
+		return v, nil
+	}
+	br, ok := new(big.Rat).SetString(v.String())
+	if !ok {
+		return nil, fmt.Errorf("bigdecimal() cannot convert %s to BigDecimal", v.Type())
+	}
+	return engine.NewBigDecimal(br), nil
+}
 func TypeConvertSigs() map[string]string {
 	return map[string]string{
 		"intval":     "intval(value, [base]) → int  — Convert to integer",

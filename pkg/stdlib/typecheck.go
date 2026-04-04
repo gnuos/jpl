@@ -46,6 +46,11 @@ func RegisterTypeCheck(e *engine.Engine) {
 	// 大数类型检查
 	e.RegisterFunc("is_bigint", builtinIsBigInt)
 	e.RegisterFunc("is_bigdecimal", builtinIsBigDecimal)
+
+	// P1
+	e.RegisterFunc("is_error", builtinIsError)
+	e.RegisterFunc("is_callable", builtinIsCallable)
+	e.RegisterFunc("is_iterable", builtinIsIterable)
 }
 
 // TypeCheckNames 返回类型检查函数名称列表。
@@ -67,6 +72,8 @@ func TypeCheckNames() []string {
 		"is_regex",
 		// 大数类型检查
 		"is_bigint", "is_bigdecimal",
+		// P1
+		"is_error", "is_callable", "is_iterable",
 	}
 }
 
@@ -442,6 +449,23 @@ func builtinIsBigDecimal(ctx *engine.Context, args []engine.Value) (engine.Value
 }
 
 // TypeCheckSigs returns function signatures for REPL :doc command.
+
+// builtinIsError 检查值是否为错误类型。
+func builtinIsError(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("is_error() expects 1 argument, got %d", len(args))
+	}
+	return engine.NewBool(args[0].Type() == engine.TypeError), nil
+}
+
+// builtinIsIterable 检查值是否可迭代。
+func builtinIsIterable(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("is_iterable() expects 1 argument, got %d", len(args))
+	}
+	t := args[0].Type()
+	return engine.NewBool(t == engine.TypeArray || t == engine.TypeObject || t == engine.TypeString || t == engine.TypeRange), nil
+}
 func TypeCheckSigs() map[string]string {
 	return map[string]string{
 		"is_null":       "is_null(value) → bool  — Check if value is null",

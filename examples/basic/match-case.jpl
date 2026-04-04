@@ -1,0 +1,185 @@
+// Pattern Matching with match/case
+// 演示 JPL 的 match/case 模式匹配功能
+
+// ============================================================================
+// 1. 基本值匹配
+// ============================================================================
+
+fn describeStatus($code) {
+    return match ($code) {
+        case 200: "OK"
+        case 404: "Not Found"
+        case 500: "Internal Server Error"
+        case _: "Unknown"
+    }
+}
+
+println describeStatus(200)   // "OK"
+println describeStatus(404)   // "Not Found"
+println describeStatus(999)   // "Unknown"
+
+// ============================================================================
+// 2. 字符串匹配
+// ============================================================================
+
+fn greet($lang) {
+    return match ($lang) {
+        case "en": "Hello!"
+        case "zh": "你好!"
+        case "ja": "こんにちは!"
+        case "fr": "Bonjour!"
+        case _: "Unknown language"
+    }
+}
+
+println greet("zh")   // "你好!"
+println greet("en")   // "Hello!"
+
+// ============================================================================
+// 3. OR 模式（多值匹配）
+// ============================================================================
+
+fn dayType($day) {
+    return match ($day) {
+        case "Saturday", "Sunday": "Weekend"
+        case _: "Weekday"
+    }
+}
+
+println dayType("Saturday")   // "Weekend"
+println dayType("Monday")     // "Weekday"
+
+// ============================================================================
+// 4. Guard 条件（范围匹配）
+// ============================================================================
+
+fn grade($score) {
+    return match ($score) {
+        case $x if $x >= 90: "A"
+        case $x if $x >= 80: "B"
+        case $x if $x >= 70: "C"
+        case $x if $x >= 60: "D"
+        case _: "F"
+    }
+}
+
+println grade(95)   // "A"
+println grade(85)   // "B"
+println grade(72)   // "C"
+println grade(55)   // "F"
+
+// ============================================================================
+// 5. 标识符绑定
+// ============================================================================
+
+fn describeValue($value) {
+    return match ($value) {
+        case $x: "Got: #{$x}"
+    }
+}
+
+println describeValue(42)     // "Got: 42"
+println describeValue("hi")   // "Got: hi"
+
+// ============================================================================
+// 6. 数组元素分类
+// ============================================================================
+
+fn classifyNumber($n) {
+    return match ($n) {
+        case $x if $x < 0: "negative"
+        case 0: "zero"
+        case $x if $x > 0: "positive"
+    }
+}
+
+$numbers = [-5, -1, 0, 3, 7]
+foreach ($n in $numbers) {
+    println "#{$n} is #{classifyNumber($n)}"
+}
+
+// ============================================================================
+// 7. 嵌套 match
+// ============================================================================
+
+fn describePoint($x, $y) {
+    return match ($x) {
+        case 0: match ($y) {
+            case 0: "origin"
+            case _: "on y-axis"
+        }
+        case _: match ($y) {
+            case 0: "on x-axis"
+            case _: "quadrant"
+        }
+    }
+}
+
+println describePoint(0, 0)   // "origin"
+println describePoint(0, 5)   // "on y-axis"
+println describePoint(3, 0)   // "on x-axis"
+println describePoint(3, 4)   // "quadrant"
+
+// ============================================================================
+// 8. 多行 case 体（使用 { } 块）
+// ============================================================================
+
+fn processStatus($status) {
+    match ($status) {
+        case 200: {
+            puts "Request succeeded"
+        }
+        case 404: {
+            puts "Resource not found"
+        }
+        case 500: {
+            puts "Server error"
+        }
+        case _: {
+            puts "Unknown status"
+        }
+    }
+}
+
+processStatus(200)
+processStatus(404)
+
+// ============================================================================
+// 9. 正则匹配（使用变量存储正则表达式）
+// ============================================================================
+
+$isoDate = #/^\d{4}-\d{2}-\d{2}/#
+$usDate = #/^\d{2}\/\d{2}\/\d{4}/#
+$shortDate = #/^\d{2}-\w{3}-\d{4}/#
+
+fn parseDate($str) {
+    return match ($str) {
+        case $isoDate: "ISO date: #{$str}"
+        case $usDate: "US date: #{$str}"
+        case $shortDate: "Short date: #{$str}"
+        case _: "Unknown format: #{$str}"
+    }
+}
+
+println parseDate("2026-04-04")     // "ISO date: 2026-04-04"
+println parseDate("04/04/2026")     // "US date: 04/04/2026"
+println parseDate("04-Apr-2026")    // "Short date: 04-Apr-2026"
+println parseDate("April 4, 2026")  // "Unknown format: April 4, 2026"
+
+// ============================================================================
+// 10. 在 match 中使用表达式
+// ============================================================================
+
+fn fibonacci($n) {
+    if ($n == 0) {
+        return 0
+    }
+    if ($n == 1) {
+        return 1
+    }
+    return fibonacci($n - 1) + fibonacci($n - 2)
+}
+
+// 计算前 10 个斐波那契数
+$fibs = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+println "Fibonacci: #{$fibs}"

@@ -24,8 +24,8 @@ println "5! = " .. factorial(5)
 println ""
 println "=== 箭头函数（Lambda） ==="
 // 多参数箭头函数
-$multiply = ($a, $b) -> $a * $b
-$square = ($x) -> $x * $x
+$multiply = (a, b) -> a * b
+$square = (x) -> x * x
 
 println "7 * 8 = " .. $multiply(7, 8)
 println "5² = " .. $square(5)
@@ -43,7 +43,7 @@ fn applyOperation(a, b, operation) {
     return operation(a, b)
 }
 
-$result = applyOperation(10, 5, ($x, $y) -> $x - $y)
+$result = applyOperation(10, 5, (x, y) -> x - y)
 println "applyOperation(10, 5, subtract) = " .. $result
 
 println ""
@@ -71,7 +71,7 @@ println "Counter A: " .. $counterA()
 println ""
 println "=== 函数作为返回值 ==="
 fn makeMultiplier(factor) {
-    return ($x) -> $x * $factor
+    return (x) -> x * factor
 }
 
 $double = makeMultiplier(2)

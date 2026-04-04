@@ -79,6 +79,23 @@ func RegisterMath(e *engine.Engine) {
 	e.RegisterFunc("octdec", builtinOctDec)
 	e.RegisterFunc("base_convert", builtinBaseConvert)
 
+	// Math P0: 缺失函数
+	e.RegisterFunc("cbrt", builtinCbrt)
+	e.RegisterFunc("log2", builtinLog2)
+	e.RegisterFunc("clamp", builtinClamp)
+	e.RegisterFunc("sign", builtinSign)
+	e.RegisterFunc("intdiv", builtinIntDiv)
+
+	// Math P1: 常用函数
+	e.RegisterFunc("trunc", builtinTrunc)
+	e.RegisterFunc("factorial", builtinFactorial)
+	e.RegisterFunc("gcd", builtinGcd)
+	e.RegisterFunc("lcm", builtinLcm)
+	e.RegisterFunc("median", builtinMedian)
+	e.RegisterFunc("mean", builtinMean)
+	e.RegisterFunc("stddev", builtinStddev)
+	e.RegisterFunc("modf", builtinModf)
+
 	// 模块注册 — import "math" 可用
 	e.RegisterModule("math", map[string]engine.GoFunction{
 		"abs": builtinAbs, "ceil": builtinCeil, "floor": builtinFloor, "round": builtinRound,
@@ -98,6 +115,13 @@ func RegisterMath(e *engine.Engine) {
 		"dechex": builtinDecHex, "decoct": builtinDecOct, "decbin": builtinDecBin,
 		"hexdec": builtinHexDec, "bindec": builtinBinDec, "octdec": builtinOctDec,
 		"base_convert": builtinBaseConvert,
+		// P0
+		"cbrt": builtinCbrt, "log2": builtinLog2, "clamp": builtinClamp,
+		"sign": builtinSign, "intdiv": builtinIntDiv,
+		// P1
+		"trunc": builtinTrunc, "factorial": builtinFactorial, "gcd": builtinGcd,
+		"lcm": builtinLcm, "median": builtinMedian, "mean": builtinMean,
+		"stddev": builtinStddev, "modf": builtinModf,
 	})
 }
 
@@ -833,6 +857,222 @@ func builtinBaseConvert(ctx *engine.Context, args []engine.Value) (engine.Value,
 	}
 }
 
+// builtinCbrt 计算立方根。
+func builtinCbrt(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("cbrt() expects 1 argument, got %d", len(args))
+	}
+	return engine.NewFloat(math.Cbrt(args[0].Float())), nil
+}
+
+// builtinLog2 计算以 2 为底的对数。
+func builtinLog2(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("log2() expects 1 argument, got %d", len(args))
+	}
+	return engine.NewFloat(math.Log2(args[0].Float())), nil
+}
+
+// builtinClamp 将值限制在 [min, max] 范围内。
+func builtinClamp(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 3 {
+		return nil, fmt.Errorf("clamp() expects 3 arguments (value, min, max), got %d", len(args))
+	}
+
+	val := args[0].Float()
+	minVal := args[1].Float()
+	maxVal := args[2].Float()
+
+	if val < minVal {
+		val = minVal
+	} else if val > maxVal {
+		val = maxVal
+	}
+
+	if val == float64(int64(val)) {
+		return engine.NewInt(int64(val)), nil
+	}
+	return engine.NewFloat(val), nil
+}
+
+// builtinSign 返回数字的符号：-1（负数）、0（零）、1（正数）。
+func builtinSign(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("sign() expects 1 argument, got %d", len(args))
+	}
+
+	val := args[0].Float()
+	if val < 0 {
+		return engine.NewInt(-1), nil
+	} else if val > 0 {
+		return engine.NewInt(1), nil
+	}
+	return engine.NewInt(0), nil
+}
+
+// builtinIntDiv 整数除法。
+func builtinIntDiv(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("intdiv() expects 2 arguments (dividend, divisor), got %d", len(args))
+	}
+
+	a := args[0].Int()
+	b := args[1].Int()
+
+	if b == 0 {
+		return nil, fmt.Errorf("intdiv() division by zero")
+	}
+
+	return engine.NewInt(a / b), nil
+}
+
+// builtinTrunc 向零取整。
+func builtinTrunc(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("trunc() expects 1 argument, got %d", len(args))
+	}
+	return engine.NewInt(int64(math.Trunc(args[0].Float()))), nil
+}
+
+// builtinFactorial 计算阶乘。
+func builtinFactorial(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("factorial() expects 1 argument, got %d", len(args))
+	}
+	n := int(args[0].Int())
+	if n < 0 {
+		return nil, fmt.Errorf("factorial() argument must be non-negative")
+	}
+	result := int64(1)
+	for i := 2; i <= n; i++ {
+		result *= int64(i)
+	}
+	return engine.NewInt(result), nil
+}
+
+// builtinGcd 计算最大公约数。
+func builtinGcd(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("gcd() expects 2 arguments, got %d", len(args))
+	}
+	a, b := args[0].Int(), args[1].Int()
+	if a < 0 {
+		a = -a
+	}
+	if b < 0 {
+		b = -b
+	}
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return engine.NewInt(a), nil
+}
+
+// builtinLcm 计算最小公倍数。
+func builtinLcm(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("lcm() expects 2 arguments, got %d", len(args))
+	}
+	a, b := args[0].Int(), args[1].Int()
+	if a == 0 || b == 0 {
+		return engine.NewInt(0), nil
+	}
+	if a < 0 {
+		a = -a
+	}
+	if b < 0 {
+		b = -b
+	}
+	return engine.NewInt(a / (a % b) * b), nil
+}
+
+// builtinMedian 计算中位数。
+func builtinMedian(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("median() expects 1 argument, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("median() argument must be array, got %s", args[0].Type())
+	}
+	arr := args[0].Array()
+	if len(arr) == 0 {
+		return nil, fmt.Errorf("median() array must not be empty")
+	}
+	vals := make([]float64, len(arr))
+	for i, v := range arr {
+		vals[i] = v.Float()
+	}
+	// 插入排序
+	for i := 1; i < len(vals); i++ {
+		for j := i; j > 0 && vals[j] < vals[j-1]; j-- {
+			vals[j], vals[j-1] = vals[j-1], vals[j]
+		}
+	}
+	n := len(vals)
+	if n%2 == 1 {
+		return engine.NewFloat(vals[n/2]), nil
+	}
+	return engine.NewFloat((vals[n/2-1] + vals[n/2]) / 2), nil
+}
+
+// builtinMean 计算算术平均值。
+func builtinMean(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("mean() expects 1 argument, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("mean() argument must be array, got %s", args[0].Type())
+	}
+	arr := args[0].Array()
+	if len(arr) == 0 {
+		return nil, fmt.Errorf("mean() array must not be empty")
+	}
+	sum := 0.0
+	for _, v := range arr {
+		sum += v.Float()
+	}
+	return engine.NewFloat(sum / float64(len(arr))), nil
+}
+
+// builtinStddev 计算标准差。
+func builtinStddev(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("stddev() expects 1 argument, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("stddev() argument must be array, got %s", args[0].Type())
+	}
+	arr := args[0].Array()
+	if len(arr) == 0 {
+		return nil, fmt.Errorf("stddev() array must not be empty")
+	}
+	n := float64(len(arr))
+	sum := 0.0
+	for _, v := range arr {
+		sum += v.Float()
+	}
+	mean := sum / n
+	variance := 0.0
+	for _, v := range arr {
+		diff := v.Float() - mean
+		variance += diff * diff
+	}
+	variance /= n
+	return engine.NewFloat(math.Sqrt(variance)), nil
+}
+
+// builtinModf 返回整数和小数部分。
+func builtinModf(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("modf() expects 1 argument, got %d", len(args))
+	}
+	intPart, fracPart := math.Modf(args[0].Float())
+	return engine.NewArray([]engine.Value{
+		engine.NewFloat(fracPart),
+		engine.NewFloat(intPart),
+	}), nil
+}
+
 // MathSigs returns function signatures for REPL :doc command.
 func MathSigs() map[string]string {
 	return map[string]string{
@@ -873,5 +1113,10 @@ func MathSigs() map[string]string {
 		"hypot":        "hypot(x, y) → float  — Hypotenuse",
 		"deg2rad":      "deg2rad(degrees) → float  — Degrees to radians",
 		"rad2deg":      "rad2deg(radians) → float  — Radians to degrees",
+		"cbrt":         "cbrt(n) → float  — Cube root",
+		"log2":         "log2(n) → float  — Base-2 logarithm",
+		"clamp":        "clamp(value, min, max) → number  — Clamp value between min and max",
+		"sign":         "sign(n) → int  — Sign of number (-1, 0, 1)",
+		"intdiv":       "intdiv(a, b) → int  — Integer division",
 	}
 }

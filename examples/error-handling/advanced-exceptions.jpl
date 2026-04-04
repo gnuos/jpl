@@ -1,0 +1,168 @@
+// Advanced Exception Handling
+// 演示 JPL 的高级异常处理功能
+
+// ============================================================================
+// 1. 基本 try/catch/throw
+// ============================================================================
+
+fn divide($a, $b) {
+    if ($b == 0) {
+        throw error("Division by zero", 1001)
+    }
+    return $a / $b
+}
+
+try {
+    $result = divide(10, 0)
+    println "Result: #{$result}"
+} catch ($e) {
+    println "Error: #{$e.message} (code: #{$e.code})"
+}
+
+// ============================================================================
+// 2. 多个 catch 分支
+// ============================================================================
+
+fn processInput($value) {
+    if ($value == null) {
+        throw error("Null input not allowed", 2001, "NullError")
+    }
+    if ($value < 0) {
+        throw error("Negative values not allowed", 2002, "ValueError")
+    }
+    return $value * 2
+}
+
+fn testInput($value) {
+    try {
+        $result = processInput($value)
+        println "Result: #{$result}"
+    } catch ($e when $e.type == "NullError") {
+        println "NullError: #{$e.message}"
+    } catch ($e when $e.type == "ValueError") {
+        println "ValueError: #{$e.message}"
+    } catch ($e) {
+        println "Unknown error: #{$e.message}"
+    }
+}
+
+testInput(null)   // NullError
+testInput(-5)     // ValueError
+testInput(10)     // Result: 20
+
+// ============================================================================
+// 3. 跨函数异常传播
+// ============================================================================
+
+fn level3($value) {
+    if ($value < 0) {
+        throw error("Negative value at level 3", 3001)
+    }
+    return $value
+}
+
+fn level2($value) {
+    return level3($value)  // 不捕获异常，向上传播
+}
+
+fn level1($value) {
+    return level2($value)  // 不捕获异常，向上传播
+}
+
+try {
+    $result = level1(-42)
+    println "Should not reach here"
+} catch ($e) {
+    println "Caught at top level: #{$e.message} (code: #{$e.code})"
+}
+
+// ============================================================================
+// 4. 嵌套 try/catch
+// ============================================================================
+
+fn nestedTry($value) {
+    try {
+        if ($value == 0) {
+            throw error("Inner error", 4001)
+        }
+        if ($value < 0) {
+            throw error("Outer error", 4002)
+        }
+        println "Value #{$value} is valid"
+    } catch ($e) {
+        println "Caught: #{$e.message}"
+    }
+}
+
+nestedTry(5)    // "Value 5 is valid"
+nestedTry(0)    // "Caught: Inner error"
+nestedTry(-1)   // "Caught: Outer error"
+
+// ============================================================================
+// 5. 自定义错误类型
+// ============================================================================
+
+fn validateUser($user) {
+    if ($user == null) {
+        throw error("User is null", 5001, "ValidationError")
+    }
+    if ($user["name"] == null || $user["name"] == "") {
+        throw error("Name is required", 5002, "ValidationError")
+    }
+    if ($user["age"] == null) {
+        throw error("Age is required", 5003, "ValidationError")
+    }
+    if ($user["age"] < 0 || $user["age"] > 150) {
+        throw error("Invalid age", 5004, "ValidationError")
+    }
+    return true
+}
+
+$users = [
+    null,
+    {name: "", age: 25},
+    {name: "Alice", age: null},
+    {name: "Bob", age: 200},
+    {name: "Charlie", age: 30}
+]
+
+foreach ($user in $users) {
+    try {
+        validateUser($user)
+        println "User validated successfully"
+    } catch ($e) {
+        println "Validation failed: #{$e.message}"
+    }
+}
+
+// ============================================================================
+// 6. 异常与返回值
+// ============================================================================
+
+fn safeDivide($a, $b) {
+    try {
+        return divide($a, $b)
+    } catch ($e) {
+        return null  // 异常时返回默认值
+    }
+}
+
+$result1 = safeDivide(10, 2)
+println "safeDivide(10, 2) = #{$result1}"  // 5
+
+$result2 = safeDivide(10, 0)
+println "safeDivide(10, 0) = #{$result2}"  // null
+
+// ============================================================================
+// 7. 错误信息格式化
+// ============================================================================
+
+fn formatError($e) {
+    return "Error [#{$e.code}] #{$e.type}: #{$e.message}"
+}
+
+try {
+    throw error("Something went wrong", 9999, "CustomError")
+} catch ($e) {
+    println formatError($e)
+}

@@ -1,6 +1,8 @@
 package stdlib
 
 import (
+	"maps"
+	"slices"
 	"sort"
 
 	"github.com/gnuos/jpl/engine"
@@ -148,129 +150,48 @@ func FunctionNames() []string {
 // 返回 map[函数名]签名描述，未知函数返回空字符串。
 func FunctionSignatures() map[string]string {
 	sigs := make(map[string]string)
-	for m, s := range IOSigs() {
-		sigs[m] = s
-	}
-	for m, s := range UtilSigs() {
-		sigs[m] = s
-	}
-	for m, s := range FunctionalSigs() {
-		sigs[m] = s
-	}
-	for m, s := range TypeCheckSigs() {
-		sigs[m] = s
-	}
-	for m, s := range TypeConvertSigs() {
-		sigs[m] = s
-	}
-	for m, s := range FileIOSigs() {
-		sigs[m] = s
-	}
-	for m, s := range FileIOAsyncSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ConstFuncSigs() {
-		sigs[m] = s
-	}
-	for m, s := range HashSigs() {
-		sigs[m] = s
-	}
-	for m, s := range UrlSigs() {
-		sigs[m] = s
-	}
-	for m, s := range GCSigs() {
-		sigs[m] = s
-	}
-	for m, s := range StringSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ArraySigs() {
-		sigs[m] = s
-	}
-	for m, s := range MathSigs() {
-		sigs[m] = s
-	}
-	for m, s := range DebugSigs() {
-		sigs[m] = s
-	}
-	for m, s := range DateTimeSigs() {
-		sigs[m] = s
-	}
-	for m, s := range EvalSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ReflectSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ErrorSigs() {
-		sigs[m] = s
-	}
-	for m, s := range JSONSigs() {
-		sigs[m] = s
-	}
-	for m, s := range BitwiseSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ProcessSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ProcessExtSigs() {
-		sigs[m] = s
-	}
-	for m, s := range VMFuncSigs() {
-		sigs[m] = s
-	}
-	for m, s := range SystemSigs() {
-		sigs[m] = s
-	}
-	for m, s := range BinarySigs() {
-		sigs[m] = s
-	}
-	for m, s := range EvSigs() {
-		sigs[m] = s
-	}
-	for m, s := range NetSigs() {
-		sigs[m] = s
-	}
-	for m, s := range DNSSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ObjectParseSigs() {
-		sigs[m] = s
-	}
-	for m, s := range TLSSigs() {
-		sigs[m] = s
-	}
-	for m, s := range HTTPSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ReSigs() {
-		sigs[m] = s
-	}
-	for m, s := range CryptoSigs() {
-		sigs[m] = s
-	}
-	for m, s := range IPSigs() {
-		sigs[m] = s
-	}
-	for m, s := range DeleteSigs() {
-		sigs[m] = s
-	}
-	for m, s := range GzipSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ZlibSigs() {
-		sigs[m] = s
-	}
-	for m, s := range BrotliSigs() {
-		sigs[m] = s
-	}
-	for m, s := range ZipSigs() {
-		sigs[m] = s
-	}
-	for m, s := range TarSigs() {
-		sigs[m] = s
-	}
+	maps.Copy(sigs, GCSigs())
+	maps.Copy(sigs, IOSigs())
+	maps.Copy(sigs, UtilSigs())
+	maps.Copy(sigs, FunctionalSigs())
+	maps.Copy(sigs, TypeCheckSigs())
+	maps.Copy(sigs, TypeConvertSigs())
+	maps.Copy(sigs, FileIOSigs())
+	maps.Copy(sigs, FileIOAsyncSigs())
+	maps.Copy(sigs, ConstFuncSigs())
+	maps.Copy(sigs, HashSigs())
+	maps.Copy(sigs, UrlSigs())
+	maps.Copy(sigs, StringSigs())
+	maps.Copy(sigs, ArraySigs())
+	maps.Copy(sigs, MathSigs())
+	maps.Copy(sigs, DebugSigs())
+	maps.Copy(sigs, DateTimeSigs())
+	maps.Copy(sigs, EvalSigs())
+	maps.Copy(sigs, ReflectSigs())
+	maps.Copy(sigs, ErrorSigs())
+	maps.Copy(sigs, JSONSigs())
+	maps.Copy(sigs, BitwiseSigs())
+	maps.Copy(sigs, ProcessSigs())
+	maps.Copy(sigs, ProcessExtSigs())
+	maps.Copy(sigs, VMFuncSigs())
+	maps.Copy(sigs, SystemSigs())
+	maps.Copy(sigs, BinarySigs())
+	maps.Copy(sigs, EvSigs())
+	maps.Copy(sigs, NetSigs())
+	maps.Copy(sigs, DNSSigs())
+	maps.Copy(sigs, ObjectParseSigs())
+	maps.Copy(sigs, TLSSigs())
+	maps.Copy(sigs, HTTPSigs())
+	maps.Copy(sigs, ReSigs())
+	maps.Copy(sigs, CryptoSigs())
+	maps.Copy(sigs, IPSigs())
+	maps.Copy(sigs, DeleteSigs())
+	maps.Copy(sigs, GzipSigs())
+	maps.Copy(sigs, ZlibSigs())
+	maps.Copy(sigs, BrotliSigs())
+	maps.Copy(sigs, ZipSigs())
+	maps.Copy(sigs, TarSigs())
+
 	return sigs
 }
 
@@ -282,11 +203,10 @@ func GetFunctionDoc(name string) string {
 	}
 	// 检查是否为已知函数名
 	names := FunctionNames()
-	for _, n := range names {
-		if n == name {
-			return name + "(...)"
-		}
+	if slices.Contains(names, name) {
+		return name + "(...)"
 	}
+
 	return ""
 }
 

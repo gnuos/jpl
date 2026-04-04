@@ -1,0 +1,179 @@
+// Array Operations with Functional Programming
+// 演示 map/filter/reduce 等高阶函数在数组上的应用
+
+// ============================================================================
+// 1. map - 映射
+// ============================================================================
+
+$numbers = [1, 2, 3, 4, 5]
+
+// 每个元素翻倍
+$doubled = map($numbers, ($x) -> $x * 2)
+println "Doubled: #{$doubled}"
+
+// 转大写
+$words = ["hello", "world", "jpl"]
+$upper = map($words, ($w) -> toUpper($w))
+println "Uppercased: #{$upper}"
+
+// 获取长度
+$lengths = map($words, ($w) -> strlen($w))
+println "Lengths: #{$lengths}"
+
+// ============================================================================
+// 2. filter - 过滤
+// ============================================================================
+
+$numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+// 只保留偶数
+$evens = filter($numbers, ($x) -> $x % 2 == 0)
+println "Evens: #{$evens}"
+
+// 只保留大于 5 的数
+$greaterThan5 = filter($numbers, ($x) -> $x > 5)
+println "Greater than 5: #{$greaterThan5}"
+
+// 过滤空字符串
+$strings = ["hello", "", "world", "", "jpl"]
+$nonEmpty = filter($strings, ($s) -> $s != "")
+println "Non-empty: #{$nonEmpty}"
+
+// ============================================================================
+// 3. reduce - 归约
+// ============================================================================
+
+// 求和
+$sum = reduce($numbers, ($acc, $x) -> $acc + $x, 0)
+println "Sum: #{$sum}"
+
+// 求积
+$product = reduce($numbers, ($acc, $x) -> $acc * $x, 1)
+println "Product: #{$product}"
+
+// 最大值
+$max = reduce($numbers, ($acc, $x) -> $x > $acc ? $x : $acc, $numbers[0])
+println "Max: #{$max}"
+
+// 拼接字符串
+$words = ["Hello", "World", "from", "JPL"]
+$sentence = reduce($words, ($acc, $w) -> $acc .. " " .. $w, "")
+println "Sentence: #{$sentence}"
+
+// ============================================================================
+// 4. find - 查找
+// ============================================================================
+
+$users = [
+    {name: "Alice", age: 30},
+    {name: "Bob", age: 25},
+    {name: "Charlie", age: 35}
+]
+
+$bob = find($users, ($u) -> $u["name"] == "Bob")
+if ($bob != null) {
+    println "Found: #{$bob["name"]}, age #{$bob["age"]}"
+}
+
+// 查找第一个大于 5 的数字
+$first = find($numbers, ($x) -> $x > 5)
+println "First > 5: #{$first}"
+
+// ============================================================================
+// 5. some / every - 条件检查
+// ============================================================================
+
+$hasEven = some($numbers, ($x) -> $x % 2 == 0)
+println "Has even number: #{$hasEven}"
+
+$allPositive = every($numbers, ($x) -> $x > 0)
+println "All positive: #{$allPositive}"
+
+$allEven = every($numbers, ($x) -> $x % 2 == 0)
+println "All even: #{$allEven}"
+
+// ============================================================================
+// 6. contains - 包含检查
+// ============================================================================
+
+$fruits = ["apple", "banana", "cherry"]
+println "Contains 'banana': #{contains($fruits, "banana")}"
+println "Contains 'grape': #{contains($fruits, "grape")}"
+
+// ============================================================================
+// 7. sort - 排序
+// ============================================================================
+
+$nums = [5, 2, 8, 1, 9, 3]
+$sorted = sort($nums)
+println "Sorted: #{$sorted}"
+
+$desc = sort($nums, ($a, $b) -> $a > $b)
+println "Descending: #{$desc}"
+
+// 按字符串长度排序
+$words = ["banana", "fig", "apple", "kiwi"]
+$byLength = sort($words, ($a, $b) -> strlen($a) < strlen($b))
+println "By length: #{$byLength}"
+
+// ============================================================================
+// 8. unique - 去重
+// ============================================================================
+
+$duplicates = [1, 2, 2, 3, 3, 3, 4, 4, 5]
+$unique = unique($duplicates)
+println "Unique: #{$unique}"
+
+// ============================================================================
+// 9. partition - 分组
+// ============================================================================
+
+$parts = partition($numbers, ($x) -> $x % 2 == 0)
+println "Even: #{$parts[0]}"
+println "Odd: #{$parts[1]}"
+
+// ============================================================================
+// 10. first / last / take / drop
+// ============================================================================
+
+println "First: #{first($numbers)}"
+println "Last: #{last($numbers)}"
+println "Take 3: #{take($numbers, 3)}"
+println "Drop 3: #{drop($numbers, 3)}"
+
+// ============================================================================
+// 11. 链式操作示例
+// ============================================================================
+
+// 计算 1-100 中所有偶数的平方和
+$result = reduce(
+    map(
+        filter(range(1, 100), ($x) -> $x % 2 == 0),
+        ($x) -> $x * $x
+    ),
+    ($acc, $x) -> $acc + $x,
+    0
+)
+println "Sum of squares of even numbers 1-100: #{$result}"
+
+// ============================================================================
+// 12. 数据处理管道
+// ============================================================================
+
+$students = [
+    {name: "Alice", score: 85},
+    {name: "Bob", score: 92},
+    {name: "Charlie", score: 78},
+    {name: "Diana", score: 95},
+    {name: "Eve", score: 88}
+]
+
+// 找出成绩 >= 85 的学生，按成绩降序排列，只取名字
+$topStudents = map(
+    sort(
+        filter($students, ($s) -> $s["score"] >= 85),
+        ($a, $b) -> $a["score"] > $b["score"]
+    ),
+    ($s) -> $s["name"]
+)
+println "Top students (score >= 85): #{$topStudents}"

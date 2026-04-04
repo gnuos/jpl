@@ -22,6 +22,7 @@ func RegisterIP(e *engine.Engine) {
 	e.RegisterFunc("ip_from_bin", builtinIPFromBin)
 	e.RegisterFunc("ip_version", builtinIPVersion)
 	e.RegisterFunc("ip_valid", builtinIPValid)
+	e.RegisterFunc("ip_in_range", builtinIPInRange)
 
 	// 模块注册 — import "ip" 可用
 	e.RegisterModule("ip", map[string]engine.GoFunction{
@@ -34,6 +35,7 @@ func RegisterIP(e *engine.Engine) {
 		"from_bin": builtinIPFromBin,
 		"version":  builtinIPVersion,
 		"valid":    builtinIPValid,
+		"in_range": builtinIPInRange,
 	})
 }
 
@@ -42,7 +44,7 @@ func IPNames() []string {
 	return []string{
 		"ip2long", "long2ip", "ip_parse",
 		"ip_to_hex", "ip_to_bin", "ip_from_hex", "ip_from_bin",
-		"ip_version", "ip_valid",
+		"ip_version", "ip_valid", "ip_in_range",
 	}
 }
 
@@ -544,12 +546,45 @@ func parseBinary(s string) ([]byte, error) {
 	return result, nil
 }
 
+// builtinIPInRange 检查 IP 地址是否在指定 CIDR 范围内。
+func builtinIPInRange(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("ip_in_range() expects 2 arguments (ip, range), got %d", len(args))
+	}
+
+	ipStr := args[0].String()
+	rangeStr := args[1].String()
+
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return engine.NewBool(false), nil
+	}
+
+	_, ipNet, err := net.ParseCIDR(rangeStr)
+	if err != nil {
+		// 尝试作为纯 IP 匹配
+		rangeIP := net.ParseIP(rangeStr)
+		if rangeIP == nil {
+			return engine.NewBool(false), nil
+		}
+		return engine.NewBool(ip.Equal(rangeIP)), nil
+	}
+
+	return engine.NewBool(ipNet.Contains(ip)), nil
+}
+
 // IPSigs returns function signatures for REPL :doc command.
 func IPSigs() map[string]string {
 	return map[string]string{
+		"ip2long":     "ip2long(ip) → int  — Convert IPv4 address to integer",
+		"long2ip":     "long2ip(long) → string  — Convert integer to IPv4 address",
 		"ip_parse":    "ip_parse(ip) → object  — Parse IP address details",
-		"ip_format":   "ip_format(ip, format) → string  — Format IP address",
-		"ip_validate": "ip_validate(ip) → bool  — Validate IP address format",
-		"ip_in_range": "ip_in_range(ip, range) → bool  — Check if IP is in range",
+		"ip_to_hex":   "ip_to_hex(ip) → string  — Convert IP to hex string",
+		"ip_to_bin":   "ip_to_bin(ip) → string  — Convert IP to binary string",
+		"ip_from_hex": "ip_from_hex(hex) → string  — Convert hex string to IP",
+		"ip_from_bin": "ip_from_bin(bin) → string  — Convert binary string to IP",
+		"ip_version":  "ip_version(ip) → int  — Detect IP version (4 or 6)",
+		"ip_valid":    "ip_valid(ip) → bool  — Validate IP address",
+		"ip_in_range": "ip_in_range(ip, range) → bool  — Check if IP is in CIDR range",
 	}
 }

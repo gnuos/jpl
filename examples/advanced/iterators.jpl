@@ -1,0 +1,119 @@
+// Iterators and Range
+// 演示 JPL 的迭代器和 range 惰性求值
+
+// ============================================================================
+// 1. Range 惰性求值
+// ============================================================================
+
+// range 创建惰性范围，不会立即生成所有值
+$r = 1...10
+println "Range 1...10: #{$r}"
+
+// 遍历 range
+println "Iterating range:"
+foreach ($i in 1...5) {
+    println "  #{$i}"
+}
+
+// 包含端点的 range
+println "\nInclusive range 1..=5:"
+foreach ($i in 1..=5) {
+    println "  #{$i}"
+}
+
+// ============================================================================
+// 2. 数组迭代
+// ============================================================================
+
+$arr = ["apple", "banana", "cherry"]
+
+// foreach-in 遍历数组
+println "\nArray iteration:"
+foreach ($item in $arr) {
+    println "  #{$item}"
+}
+
+// 带索引的遍历
+println "\nArray with index:"
+$i = 0
+while ($i < len($arr)) {
+    println "  #{$i}: #{$arr[$i]}"
+    $i = $i + 1
+}
+
+// ============================================================================
+// 3. 对象迭代
+// ============================================================================
+
+$obj = {name: "Alice", age: 30, city: "NYC"}
+
+// foreach 遍历对象（键值对）
+println "\nObject iteration:"
+foreach ($key => $val in $obj) {
+    println "  #{$key}: #{$val}"
+}
+
+// ============================================================================
+// 4. 字符串字符访问
+// ============================================================================
+
+$str = "Hello"
+println "\nString chars:"
+$i = 0
+while ($i < len($str)) {
+    $char = substr($str, $i, 1)
+    println "  #{$char}"
+    $i = $i + 1
+}
+
+// ============================================================================
+// 5. 使用 functional 模块处理迭代
+// ============================================================================
+
+$numbers = 1...20
+
+// 过滤偶数并平方
+$squares = map(
+    filter($numbers, ($x) -> $x % 2 == 0),
+    ($x) -> $x * $x
+)
+println "\nEven squares: #{$squares}"
+
+// 求和
+$total = reduce($numbers, ($acc, $x) -> $acc + $x, 0)
+println "Sum 1..20: #{$total}"
+
+// 分组
+$words = ["apple", "banana", "avocado", "blueberry", "cherry"]
+$grouped = group_by($words, ($w) -> substr($w, 0, 1))
+println "\nWords by first letter:"
+foreach ($letter => $group in $grouped) {
+    println "  #{$letter}: #{$group}"
+}
+
+// ============================================================================
+// 6. 自定义迭代模式
+// ============================================================================
+
+// 使用 while 循环实现自定义迭代
+fn fibonacciIter($n) {
+    $a = 0
+    $b = 1
+    $result = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+    return slice($result, 0, $n)
+}
+
+$fibs = fibonacciIter(10)
+println "\nFibonacci (10): #{$fibs}"
+
+// ============================================================================
+// 7. 数据处理管道
+// ============================================================================
+
+// 使用管道运算符构建数据处理管道
+$nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+$filtered = filter($nums, ($x) -> $x > 3)
+$doubled = map($filtered, ($x) -> $x * 2)
+$result = reduce($doubled, ($acc, $x) -> $acc + $x, 0)
+
+println "\nPipeline result (filter > 3, double, sum): #{$result}"

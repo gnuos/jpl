@@ -1,0 +1,62 @@
+// Path Manipulation
+// 演示文件路径处理函数
+
+// ============================================================================
+// 1. 路径拼接
+// ============================================================================
+
+$path = joinPath("home", "user", "documents", "file.txt")
+println "Joined: #{$path}"
+
+// ============================================================================
+// 2. 提取路径组成部分
+// ============================================================================
+
+$fullPath = "/home/user/documents/report.pdf"
+
+println "Path: #{$fullPath}"
+println "Directory: #{dirname($fullPath)}"
+println "Filename: #{basename($fullPath)}"
+println "Extension: #{extname($fullPath)}"
+
+// ============================================================================
+// 3. 路径信息
+// ============================================================================
+
+$info = pathinfo("/var/log/app/error.log")
+println "pathinfo:"
+pp $info
+
+// ============================================================================
+// 4. 绝对路径与相对路径
+// ============================================================================
+
+println "Current directory: #{cwd()}"
+
+$abs = absPath("./examples")
+println "Absolute path of ./examples: #{$abs}"
+
+$rel = relPath("/home/user/documents/file.txt", "/home/user")
+println "Relative path: #{$rel}"
+
+// ============================================================================
+// 5. 规范化路径
+// ============================================================================
+
+$messy = "/home/user/../user/./documents//file.txt"
+$clean = realpath($messy)
+println "Messy: #{$messy}"
+println "Clean: #{$clean}"
+
+// ============================================================================
+// 6. 文件存在性检查
+// ============================================================================
+
+println "README.md exists: #{exists("README.md")}"
+println "file_exists alias: #{file_exists("README.md")}"
+println "nonexistent.txt exists: #{exists("nonexistent.txt")}"
+
+println "examples/ is dir: #{isDir("examples")}"
+println "is_dir alias: #{is_dir("examples")}"
+println "README.md is file: #{isFile("README.md")}"
+println "is_file alias: #{is_file("README.md")}"

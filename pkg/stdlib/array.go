@@ -43,24 +43,10 @@ func RegisterArray(e *engine.Engine) {
 	e.RegisterFunc("array_product", builtinArrayProduct)
 	e.RegisterFunc("array_values", builtinArrayValues)
 	e.RegisterFunc("array_diff", builtinArrayDiff)
+	e.RegisterFunc("array_fill", builtinArrayFill)
 	e.RegisterFunc("array_intersect", builtinArrayIntersect)
 	e.RegisterFunc("in_array", builtinInArray) // 别名
 	e.RegisterFunc("array_copy", builtinArrayCopy)
-
-	e.RegisterFunc("key", builtinKey)
-	e.RegisterFunc("current", builtinCurrent)
-	e.RegisterFunc("each", builtinEach)
-	e.RegisterFunc("next", builtinNext)
-	e.RegisterFunc("prev", builtinPrev)
-	e.RegisterFunc("end", builtinEnd)
-	e.RegisterFunc("reset", builtinReset)
-	e.RegisterFunc("extract", builtinExtract)
-	e.RegisterFunc("array_map", builtinArrayMap)
-	e.RegisterFunc("array_walk", builtinArrayWalk)
-	e.RegisterFunc("usort", builtinUsort)
-	e.RegisterFunc("array_fill", builtinArrayFill)
-	e.RegisterFunc("array_fill_keys", builtinArrayFillKeys)
-	e.RegisterFunc("array_flip", builtinArrayFlip)
 	e.RegisterFunc("range", builtinRange)
 	e.RegisterFunc("array_column", builtinArrayColumn)
 	e.RegisterFunc("array_chunk", builtinArrayChunk)
@@ -77,8 +63,7 @@ func RegisterArray(e *engine.Engine) {
 		"sum": builtinArraySum, "product": builtinArrayProduct,
 		"values": builtinArrayValues, "copy": builtinArrayCopy,
 		"diff": builtinArrayDiff, "intersect": builtinArrayIntersect,
-		"in_array": builtinInArray, "usort": builtinUsort, "fill": builtinArrayFill,
-		"fill_keys": builtinArrayFillKeys, "flip": builtinArrayFlip, "range": builtinRange,
+		"in_array": builtinInArray, "range": builtinRange,
 	})
 }
 
@@ -107,10 +92,7 @@ func ArrayNames() []string {
 		"array_merge", "array_min", "array_max", "array_sum",
 		"array_product", "array_values", "array_diff",
 		"array_intersect", "in_array", "array_copy",
-		"sort", "rsort", "usort", "key", "current", "each",
-		"next", "prev", "end", "reset", "extract", "array_map",
-		"array_walk", "array_fill", "array_fill_keys", "array_flip",
-		"range",
+		"range", "array_column", "array_chunk",
 	}
 }
 
@@ -153,7 +135,6 @@ func ArrayNames() []string {
 // 安全做法（推荐）：
 //   - 一次性 push 多个元素，减少扩容概率
 //   - 使用 splice 替代（会创建新数组）
-//   - 预先分配足够容量：$arr = array_fill(100, null)
 func builtinPush(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) < 2 {
 		return nil, fmt.Errorf("push() expects at least 2 arguments, got %d", len(args))
@@ -1155,201 +1136,6 @@ func deepCopyArray(arr []engine.Value) []engine.Value {
 	return result
 }
 
-func builtinUsort(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 || len(args) > 2 {
-		return nil, fmt.Errorf("usort() expects 1 or 2 arguments (array, [fn]), got %d", len(args))
-	}
-	if args[0].Type() != engine.TypeArray {
-		return nil, fmt.Errorf("usort() argument 1 must be an array, got %s", args[0].Type())
-	}
-
-	arr := args[0].Array()
-	if len(arr) == 0 {
-		return engine.NewArray([]engine.Value{}), nil
-	}
-
-	result := make([]engine.Value, len(arr))
-	copy(result, arr)
-
-	// Default comparison: use Less method
-	less := func(i, j int) bool {
-		return result[i].Less(result[j])
-	}
-
-	// If custom comparison function provided
-	if len(args) == 2 {
-		if args[1].Type() != engine.TypeFunc {
-			return nil, fmt.Errorf("usort() argument 2 must be a function, got %s", args[1].Type())
-		}
-		vm := ctx.VM()
-		fn := args[1]
-		less = func(i, j int) bool {
-			val, err := vm.CallValue(fn, result[i], result[j])
-			if err != nil {
-				return false
-			}
-			return val.Bool()
-		}
-	}
-
-	// Insertion sort
-	n := len(result)
-	for i := 1; i < n; i++ {
-		for j := i; j > 0 && less(j, j-1); j-- {
-			result[j], result[j-1] = result[j-1], result[j]
-		}
-	}
-
-	return engine.NewArray(result), nil
-}
-
-func builtinKey(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("key() expects at least 1 argument, got %d", len(args))
-	}
-
-	if args[0].Type() == engine.TypeArray {
-		arr := args[0].Array()
-		if len(arr) > 0 {
-			return engine.NewInt(0), nil
-		}
-	}
-
-	return engine.NewNull(), nil
-}
-
-func builtinCurrent(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("current() expects at least 1 argument, got %d", len(args))
-	}
-
-	if args[0].Type() == engine.TypeArray {
-		arr := args[0].Array()
-		if len(arr) > 0 {
-			return arr[0], nil
-		}
-	}
-
-	return engine.NewNull(), nil
-}
-
-func builtinEach(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("each() expects at least 1 argument, got %d", len(args))
-	}
-
-	if args[0].Type() != engine.TypeArray {
-		return nil, fmt.Errorf("each() argument 1 must be an array, got %s", args[0].Type())
-	}
-
-	arr := args[0].Array()
-	if len(arr) > 0 {
-		obj := make(map[string]engine.Value)
-		obj["1"] = arr[0]
-		obj["value"] = arr[0]
-		obj["0"] = engine.NewInt(0)
-		obj["key"] = engine.NewInt(0)
-		return engine.NewObject(obj), nil
-	}
-
-	return engine.NewBool(false), nil
-}
-
-func builtinNext(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("next() expects at least 1 argument, got %d", len(args))
-	}
-
-	return engine.NewNull(), nil
-}
-
-func builtinPrev(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("prev() expects at least 1 argument, got %d", len(args))
-	}
-
-	return engine.NewNull(), nil
-}
-
-func builtinEnd(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("end() expects at least 1 argument, got %d", len(args))
-	}
-
-	if args[0].Type() == engine.TypeArray {
-		arr := args[0].Array()
-		if len(arr) > 0 {
-			return arr[len(arr)-1], nil
-		}
-	}
-
-	return engine.NewNull(), nil
-}
-
-func builtinReset(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("reset() expects at least 1 argument, got %d", len(args))
-	}
-
-	if args[0].Type() == engine.TypeArray {
-		arr := args[0].Array()
-		if len(arr) > 0 {
-			return arr[0], nil
-		}
-	}
-
-	return engine.NewNull(), nil
-}
-
-func builtinExtract(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("extract() expects at least 1 argument, got %d", len(args))
-	}
-
-	if args[0].Type() != engine.TypeArray {
-		return nil, fmt.Errorf("extract() argument 1 must be an array, got %s", args[0].Type())
-	}
-
-	arr := args[0].Array()
-	result := make(map[string]engine.Value)
-
-	for i, v := range arr {
-		key := fmt.Sprintf("var%d", i)
-		result[key] = v
-	}
-
-	return engine.NewObject(result), nil
-}
-
-func builtinArrayMap(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 2 {
-		return nil, fmt.Errorf("array_map() expects at least 2 arguments, got %d", len(args))
-	}
-
-	if args[1].Type() != engine.TypeArray {
-		return nil, fmt.Errorf("array_map() argument 2 must be an array, got %s", args[1].Type())
-	}
-
-	arr := args[1].Array()
-	result := make([]engine.Value, len(arr))
-
-	copy(result, arr)
-
-	return engine.NewArray(result), nil
-}
-
-func builtinArrayWalk(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) < 2 {
-		return nil, fmt.Errorf("array_walk() expects at least 2 arguments, got %d", len(args))
-	}
-
-	if args[0].Type() != engine.TypeArray {
-		return nil, fmt.Errorf("array_walk() argument 1 must be an array, got %s", args[0].Type())
-	}
-
-	return engine.NewBool(true), nil
-}
-
 func builtinArrayFill(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) != 3 {
 		return nil, fmt.Errorf("array_fill() expects 3 arguments, got %d", len(args))
@@ -1370,48 +1156,9 @@ func builtinArrayFill(ctx *engine.Context, args []engine.Value) (engine.Value, e
 	return engine.NewArray(result), nil
 }
 
-func builtinArrayFillKeys(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) != 2 {
-		return nil, fmt.Errorf("array_fill_keys() expects 2 arguments, got %d", len(args))
-	}
-
-	keys := args[0]
-	value := args[1]
-
-	if keys.Type() != engine.TypeArray {
-		return nil, fmt.Errorf("array_fill_keys() argument 1 must be an array, got %s", keys.Type())
-	}
-
-	keyArr := keys.Array()
-	result := make([]engine.Value, 0, len(keyArr))
-
-	for range keyArr {
-		result = append(result, value)
-	}
-
-	return engine.NewArray(result), nil
-}
-
-func builtinArrayFlip(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
-	if len(args) != 1 {
-		return nil, fmt.Errorf("array_flip() expects 1 argument, got %d", len(args))
-	}
-
-	if args[0].Type() != engine.TypeArray {
-		return nil, fmt.Errorf("array_flip() argument must be an array, got %s", args[0].Type())
-	}
-
-	arr := args[0].Array()
-	result := make([]engine.Value, len(arr))
-
-	for i, v := range arr {
-		strVal := v.String()
-		result[i] = engine.NewString(strVal)
-	}
-
-	return engine.NewArray(result), nil
-}
-
+// builtinRange 从指定的开始和结尾返回一个整数范围对象
+//
+// 用法：range(1, 100)
 func builtinRange(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	var start, end int64
 	inclusive := false
@@ -1551,10 +1298,7 @@ func builtinArrayChunk(ctx *engine.Context, args []engine.Value) (engine.Value, 
 	chunks := make([]engine.Value, 0)
 
 	for i := int64(0); i < int64(len(arr)); i += size {
-		end := i + size
-		if end > int64(len(arr)) {
-			end = int64(len(arr))
-		}
+		end := min(i+size, int64(len(arr)))
 
 		chunk := make([]engine.Value, 0, end-i)
 		for j := i; j < end; j++ {
@@ -1573,41 +1317,29 @@ func ArraySigs() map[string]string {
 		"pop":              "pop(arr) → value  — Remove and return last element",
 		"shift":            "shift(arr) → value  — Remove and return first element",
 		"unshift":          "unshift(arr, values...) → int  — Add elements to beginning",
+		"splice":           "splice(arr, start, count, ...items) → array  — Remove/replace/insert elements",
+		"indexOf":          "indexOf(arr, value) → int  — Find first index of value, -1 if not found",
+		"lastIndexOf":      "lastIndexOf(arr, value) → int  — Find last index of value, -1 if not found",
+		"slice":            "slice(arr, start, [end]) → array  — Extract portion of array",
+		"array_reverse":    "array_reverse(arr) → array  — Reverse array",
+		"includes":         "includes(arr, value) → bool  — Check if array contains value",
+		"flat":             "flat(arr, [depth]) → array  — Flatten nested arrays",
+		"unique":           "unique(arr) → array  — Remove duplicate values",
+		"array_key_exists": "array_key_exists(arr, index) → bool  — Check if index exists",
+		"key_exists":       "key_exists(arr, index) → bool  — Alias of array_key_exists",
+		"array_fill":       "array_fill(arr, num, value) → array — Alloc array with the number of values",
 		"array_merge":      "array_merge(...arrays) → array  — Merge arrays",
-		"array_slice":      "array_slice(arr, start, [length]) → array  — Extract portion of array",
-		"array_splice":     "array_splice(arr, start, count, ...items) → array  — Remove/replace/insert",
-		"array_keys":       "array_keys(arr) → array  — Get all keys",
-		"array_key_exists": "array_key_exists(arr, key) → bool  — Check if key exists",
-		"key_exists":       "key_exists(arr, key) → bool  — Alias of array_key_exists",
-		"array_values":     "array_values(arr) → array  — Get all values",
+		"array_min":        "array_min(arr) → value  — Minimum element (numeric)",
+		"array_max":        "array_max(arr) → value  — Maximum element (numeric)",
 		"array_sum":        "array_sum(arr) → int/float  — Sum array elements",
 		"array_product":    "array_product(arr) → int/float  — Product of elements",
+		"array_values":     "array_values(arr) → array  — Copy array values",
 		"array_diff":       "array_diff(arr, ...others) → array  — Array difference",
 		"array_intersect":  "array_intersect(arr, ...others) → array  — Array intersection",
 		"in_array":         "in_array(value, arr) → bool  — Check if value exists in array",
-		"includes":         "includes(arr, value) → bool  — Check if array contains value",
 		"array_copy":       "array_copy(arr) → array  — Deep copy array",
-		"array_column":     "array_column(arr, column_key, [index_key]) → array  — Extract column",
-		"array_chunk":      "array_chunk(arr, size, [preserve_keys]) → array  — Split into chunks",
-		"array_reverse":    "array_reverse(arr) → array  — Reverse array",
-		"array_fill":       "array_fill(start, num, value) → array  — Fill array with value",
-		"array_range":      "array_range(start, end, [inclusive]) → array  — Create range array",
-		"array_unique":     "array_unique(arr) → array  — Remove duplicate values",
-		"array_flip":       "array_flip(arr) → array  — Flip keys and values",
-		"array_search":     "array_search(value, arr) → int  — Search for value, return index",
-		"count":            "count(arr) → int  — Count elements",
-		"sizeof":           "sizeof(arr) → int  — Alias of count",
-		"sort":             "sort(arr, [fn]) → array  — Sort array",
-		"rsort":            "rsort(arr, [fn]) → array  — Sort array in reverse",
-		"usort":            "usort(arr, [fn]) → array  — Sort with custom comparator",
-		"key":              "key(arr) → int  — Get current key",
-		"current":          "current(arr) → value  — Get current element",
-		"next":             "next(arr) → value  — Move to next element",
-		"prev":             "prev(arr) → value  — Move to previous element",
-		"end":              "end(arr) → value  — Get last element",
-		"reset":            "reset(arr) → value  — Reset to first element",
-		"extract":          "extract(arr) → object  — Extract array to object",
-		"array_map":        "array_map(fn, arr) → array  — Apply function to each element",
-		"array_walk":       "array_walk(arr, fn) → bool  — Walk array with callback",
+		"range":            "range(start, end, [inclusive]) → range  — Create a range",
+		"array_column":     "array_column(arr, column_key, [index_key]) → array  — Extract column from nested arrays",
+		"array_chunk":      "array_chunk(arr, size) → array  — Split into chunks",
 	}
 }

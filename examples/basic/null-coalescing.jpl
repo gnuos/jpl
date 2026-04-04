@@ -1,0 +1,109 @@
+// Null Coalescing Operator (??)
+// 演示 JPL 的空值合并运算符
+
+// ============================================================================
+// 1. 基本用法
+// ============================================================================
+
+$a = null
+$b = "default"
+$result = $a ?? $b
+println "null ?? 'default' = #{$result}"  // "default"
+
+$c = "hello"
+$result2 = $c ?? "default"
+println "'hello' ?? 'default' = #{$result2}"  // "hello"
+
+// ============================================================================
+// 2. 链式使用
+// ============================================================================
+
+$x = null
+$y = null
+$z = "found"
+$result3 = $x ?? $y ?? $z
+println "null ?? null ?? 'found' = #{$result3}"  // "found"
+
+// ============================================================================
+// 3. 与 || 的优先级对比
+// ============================================================================
+
+$a2 = null
+$b2 = false
+$c2 = "fallback"
+$result4 = $a2 ?? $b2 || $c2
+println "null ?? false || 'fallback' = #{$result4}"  // fallback
+
+// ============================================================================
+// 4. 函数默认值模式
+// ============================================================================
+
+fn getConfig($key, $default) {
+    $config = {
+        host: "localhost",
+        port: 8080,
+        debug: true
+    }
+    return $config[$key] ?? $default
+}
+
+println "host: #{getConfig("host", "127.0.0.1")}"    // "localhost"
+println "timeout: #{getConfig("timeout", 30)}"        // 30 (default)
+
+// ============================================================================
+// 5. 安全访问模式
+// ============================================================================
+
+fn getUser($users, $id) {
+    $user = $users[$id] ?? null
+    if ($user == null) {
+        return "Unknown"
+    }
+    return $user["name"] ?? "Unknown"
+}
+
+$users = {
+    1: {name: "Alice", email: "alice@example.com"},
+    2: {name: null, email: "bob@example.com"}
+}
+
+println getUser($users, 1)   // "Alice"
+println getUser($users, 2)   // "Unknown" (name is null)
+println getUser($users, 99)  // "Unknown" (user not found)
+
+// ============================================================================
+// 6. 与三元运算符对比
+// ============================================================================
+
+$val1 = null
+$oldWay = $val1 != null ? $val1 : "default"
+println "ternary: #{$oldWay}"
+
+$newWay = $val1 ?? "default"
+println "coalesce: #{$newWay}"
+
+// ============================================================================
+// 7. 嵌套对象安全访问
+// ============================================================================
+
+fn safeGet($obj, $key, $default) {
+    return $obj[$key] ?? $default
+}
+
+$config = {
+    database: {
+        host: "localhost",
+        port: 5432
+    }
+}
+
+$dbHost = safeGet($config, "database", {})
+println "db host: #{safeGet($dbHost, "host", "127.0.0.1")}"
+println "db name: #{safeGet($dbHost, "name", "mydb")}"
+
+// ============================================================================
+// 8. $_ 结果保留变量与 ??
+// ============================================================================
+
+null ?? "fallback"
+println "last result: #{$_}"  // "fallback"

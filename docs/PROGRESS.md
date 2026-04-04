@@ -8,6 +8,7 @@
 
 | 日期 | 阶段 | 任务 | 说明 |
 |------|------|------|------|
+| 2026-04-04 | 标准库增强 | stdlib 清理与补全 | 清理 PHP 风格函数（array_fill_keys/array_flip/key/current/each/next/prev/end/reset/extract/array_map/array_walk/usort），修正 array_fill 签名；新增 20+ 函数：datetime(strtotime/checkdate)、crypto(random_bytes/hash)、io(input/readline)、ip(ip_in_range)、math(cbrt/log2/clamp/sign/intdiv)、string(ucfirst/ucwords/substr_replace)、json(json_validate)、util(typeof/dump)；添加 file_exists/is_file/is_dir/file_size 别名；更新所有 Sigs() 映射 |
 | 2026-04-03 | REPL 改进 | 多行续输 + :doc 完整签名 | 括号/引号平衡检测自动进入多行模式，提示符变为 `... `；41 个模块函数签名全覆盖，`:doc fn` 显示完整参数和返回值 |
 | 2026-04-03 | 用户体验 | 更好的错误消息 | 运行时错误显示行号 + 源码上下文（箭头标记 + 前后 2 行），Program 存储源代码，RuntimeError 新增 FormatWithContext |
 | 2026-04-03 | 性能优化 | 尾调用优化 (TCO) | 自递归尾调用栈帧复用，支持 10000+ 深度递归不溢出；编译器 emit OP_TAIL_CALL，VM 自递归检测 + IP 跳转，opReturn 尾调用返回传播 |
@@ -63,9 +64,10 @@
 
 **项目状态**：维护模式
 
-**当前阶段**：功能完整，进入维护
+**当前阶段**：功能完整，持续维护
 
 **已完成**：
+- 标准库清理与补全 ✅ 完成（清理 PHP 风格函数，新增 20+ 函数，补充别名和 Sigs 映射）
 - 尾调用优化 (TCO) ✅ 完成（自递归栈帧复用，支持 10000+ 深度递归）
 - static 变量 ✅ 完成（函数级持久化变量）
 - Range 惰性加载优化 ✅ 100% 完成（使用 Go 1.25 iter.Seq2 原生泛型迭代器）
@@ -95,7 +97,7 @@
 - LSP 支持 — 投入产出比低，lint + fmt 已覆盖核心价值
 - 调试器 (DAP) — 风险高，--debug + REPL 已提供基本调试能力
 
-**最后更新**：2026-04-03（REPL 多行续输 + :doc 签名 + 更好的错误消息 + 尾调用优化 + static 变量完成）
+**最后更新**：2026-04-04（stdlib 清理与补全：清理 PHP 风格函数 + 新增 20+ 函数 + 别名 + 文档）
 
 ---
 

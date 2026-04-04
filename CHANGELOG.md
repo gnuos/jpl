@@ -1,5 +1,96 @@
 # Changelog
 
+## v0.9.6 (2026-04-04)
+
+### 新增
+
+#### 标准库函数补全（P0）
+- **datetime**: `strtotime()` 解析日期字符串为时间戳（支持 ISO 8601、相对时间如 `+1 day`/`-2 weeks`），`checkdate()` 验证公历日期
+- **crypto**: `random_bytes()` 密码学安全随机字节，`hash()` 通用 hash 函数（md5/sha1/sha256/sha512）
+- **io**: `input()` / `readline()` 从标准输入读取用户输入
+- **ip**: `ip_in_range()` 检查 IP 是否在 CIDR 范围内
+- **math**: `cbrt()` 立方根，`log2()` 以 2 为底的对数，`clamp()` 值限制，`sign()` 符号函数，`intdiv()` 整数除法
+- **string**: `ucfirst()` 首字母大写，`ucwords()` 单词首字母大写，`substr_replace()` 子串替换
+- **json**: `json_validate()` 验证 JSON 合法性（不返回解析结果）
+- **util**: `typeof()` 返回类型名称，`dump()` 返回值的调试表示
+
+#### 标准库函数补全（P1）
+- **util**: `keys()` / `values()` / `entries()` 对象键值操作（JS `Object.keys/values/entries`），`has_key()` 检查键存在，`clone()` 深拷贝
+- **string**: `str_contains()` 检查子串（JS `includes`），`str_starts_with()` / `str_ends_with()` 前缀/后缀检查，`str_word_count()` 单词计数
+- **math**: `trunc()` 向零取整，`factorial()` 阶乘，`gcd()` / `lcm()` 最大公约数/最小公倍数，`median()` 中位数，`mean()` 平均值，`stddev()` 标准差，`modf()` 分离整数和小数部分
+- **crypto**: `uuid4()` 生成 UUID v4
+- **fileio**: `tempfile()` 创建临时文件，`read_json()` / `write_json()` JSON 文件读写，`walk()` 递归目录遍历
+- **datetime**: `date_diff()` 计算时间差，`date_add()` 时间戳加法
+- **url**: `build_url()` 从 parts 构建 URL，`parse_query()` 解析查询字符串
+- **functional**: `group_by()` 分组，`count_by()` 计数，`sort_by()` 按 key 排序，`compact()` 移除假值
+- **bitwise**: `bit_count()` 计算设置位数（popcount），`bit_length()` 计算所需位数
+- **typecheck**: `is_error()` / `is_callable()` / `is_iterable()` 类型检查
+- **typeconvert**: `bigint()` / `bigdecimal()` 大数类型转换
+- **re**: `re_quote()` 转义正则特殊字符（Python `re.escape`），`re_fullmatch()` 完全匹配
+- **system**: `cpu_count()` CPU 核心数，`meminfo()` 内存使用信息
+
+#### 文件 I/O 别名
+- `file_exists` → `exists`
+- `is_file` → `isFile`
+- `is_dir` → `isDir`
+- `file_size` → `fileSize`
+
+### 修复
+
+#### strtotime 相对时间解析
+- 修复 `+1 day`/`+3 hours` 等相对时间格式返回 1970 时间戳的问题
+- 正确解析 `+` 前缀符号
+
+#### hash 函数算法错误
+- 修复 `hash("md5", ...)` 和 `hash("sha1", ...)` 错误使用 sha256 算法的问题
+- 现在正确使用对应的 hash 算法
+
+### 清理
+
+#### 移除 PHP 风格函数
+- 删除 `array_fill_keys`、`array_flip` — 无意义的 PHP 风格函数
+- 删除 `key`、`current`、`each`、`next`、`prev`、`end`、`reset` — PHP 内部指针风格
+- 删除 `extract` — PHP 风格变量提取
+- 删除 `array_map`、`array_walk` — stub 空实现（functional.go 已有 `map`/`filter`）
+- 删除 `usort` — functional.go 已有 `sort`
+- 修正 `array_fill` 签名从 `(start, num, value)` 改为 `(num, value)`
+
+### 文档
+
+- `docs/Stdlib/INDEX.md` — 更新所有模块函数列表
+- `docs/Learning/Stdlib.md` — 新增 7 个模块 API 文档
+- `docs/PROGRESS.md` — 更新进度记录
+
+### 示例
+
+- `examples/basic/match-case.jpl` — 模式匹配完整示例
+- `examples/basic/arrow-functions.jpl` — 箭头函数和闭包示例
+- `examples/error-handling/advanced-exceptions.jpl` — 高级异常处理
+- `examples/io/path-manipulation.jpl` — 路径操作示例
+- `examples/advanced/datetime.jpl` — 日期时间处理示例
+- `examples/advanced/crypto-advanced.jpl` — 加密函数示例
+- `examples/functional/array-operations.jpl` — 函数式数组操作
+- `examples/network/http-client.jpl` — HTTP 客户端请求示例
+- `examples/advanced/crypto-advanced.jpl` - 加密算法高级用法示例
+- `examples/advanced/datetime.jpl` - 日期时间转换格式示例
+- `examples/advanced/gc-usage.jpl` - GC用法示例
+- `examples/advanced/iterators.jpl` - 遍历复合类型值的语法示例
+- `examples/advanced/json-file-io.jpl` - JSON文本操作示例
+- `examples/advanced/os-environment.jpl` - 系统环境变量操作示例
+- `examples/advanced/util-functions.jpl` - 一些方便的内置函数使用示例
+- `examples/basic/arrow-functions.jpl` - 箭头函数语法示例
+- `examples/basic/match-case.jpl` - 模式匹配用法示例
+- `examples/basic/null-coalescing.jpl` - 空值合并运算符用法示例
+- `examples/error-handling/advanced-exceptions.jpl` - 异常处理高级使用方法示例
+- `examples/functional/array-operations.jpl` - 使用函数式方法处理数组示例
+- `examples/io/csv-handling.jpl` - CSV文件操作示例
+- `examples/io/input-stdin.jpl` - 从键盘输入处理文本示例
+- `examples/io/path-manipulation.jpl` - 文件路径信息操作示例
+- `examples/modules/import-include.jpl` - 模块的导入用法示例
+- `examples/network/http-client.jpl` - HTTP客户端库用法示例
+
+---
+
 ## v0.9.5 (2026-04-04)
 
 ### 新增

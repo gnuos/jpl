@@ -1,0 +1,124 @@
+// Garbage Collection
+// 演示 JPL 的垃圾回收机制
+
+// ============================================================================
+// 1. 引用计数基础
+// ============================================================================
+
+// JPL 使用引用计数管理内存
+// 每个 Value 对象都有一个引用计数器
+// 当引用计数为 0 时，对象被自动释放
+
+fn createArray() {
+    $arr = [1, 2, 3, 4, 5]
+    return $arr  // 返回时引用计数 +1
+}
+
+$result = createArray()
+println "Array from function: #{$result}"
+// $arr 在函数返回后被释放
+// $result 持有新的引用
+
+// ============================================================================
+// 2. 循环引用
+// ============================================================================
+
+// JPL 的 GC 可以检测循环引用
+// 使用标记-清除算法处理循环引用
+
+$a = {name: "A"}
+$b = {name: "B"}
+
+// 创建循环引用
+$a["ref"] = $b
+$b["ref"] = $a
+
+println "A: #{$a["name"]}"
+println "B: #{$b["name"]}"
+println "A.ref: #{$a["ref"]["name"]}"
+println "B.ref: #{$b["ref"]["name"]}"
+
+// 当 $a 和 $b 被设为 null 时
+// 循环引用的对象会被 GC 检测到并释放
+$a = null
+$b = null
+
+// ============================================================================
+// 3. 大量对象创建与回收
+// ============================================================================
+
+fn createManyObjects($count) {
+    $objects = []
+    $i = 0
+    while ($i < $count) {
+        $obj = {
+            id: $i,
+            data: "Object #" .. $i,
+            values: [$i, $i * 2, $i * 3]
+        }
+        if ($i == 0) {
+            $objects[0] = $obj
+        }
+        $i = $i + 1
+    }
+    return $objects
+}
+
+println "\nCreating 1000 objects..."
+$many = createManyObjects(1000)
+println "Created #{len($many)} objects"
+
+// 释放引用
+$many = null
+println "Objects released"
+
+// ============================================================================
+// 4. 闭包与内存
+// ============================================================================
+
+fn makeCounter() {
+    static $count = 0
+    $count = $count + 1
+    return $count
+}
+
+println "\nCounter:"
+println "  Call 1: #{makeCounter()}"
+println "  Call 2: #{makeCounter()}"
+println "  Call 3: #{makeCounter()}"
+
+// ============================================================================
+// 5. 大字符串释放
+// ============================================================================
+
+fn createLargeString($size) {
+    $s = ""
+    $i = 0
+    while ($i < $size) {
+        $s = $s .. "x"
+        $i = $i + 1
+    }
+    return $s
+}
+
+println "\nCreating large string..."
+$large = createLargeString(100000)
+println "String length: #{len($large)}"
+$large = null
+println "Large string released"
+
+// ============================================================================
+// 6. 长时间运行的应用建议
+// ============================================================================
+
+// 对于长时间运行的应用（如服务器）：
+// 1. 及时释放不需要的引用（设为 null）
+// 2. 避免创建不必要的循环引用
+// 3. 使用局部变量而非全局变量
+// 4. 定期清理缓存
+
+println "\nGC tips for long-running apps:"
+println "  1. Set unused references to null"
+println "  2. Avoid unnecessary circular references"
+println "  3. Use local variables instead of globals"
+println "  4. Clean caches periodically"

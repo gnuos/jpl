@@ -1,0 +1,111 @@
+// Interactive Input from stdin
+// 演示 input() 和 readline() 函数的使用
+
+// ============================================================================
+// 1. 基本输入
+// ============================================================================
+
+// 读取用户输入（带提示）
+$name = input("Enter your name: ")
+println "Hello, #{$name}!"
+
+// ============================================================================
+// 2. readline 是 input 的别名
+// ============================================================================
+
+$city = readline("Enter your city: ")
+println "You are from #{$city}"
+
+// ============================================================================
+// 3. 无提示输入
+// ============================================================================
+
+println "Enter a number:"
+$numStr = input()
+$num = parseInt($numStr)
+println "You entered: #{$num}, doubled: #{$num * 2}"
+
+// ============================================================================
+// 4. 输入验证循环
+// ============================================================================
+
+fn readNumber($prompt) {
+    while (true) {
+        $input = input($prompt)
+        $num = parseInt($input)
+        if ($num != null) {
+            return $num
+        }
+        println "Invalid number, try again."
+    }
+}
+
+$age = readNumber("Enter your age: ")
+println "You are #{$age} years old."
+
+// ============================================================================
+// 5. 简单的交互式菜单
+// ============================================================================
+
+fn showMenu() {
+    println ""
+    println "=== Simple Calculator ==="
+    println "1. Add"
+    println "2. Subtract"
+    println "3. Multiply"
+    println "4. Divide"
+    println "5. Exit"
+}
+
+fn calculator() {
+    while (true) {
+        showMenu()
+        $choice = input("Choose an option (1-5): ")
+
+        if ($choice == "5") {
+            println "Goodbye!"
+            break
+        }
+
+        $a = readNumber("Enter first number: ")
+        $b = readNumber("Enter second number: ")
+
+        $result = match ($choice) {
+            case "1": $a + $b
+            case "2": $a - $b
+            case "3": $a * $b
+            case "4": $b != 0 ? $a / $b : "Error: division by zero"
+            case _: "Invalid choice"
+        }
+
+        println "Result: #{$result}"
+    }
+}
+
+// 取消注释以运行交互式计算器：
+// calculator()
+
+// ============================================================================
+// 6. 读取多行输入
+// ============================================================================
+
+fn readLines($prompt) {
+    println $prompt
+    println "(Enter empty line to finish)"
+    $lines = []
+    while (true) {
+        $line = input("> ")
+        if ($line == "") {
+            break
+        }
+        $lines = push($lines, $line)
+    }
+    return $lines
+}
+
+// 示例：读取多行文本
+// $text = readLines("Enter your text:")
+// println "You entered #{$len(text)} lines:"
+// foreach ($line in $text) {
+//     println "  #{$line}"
+// }

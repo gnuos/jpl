@@ -215,8 +215,8 @@ $n.year`
 // TestDateTimeNames 测试日期时间函数列表
 func TestDateTimeNames(t *testing.T) {
 	names := DateTimeNames()
-	if len(names) != 12 {
-		t.Errorf("expected 12 datetime function names, got %d", len(names))
+	if len(names) != 16 {
+		t.Errorf("expected 16 datetime function names, got %d", len(names))
 	}
 }
 

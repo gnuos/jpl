@@ -59,6 +59,9 @@ func RegisterIO(e *engine.Engine) {
 	e.RegisterFunc("is_readable", builtinStreamIsReadable)
 	e.RegisterFunc("is_writable", builtinStreamIsWritable)
 
+	e.RegisterFunc("input", builtinInput)
+	e.RegisterFunc("readline", builtinReadline)
+
 	e.RegisterModule("io", map[string]engine.GoFunction{
 		"print": builtinPrint, "println": builtinPrintln, "puts": builtinPuts, "pp": builtinPP,
 		"echo": builtinEcho, "format": builtinFormat, "assert": builtinAssert,
@@ -66,6 +69,7 @@ func RegisterIO(e *engine.Engine) {
 		"fwrite": builtinFwrite, "fclose": builtinFclose, "feof": builtinFeof,
 		"fflush": builtinFflush, "stream_get_meta_data": builtinStreamGetMetaData,
 		"is_readable": builtinStreamIsReadable, "is_writable": builtinStreamIsWritable,
+		"input": builtinInput, "readline": builtinReadline,
 	})
 }
 
@@ -76,7 +80,7 @@ func RegisterIO(e *engine.Engine) {
 // 返回值：
 //   - []string: I/O 函数名列表 ["print", "println", "puts", "pp", "echo", "format", "assert"]
 func IONames() []string {
-	return []string{"print", "println", "puts", "pp", "echo", "format", "assert"}
+	return []string{"print", "println", "puts", "pp", "echo", "format", "assert", "input", "readline"}
 }
 
 // builtinPrint 将参数输出到标准输出（stdout），不换行。
@@ -663,6 +667,32 @@ func prettyPrintValue(v engine.Value, indent int) string {
 	}
 }
 
+// builtinInput 从标准输入读取一行（带可选提示）。
+func builtinInput(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	prompt := ""
+	if len(args) >= 1 {
+		prompt = args[0].String()
+	}
+
+	if prompt != "" {
+		fmt.Print(prompt)
+	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		return engine.NewString(scanner.Text()), nil
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("input() error: %v", err)
+	}
+	return engine.NewNull(), nil
+}
+
+// builtinReadline 从标准输入读取一行（alias of input）。
+func builtinReadline(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	return builtinInput(ctx, args)
+}
+
 // IOSigs returns function signatures for REPL :doc command.
 func IOSigs() map[string]string {
 	return map[string]string{
@@ -683,5 +713,7 @@ func IOSigs() map[string]string {
 		"stream_get_meta_data": "stream_get_meta_data(stream) → object  — Get stream metadata",
 		"is_readable":          "is_readable(path_or_stream) → bool  — Check if readable",
 		"is_writable":          "is_writable(path_or_stream) → bool  — Check if writable",
+		"input":                "input([prompt]) → string  — Read a line from stdin",
+		"readline":             "readline([prompt]) → string  — Alias of input",
 	}
 }

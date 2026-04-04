@@ -16,6 +16,8 @@ func TestFunctionalNames(t *testing.T) {
 		"sort", "contains", "unique", "partition", "flattenDeep",
 		"difference", "union", "zip", "unzip", "first", "last",
 		"take", "drop", "sum", "size",
+		// P1
+		"group_by", "count_by", "sort_by", "compact",
 	}
 
 	if len(names) != len(expected) {

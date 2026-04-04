@@ -50,6 +50,10 @@
 - `format(template, ...args)` - 格式化字符串（%s 占位符）
 - `assert(condition, message?)` - 断言检查
 
+### 输入函数
+- `input(prompt?)` - 从标准输入读取一行
+- `readline(prompt?)` - input 的别名
+
 ### 文件操作
 - `fopen(path, mode?)` - 打开文件流
 - `fread(stream, length?)` - 从流读取数据
@@ -67,7 +71,13 @@
 文件: `pkg/stdlib/util.go`
 
 - `len(value)` - 返回值长度
-- `type(value)` - 返回值类型名称
+- `typeof(value)` - 返回值类型名称
+- `dump(value)` - 返回值的详细调试信息
+- `keys(obj_or_arr)` - 返回对象的键或数组的索引
+- `values(obj)` - 返回对象的所有值
+- `entries(obj)` - 返回对象的 [key, value] 对数组
+- `has_key(obj, key)` - 检查对象是否包含指定键
+- `clone(value)` - 深拷贝任意值
 
 ## 数组操作
 
@@ -110,23 +120,10 @@
 - `array_copy(arr)` - 复制数组
 
 ### 其他函数
-- `range(start, end?, step?)` - 生成范围数组
-- `array_fill(start, count, value)` - 用值填充数组
-- `array_fill_keys(keys, value)` - 用值填充键
-- `array_flip(arr)` - 交换键和值
-- `usort(arr, cmp_fn)` - 自定义排序
-
-### 迭代器函数
-- `key(arr)` - 返回当前键
-- `current(arr)` - 返回当前值
-- `each(arr)` - 返回当前键值对并前进
-- `next(arr)` - 前进到下一个元素
-- `prev(arr)` - 后退到上一个元素
-- `end(arr)` - 移动到末尾元素
-- `reset(arr)` - 重置到开头元素
-- `extract(arr, prefix?)` - 提取变量到当前作用域
-- `array_map(arr, fn)` - 映射数组
-- `array_walk(arr, fn)` - 遍历数组并应用函数
+- `range(start, end, inclusive?)` - 生成范围值
+- `array_fill(count, value)` - 用值填充数组
+- `array_column(arr, column_key, index_key?)` - 提取列
+- `array_chunk(arr, size)` - 分块数组
 
 ## 字符串操作
 
@@ -145,6 +142,8 @@
 ### 大小写转换
 - `toUpper(str)` - 转换为大写
 - `toLower(str)` - 转换为小写
+- `ucfirst(str)` - 首字母大写
+- `ucwords(str)` - 每个单词首字母大写
 
 ### 分割和连接
 - `split(str, delim, limit?)` - 分割字符串
@@ -155,12 +154,17 @@
 ### 检查函数
 - `startsWith(str, prefix)` - 检查前缀
 - `endsWith(str, suffix)` - 检查后缀
+- `str_contains(haystack, needle)` - 检查是否包含子串
+- `str_starts_with(str, prefix)` - startsWith 的别名
+- `str_ends_with(str, suffix)` - endsWith 的别名
 
 ### 其他函数
 - `charAt(str, index)` - 获取指定位置字符
 - `repeat(str, count)` - 重复字符串
 - `reverse(str)` - 反转字符串
 - `strrev(str)` - reverse 的别名
+- `substr_replace(str, replacement, start, length?)` - 替换指定位置子串
+- `str_word_count(str)` - 计算单词数量
 
 ### 字符串比较
 - `strcmp(str1, str2)` - 比较字符串（区分大小写）
@@ -233,6 +237,7 @@
 ### 对数和指数
 - `log(x)` - 自然对数
 - `log10(x)` - 常用对数
+- `log2(x)` - 以 2 为底的对数
 - `exp(x)` - 指数函数
 - `pi()` - 圆周率
 
@@ -241,70 +246,22 @@
 - `hypot(x, y)` - 直角三角形斜边长度
 - `deg2rad(deg)` - 角度转弧度
 - `rad2deg(rad)` - 弧度转角度
+- `cbrt(x)` - 立方根
+- `clamp(value, min, max)` - 限制值在范围内
+- `sign(x)` - 返回符号（-1, 0, 1）
+- `intdiv(a, b)` - 整数除法
+- `trunc(x)` - 向零取整
+- `factorial(n)` - 阶乘
+- `gcd(a, b)` - 最大公约数
+- `lcm(a, b)` - 最小公倍数
+- `median(arr)` - 中位数
+- `mean(arr)` - 算术平均值
+- `stddev(arr)` - 标准差
+- `modf(x)` - 返回 [小数部分, 整数部分]
 
 ### 随机数
-- `random()` - 0 到 1 之间的随机浮点数
-- `randomInt(min, max)` - 指定范围的随机整数
-- `rand_str(length?, chars?)` - 生成随机字符串
-- `getrandmax()` - 最大随机数
-
-### 进制转换
-- `dechex(num)` - 十进制转十六进制
-- `decoct(num)` - 十进制转八进制
-- `decbin(num)` - 十进制转二进制
-- `hexdec(str)` - 十六进制转十进制
-- `bindec(str)` - 二进制转十进制
-- `octdec(str)` - 八进制转十进制
-- `base_convert(num, frombase, tobase)` - 任意进制转换
-
-### 字符串转换
-- `parseInt(str, base?)` - 字符串转整数
-- `parseFloat(str)` - 字符串转浮点数
-- `isNaN(x)` - 检查是否为 NaN
-- `isFinite(x)` - 检查是否为有限数
-
-## 哈希与编码
-
-文件: `pkg/stdlib/hash.go`
-
-### 哈希函数
-- `md5(str)` - MD5 哈希
-- `sha1(str)` - SHA1 哈希
-- `md5_file(path)` - 文件 MD5 哈希
-- `sha1_file(path)` - 文件 SHA1 哈希
-- `crc32(str)` - CRC32 校验和
-
-### 编码函数
-- `base64_encode(str)` - Base64 编码
-- `base64_decode(str)` - Base64 解码
-- `bin2hex(str)` - 二进制转十六进制
-- `hex2bin(str)` - 十六进制转二进制
-
-## 加密模块
-
-文件: `pkg/stdlib/crypto.go`
-
-### 强哈希函数
-- `sha256(str)` - SHA256 哈希
-- `sha512(str)` - SHA512 哈希
-- `sha256_file(path)` - 文件 SHA256 哈希
-- `sha512_file(path)` - 文件 SHA512 哈希
-
-### HMAC 函数
-- `hmac_sha256(key, msg)` - HMAC-SHA256
-- `hmac_sha512(key, msg)` - HMAC-SHA512
-
-### 编码函数
-- `hex_encode(str)` - 十六进制编码
-- `hex_decode(str)` - 十六进制解码
-
-### 加密解密
-- `aes_encrypt(plaintext, key, iv?)` - AES-GCM 加密
-- `aes_decrypt(ciphertext, key)` - AES-GCM 解密
-
-### 密码哈希
-- `bcrypt_hash(password, cost?)` - bcrypt 密码哈希
-- `bcrypt_verify(password, hash)` - bcrypt 密码验证
+- `random_bytes(length)` - 密码学安全随机字节
+- `uuid4()` - 生成 UUID v4
 
 ### Ed25519 签名
 - `ed25519_keypair()` - 生成 Ed25519 密钥对
@@ -332,10 +289,14 @@
 
 ### 基础函数
 - `time()` - 当前时间戳（秒）
-- `microtime(get_as_float?)` - 当前微秒时间戳
+- `microtime()` - 当前微秒时间戳
 - `now(format?)` - 当前时间对象
 - `date(format, timestamp?)` - 格式化时间
 - `sleep(ms)` - 休眠毫秒数
+
+### 日期解析与验证
+- `strtotime(datetime_string, base_timestamp?)` - 解析日期字符串为时间戳
+- `checkdate(month, day, year)` - 验证公历日期是否有效
 
 ### 高级函数
 - `getdate(timestamp?)` - 返回日期信息对象
@@ -344,6 +305,12 @@
 - `gmdate(format, timestamp?)` - GMT 时间格式化
 - `localtime(timestamp?)` - 本地时间对象
 - `gettimeofday()` - 时间信息对象（类似 C 的 gettimeofday）
+
+### 日期解析与计算
+- `strtotime(datetime_string, base_timestamp?)` - 解析日期字符串为时间戳
+- `checkdate(month, day, year)` - 验证公历日期
+- `date_diff(ts1, ts2)` - 计算两个时间戳的差异
+- `date_add(timestamp, duration_str)` - 给时间戳添加时间
 
 ### 时间戳转换
 - `mktime(hour, minute, second, month, day, year)` - 生成时间戳
@@ -371,11 +338,17 @@
 
 ### 文件信息
 - `stat(path)` - 文件状态
-- `fileSize(path)` - 文件大小
-- `isFile(path)` - 检查是否为文件
-- `isDir(path)` - 检查是否为目录
-- `exists(path)` - 检查文件是否存在
+- `fileSize(path)` / `file_size(path)` - 文件大小
+- `isFile(path)` / `is_file(path)` - 检查是否为文件
+- `isDir(path)` / `is_dir(path)` - 检查是否为目录
+- `exists(path)` / `file_exists(path)` - 检查文件是否存在
 - `pathinfo(path, options?)` - 路径信息
+
+### 临时文件与 JSON
+- `tempfile(prefix?, suffix?)` - 创建临时文件
+- `read_json(path)` - 读取并解析 JSON 文件
+- `write_json(path, value, pretty?)` - 写入 JSON 文件
+- `walk(root)` - 递归目录遍历
 
 ### 路径处理
 - `dirname(path)` - 目录部分
@@ -506,6 +479,7 @@
 - `json_encode(value, pretty?)` - 序列化为 JSON
 - `json_decode(json_str)` - 解析 JSON 字符串
 - `json_pretty(value)` - 美化 JSON
+- `json_validate(json_str)` - 验证 JSON 是否合法（不返回解析结果）
 
 ## 函数式编程
 
@@ -516,6 +490,13 @@
 - `filter(arr, fn)` - 过滤数组
 - `reduce(arr, fn, initial?)` - 归约数组
 - `find(arr, fn)` - 查找第一个满足条件的元素
+
+### 分组和排序
+- `group_by(arr, fn)` - 按函数返回值分组
+- `count_by(arr, fn)` - 按函数返回值计数
+- `sort_by(arr, fn)` - 按函数返回值排序
+- `sort(arr, cmp?)` - 对数组排序
+- `compact(arr)` - 移除假值
 
 ### 集合操作
 - `some(arr, fn)` - 检查是否有元素满足条件
@@ -581,6 +562,9 @@
 - `is_regex(value)` - 检查是否为正则表达式
 - `is_bigint(value)` - 检查是否为大整数
 - `is_bigdecimal(value)` - 检查是否为高精度小数
+- `is_error(value)` - 检查是否为错误类型
+- `is_callable(value)` - 检查是否可调用
+- `is_iterable(value)` - 检查是否可迭代
 
 ## 类型转换
 
@@ -593,6 +577,8 @@
 - `boolval(value)` - 转换为布尔值
 - `doubleval(value)` - floatval 的别名
 - `settype(value, type)` - 设置变量类型
+- `bigint(value)` - 转换为 BigInt
+- `bigdecimal(value)` - 转换为 BigDecimal
 
 ## 系统函数
 
@@ -613,6 +599,8 @@
 - `uname()` - 系统信息对象
 - `getHostname()` - 主机名
 - `php_uname(mode?)` - uname 的别名
+- `cpu_count()` - CPU 核心数
+- `meminfo()` - 内存使用信息（alloc, total_alloc, sys, num_gc, num_goroutine）
 
 ### 其他
 - `umask(mask?)` - 文件创建掩码
@@ -664,6 +652,8 @@
 - `bit_not(x)` - 按位非
 - `bit_left_shift(x, n)` - 左移
 - `bit_right_shift(x, n)` - 右移
+- `bit_count(n)` - 计算设置位的数量（popcount）
+- `bit_length(n)` - 计算表示数字所需的位数
 
 ## 二进制操作
 
@@ -681,6 +671,8 @@
 - `re_match_all(pattern, str, flags?)` - 匹配所有
 - `re_replace(pattern, replacement, str, flags?)` - 替换匹配
 - `re_split(pattern, str, limit?, flags?)` - 分割字符串
+- `re_quote(str)` - 转义正则特殊字符（Python `re.escape`）
+- `re_fullmatch(pattern, str)` - 检查是否完全匹配
 
 ### 正则字面量
 - `#/pattern/flags#` - 正则表达式字面量
@@ -744,6 +736,8 @@
 - `rawurlencode(str)` - 原始 URL 编码
 - `rawurldecode(str)` - 原始 URL 解码
 - `http_build_query(data, prefix?, arg_sep?, enc_type?)` - 构建查询字符串
+- `build_url(parts)` - 从 parts 对象构建 URL
+- `parse_query(str)` - 解析查询字符串为键值对
 
 ## DNS 查询
 
@@ -760,10 +754,14 @@
 
 - `ip2long(ip)` - IP 地址转整数
 - `long2ip(long)` - 整数转 IP 地址
-- `inet_pton(address)` - 将可读地址转换为二进制格式
-- `inet_ntop(in_addr)` - 将二进制地址转换为可读格式
-- `is_ipv4(address)` - 检查是否为 IPv4 地址
-- `is_ipv6(address)` - 检查是否为 IPv6 地址
+- `ip_parse(ip)` - 解析 IP 地址详情
+- `ip_to_hex(ip)` - IP 转十六进制
+- `ip_to_bin(ip)` - IP 转二进制
+- `ip_from_hex(hex)` - 十六进制转 IP
+- `ip_from_bin(bin)` - 二进制转 IP
+- `ip_version(ip)` - 检测 IP 版本（4 或 6）
+- `ip_valid(ip)` - 验证 IP 地址
+- `ip_in_range(ip, range)` - 检查 IP 是否在 CIDR 范围内
 
 ## 事件循环
 
@@ -820,36 +818,36 @@ JPL 标准库共包含约 300+ 个内置函数，分布在以下模块：
 
 | 模块 | 函数数量 |
 |------|----------|
-| I/O | 18 |
-| 工具 | 2 |
-| 数组 | 45 |
-| 字符串 | 70 |
-| 数学 | 45 |
+| I/O | 20 |
+| 工具 | 8 |
+| 数组 | 28 |
+| 字符串 | 74 |
+| 数学 | 54 |
 | 哈希与编码 | 8 |
-| 加密 | 20 |
-| 日期时间 | 12 |
-| 文件 I/O | 35 |
+| 加密 | 23 |
+| 日期时间 | 16 |
+| 文件 I/O | 39 |
 | HTTP | 6 |
 | 网络 | 15 |
 | TLS | 10 |
-| JSON | 3 |
-| 函数式编程 | 20 |
+| JSON | 4 |
+| 函数式编程 | 26 |
 | 反射 | 8 |
-| 类型检查 | 15 |
-| 类型转换 | 6 |
-| 系统 | 8 |
+| 类型检查 | 22 |
+| 类型转换 | 8 |
+| 系统 | 13 |
 | 进程控制 | 2 |
 | 进程扩展 | 10 |
 | 调试工具 | 3 |
 | 动态执行 | 1 |
-| 位运算 | 6 |
+| 位运算 | 8 |
 | 二进制操作 | 2 |
-| 正则表达式 | 5 |
+| 正则表达式 | 7 |
 | 压缩解压 | 9 |
 | 归档操作 | 12 |
-| URL 处理 | 8 |
+| URL 处理 | 10 |
 | DNS 查询 | 5 |
-| IP 地址 | 7 |
+| IP 地址 | 10 |
 | 事件循环 | 6 |
 | 虚拟机函数 | 3 |
 | 对象解析 | 2 |
@@ -857,4 +855,4 @@ JPL 标准库共包含约 300+ 个内置函数，分布在以下模块：
 | 删除操作 | 2 |
 | 错误处理 | 3 |
 
-**总计**: ~400 个函数
+**总计**: ~450+ 个函数

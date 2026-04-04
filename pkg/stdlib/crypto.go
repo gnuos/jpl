@@ -4,11 +4,15 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
+	"crypto/md5"
+	"crypto/rand"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io"
 
 	"github.com/gnuos/jpl/engine"
 )
@@ -35,6 +39,13 @@ func RegisterCrypto(e *engine.Engine) {
 	e.RegisterFunc("aes_encrypt", builtinAESEncrypt)
 	e.RegisterFunc("aes_decrypt", builtinAESDecrypt)
 
+	// 随机数
+	e.RegisterFunc("random_bytes", builtinRandomBytes)
+	e.RegisterFunc("uuid4", builtinUUID4)
+
+	// 通用 hash
+	e.RegisterFunc("hash", builtinHash)
+
 	// bcrypt 密码哈希
 	RegisterBcrypt(e)
 
@@ -47,14 +58,16 @@ func RegisterCrypto(e *engine.Engine) {
 	// 模块注册 - import "crypto" 可用
 	// 注意：base64 函数已在 hash 模块中注册，这里通过 crypto 模块重新导出
 	e.RegisterModule("crypto", map[string]engine.GoFunction{
-		"sha256":      builtinSHA256,
-		"sha512":      builtinSHA512,
-		"hmac_sha256": builtinHMACSHA256,
-		"hmac_sha512": builtinHMACSHA512,
-		"hex_encode":  builtinHexEncode,
-		"hex_decode":  builtinHexDecode,
-		"aes_encrypt": builtinAESEncrypt,
-		"aes_decrypt": builtinAESDecrypt,
+		"sha256":       builtinSHA256,
+		"sha512":       builtinSHA512,
+		"hmac_sha256":  builtinHMACSHA256,
+		"hmac_sha512":  builtinHMACSHA512,
+		"hex_encode":   builtinHexEncode,
+		"hex_decode":   builtinHexDecode,
+		"aes_encrypt":  builtinAESEncrypt,
+		"aes_decrypt":  builtinAESDecrypt,
+		"random_bytes": builtinRandomBytes,
+		"hash":         builtinHash,
 		// base64 函数引用 hash.go 中的实现（通过 RegisterHash 注册）
 		"base64_encode": builtinBase64Encode,
 		"base64_decode": builtinBase64Decode,
@@ -400,12 +413,113 @@ func builtinAESDecrypt(ctx *engine.Context, args []engine.Value) (engine.Value, 
 	return engine.NewString(string(plaintext)), nil
 }
 
+// builtinRandomBytes 生成密码学安全的随机字节。
+func builtinRandomBytes(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("random_bytes() expects 1 argument, got %d", len(args))
+	}
+
+	length := int(args[0].Int())
+	if length < 0 {
+		return nil, fmt.Errorf("random_bytes() length must be non-negative")
+	}
+
+	buf := make([]byte, length)
+	_, err := io.ReadFull(rand.Reader, buf)
+	if err != nil {
+		return nil, fmt.Errorf("random_bytes() failed: %v", err)
+	}
+
+	return engine.NewString(string(buf)), nil
+}
+
+// builtinHash 通用 hash 函数，支持多种算法。
+func builtinHash(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 2 || len(args) > 3 {
+		return nil, fmt.Errorf("hash() expects 2-3 arguments (algo, data, [raw_output]), got %d", len(args))
+	}
+
+	algo := args[0].String()
+	data := args[1].String()
+	rawOutput := false
+	if len(args) == 3 {
+		rawOutput = engine.IsTruthy(args[2])
+	}
+
+	var hash []byte
+	switch algo {
+	case "md5":
+		h := md5.Sum([]byte(data))
+		hash = h[:]
+	case "sha1":
+		h := sha1.Sum([]byte(data))
+		hash = h[:]
+	case "sha256":
+		h := sha256.Sum256([]byte(data))
+		hash = h[:]
+	case "sha512":
+		h := sha512.Sum512([]byte(data))
+		hash = h[:]
+	default:
+		return nil, fmt.Errorf("hash() unsupported algorithm: %s (supported: md5, sha1, sha256, sha512)", algo)
+	}
+
+	if rawOutput {
+		return engine.NewString(string(hash)), nil
+	}
+	return engine.NewString(hex.EncodeToString(hash)), nil
+}
+
+// builtinUUID4 生成 UUID v4（随机）。
+func builtinUUID4(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("uuid4() expects no arguments, got %d", len(args))
+	}
+
+	b := make([]byte, 16)
+	_, err := io.ReadFull(rand.Reader, b)
+	if err != nil {
+		return nil, fmt.Errorf("uuid4() failed: %v", err)
+	}
+
+	b[6] = (b[6] & 0x0f) | 0x40 // version 4
+	b[8] = (b[8] & 0x3f) | 0x80 // variant 1
+
+	uuid := fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+	return engine.NewString(uuid), nil
+}
+
 // CryptoSigs returns function signatures for REPL :doc command.
 func CryptoSigs() map[string]string {
 	return map[string]string{
-		"aes_encrypt": "aes_encrypt(data, key) → string  — AES-256-GCM encrypt (base64 output)",
-		"aes_decrypt": "aes_decrypt(data, key) → string  — AES-256-GCM decrypt",
-		"hmac_sha256": "hmac_sha256(key, data) → string  — HMAC-SHA256",
-		"hmac_sha512": "hmac_sha512(key, data) → string  — HMAC-SHA512",
+		"sha256":               "sha256(data) → string  — SHA-256 hash (hex)",
+		"sha512":               "sha512(data) → string  — SHA-512 hash (hex)",
+		"hmac_sha256":          "hmac_sha256(key, data) → string  — HMAC-SHA256",
+		"hmac_sha512":          "hmac_sha512(key, data) → string  — HMAC-SHA512",
+		"hex_encode":           "hex_encode(data) → string  — Hex encode",
+		"hex_decode":           "hex_decode(hex) → string  — Hex decode",
+		"aes_encrypt":          "aes_encrypt(data, key) → string  — AES-256-GCM encrypt (base64 output)",
+		"aes_decrypt":          "aes_decrypt(data, key) → string  — AES-256-GCM decrypt",
+		"random_bytes":         "random_bytes(length) → string  — Cryptographically secure random bytes",
+		"hash":                 "hash(algo, data, [raw_output]) → string  — Generic hash (md5, sha1, sha256, sha512)",
+		"base64_encode":        "base64_encode(data) → string  — Base64 encode",
+		"base64_decode":        "base64_decode(data) → string  — Base64 decode",
+		"bcrypt_hash":          "bcrypt_hash(password, [cost]) → string  — Bcrypt password hash",
+		"bcrypt_verify":        "bcrypt_verify(password, hash) → bool  — Verify bcrypt hash",
+		"bcrypt_cost":          "bcrypt_cost(hash) → int  — Get bcrypt cost factor",
+		"ed25519_generate_key": "ed25519_generate_key([seed]) → object  — Generate Ed25519 keypair",
+		"ed25519_sign":         "ed25519_sign(private_key, message) → string  — Sign with Ed25519",
+		"ed25519_verify":       "ed25519_verify(public_key, message, signature) → bool  — Verify Ed25519 signature",
+		"ed25519_public_key":   "ed25519_public_key(private_key) → string  — Extract Ed25519 public key",
+		"x25519_generate_key":  "x25519_generate_key([private_key]) → object  — Generate X25519 keypair",
+		"x25519_shared_secret": "x25519_shared_secret(private_key, public_key) → string  — X25519 key exchange",
+		"x25519_public_key":    "x25519_public_key(private_key) → string  — Extract X25519 public key",
+		"rsa_generate_key":     "rsa_generate_key(bits) → object  — Generate RSA keypair",
+		"rsa_encrypt":          "rsa_encrypt(public_key, data) → string  — RSA encrypt",
+		"rsa_decrypt":          "rsa_decrypt(private_key, data) → string  — RSA decrypt",
+		"rsa_sign":             "rsa_sign(private_key, data) → string  — RSA sign",
+		"rsa_verify":           "rsa_verify(public_key, data, signature) → bool  — Verify RSA signature",
+		"rsa_public_key":       "rsa_public_key(private_key) → string  — Extract RSA public key",
 	}
 }

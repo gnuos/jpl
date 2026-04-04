@@ -18,11 +18,12 @@ func RegisterJSON(e *engine.Engine) {
 	e.RegisterFunc("json_encode", builtinJSONEncode)
 	e.RegisterFunc("json_decode", builtinJSONDecode)
 	e.RegisterFunc("json_pretty", builtinJSONPretty)
+	e.RegisterFunc("json_validate", builtinJSONValidate)
 }
 
 // JSONNames 返回 JSON 相关函数名
 func JSONNames() []string {
-	return []string{"json_encode", "json_decode", "json_pretty"}
+	return []string{"json_encode", "json_decode", "json_pretty", "json_validate"}
 }
 
 // builtinJSONEncode 将值序列化为 JSON 字符串
@@ -133,6 +134,26 @@ func builtinJSONPretty(ctx *engine.Context, args []engine.Value) (engine.Value, 
 	}
 
 	return engine.NewString(string(bytes)), nil
+}
+
+// builtinJSONValidate 验证 JSON 字符串是否合法，不返回解析结果。
+func builtinJSONValidate(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("json_validate() requires exactly 1 argument")
+	}
+
+	jsonStr := args[0].String()
+	jsonStr = strings.TrimSpace(jsonStr)
+
+	dec := json.NewDecoder(bytes.NewReader([]byte(jsonStr)))
+	dec.UseNumber()
+
+	var raw any
+	err := dec.Decode(&raw)
+	if err != nil {
+		return engine.NewBool(false), nil
+	}
+	return engine.NewBool(true), nil
 }
 
 // jplValueToGo 将 JPL 值转换为 Go 值
@@ -463,7 +484,9 @@ func normalizeNumber(s string) string {
 // JSONSigs returns function signatures for REPL :doc command.
 func JSONSigs() map[string]string {
 	return map[string]string{
-		"json_encode": "json_encode(value, [pretty]) → string  — Serialize to JSON",
-		"json_decode": "json_decode(str) → value  — Parse JSON string",
+		"json_encode":   "json_encode(value, [pretty]) → string  — Serialize to JSON",
+		"json_decode":   "json_decode(str) → value  — Parse JSON string",
+		"json_pretty":   "json_pretty(value) → string  — Pretty-print JSON",
+		"json_validate": "json_validate(str) → bool  — Validate JSON without parsing",
 	}
 }

@@ -2,6 +2,7 @@ package stdlib
 
 import (
 	"fmt"
+	"math/bits"
 
 	"github.com/gnuos/jpl/engine"
 )
@@ -15,20 +16,26 @@ func RegisterBitwise(e *engine.Engine) {
 	e.RegisterFunc("shl", builtinShl)
 	e.RegisterFunc("shr", builtinShr)
 
+	// P1
+	e.RegisterFunc("bit_count", builtinBitCount)
+	e.RegisterFunc("bit_length", builtinBitLength)
+
 	// 模块注册 — import "bitwise" 可用
 	e.RegisterModule("bitwise", map[string]engine.GoFunction{
-		"band": builtinBitAnd,
-		"bor":  builtinBitOr,
-		"bxor": builtinBitXor,
-		"bnot": builtinBitNot,
-		"shl":  builtinShl,
-		"shr":  builtinShr,
+		"band":       builtinBitAnd,
+		"bor":        builtinBitOr,
+		"bxor":       builtinBitXor,
+		"bnot":       builtinBitNot,
+		"shl":        builtinShl,
+		"shr":        builtinShr,
+		"bit_count":  builtinBitCount,
+		"bit_length": builtinBitLength,
 	})
 }
 
 // BitwiseNames 返回位运算函数名
 func BitwiseNames() []string {
-	return []string{"band", "bor", "bxor", "bnot", "shl", "shr"}
+	return []string{"band", "bor", "bxor", "bnot", "shl", "shr", "bit_count", "bit_length"}
 }
 
 // builtinBitAnd 按位与
@@ -80,13 +87,39 @@ func builtinShr(ctx *engine.Context, args []engine.Value) (engine.Value, error) 
 }
 
 // BitwiseSigs returns function signatures for REPL :doc command.
+
+// builtinBitCount 计算设置位的数量。
+func builtinBitCount(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("bit_count() expects 1 argument, got %d", len(args))
+	}
+	n := args[0].Int()
+	return engine.NewInt(int64(bits.OnesCount64(uint64(n)))), nil
+}
+
+// builtinBitLength 计算表示数字所需的位数。
+func builtinBitLength(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("bit_length() expects 1 argument, got %d", len(args))
+	}
+	n := args[0].Int()
+	if n < 0 {
+		n = -n
+	}
+	if n == 0 {
+		return engine.NewInt(0), nil
+	}
+	return engine.NewInt(int64(64 - bits.LeadingZeros64(uint64(n)))), nil
+}
 func BitwiseSigs() map[string]string {
 	return map[string]string{
-		"bit_and": "bit_and(a, b) → int  — Bitwise AND",
-		"bit_or":  "bit_or(a, b) → int  — Bitwise OR",
-		"bit_xor": "bit_xor(a, b) → int  — Bitwise XOR",
-		"bit_not": "bit_not(a) → int  — Bitwise NOT",
-		"bit_shl": "bit_shl(a, b) → int  — Bitwise left shift",
-		"bit_shr": "bit_shr(a, b) → int  — Bitwise right shift",
+		"bit_and":    "bit_and(a, b) → int  — Bitwise AND",
+		"bit_or":     "bit_or(a, b) → int  — Bitwise OR",
+		"bit_xor":    "bit_xor(a, b) → int  — Bitwise XOR",
+		"bit_not":    "bit_not(a) → int  — Bitwise NOT",
+		"bit_shl":    "bit_shl(a, b) → int  — Bitwise left shift",
+		"bit_shr":    "bit_shr(a, b) → int  — Bitwise right shift",
+		"bit_count":  "bit_count(n) → int  — Count number of set bits",
+		"bit_length": "bit_length(n) → int  — Number of bits to represent integer",
 	}
 }

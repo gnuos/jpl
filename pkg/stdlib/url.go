@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gnuos/jpl/engine"
 )
@@ -27,6 +28,10 @@ func RegisterURL(e *engine.Engine) {
 	e.RegisterFunc("rawurldecode", builtinRawurldecode)
 	e.RegisterFunc("parse_url", builtinParseURL)
 
+	// P1
+	e.RegisterFunc("build_url", builtinBuildURL)
+	e.RegisterFunc("parse_query", builtinParseQuery)
+
 	// 模块注册 — import "url" 可用
 	e.RegisterModule("url", map[string]engine.GoFunction{
 		"urlencode":    builtinUrlencode,
@@ -34,6 +39,9 @@ func RegisterURL(e *engine.Engine) {
 		"rawurlencode": builtinRawurlencode,
 		"rawurldecode": builtinRawurldecode,
 		"parse_url":    builtinParseURL,
+		// P1
+		"build_url":   builtinBuildURL,
+		"parse_query": builtinParseQuery,
 	})
 }
 
@@ -42,7 +50,7 @@ func RegisterURL(e *engine.Engine) {
 // 返回值：
 //   - []string: 函数名列表 ["urlencode", "urldecode", "rawurlencode", "rawurldecode", "parse_url"]
 func UrlNames() []string {
-	return []string{"urlencode", "urldecode", "rawurlencode", "rawurldecode", "parse_url"}
+	return []string{"urlencode", "urldecode", "rawurlencode", "rawurldecode", "parse_url", "build_url", "parse_query"}
 }
 
 // builtinUrlencode 标准 URL 编码。
@@ -256,5 +264,77 @@ func UrlSigs() map[string]string {
 		"rawurlencode": "rawurlencode(str) → string  — Raw URL encode (space → %20)",
 		"rawurldecode": "rawurldecode(str) → string  — Raw URL decode",
 		"parse_url":    "parse_url(url) → object  — Parse URL into components",
+		"build_url":    "build_url(parts) → string  — Build URL from parts object",
+		"parse_query":  "parse_query(str) → object  — Parse query string to key-value object",
 	}
+}
+
+// builtinBuildURL 从 parts 对象构建 URL。
+func builtinBuildURL(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("build_url() expects 1 argument, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeObject {
+		return nil, fmt.Errorf("build_url() argument must be object, got %s", args[0].Type())
+	}
+	obj := args[0].Object()
+	scheme := ""
+	if v, ok := obj["scheme"]; ok {
+		scheme = v.String()
+	}
+	host := ""
+	if v, ok := obj["host"]; ok {
+		host = v.String()
+	}
+	port := ""
+	if v, ok := obj["port"]; ok {
+		port = v.String()
+	}
+	path := ""
+	if v, ok := obj["path"]; ok {
+		path = v.String()
+	}
+	query := ""
+	if v, ok := obj["query"]; ok {
+		query = v.String()
+	}
+
+	var result string
+	if scheme != "" {
+		result = scheme + "://"
+	}
+	result += host
+	if port != "" {
+		result += ":" + port
+	}
+	result += path
+	if query != "" {
+		result += "?" + query
+	}
+	return engine.NewString(result), nil
+}
+
+// builtinParseQuery 解析查询字符串为键值对对象。
+func builtinParseQuery(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("parse_query() expects 1 argument, got %d", len(args))
+	}
+	str := args[0].String()
+	result := make(map[string]engine.Value)
+	pairs := strings.Split(str, "&")
+	for _, pair := range pairs {
+		if pair == "" {
+			continue
+		}
+		kv := strings.SplitN(pair, "=", 2)
+		key := kv[0]
+		val := ""
+		if len(kv) == 2 {
+			val = kv[1]
+		}
+		decodedKey, _ := url.QueryUnescape(key)
+		decodedVal, _ := url.QueryUnescape(val)
+		result[decodedKey] = engine.NewString(decodedVal)
+	}
+	return engine.NewObject(result), nil
 }

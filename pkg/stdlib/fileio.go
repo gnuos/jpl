@@ -1,6 +1,7 @@
 package stdlib
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -43,8 +44,12 @@ func RegisterFileIO(e *engine.Engine) {
 	// 文件信息
 	e.RegisterFunc("stat", builtinStat)
 	e.RegisterFunc("fileSize", builtinFileSize)
+	e.RegisterFunc("file_size", builtinFileSize) // snake_case alias
 	e.RegisterFunc("isFile", builtinIsFile)
+	e.RegisterFunc("is_file", builtinIsFile) // snake_case alias
 	e.RegisterFunc("isDir", builtinIsDir)
+	e.RegisterFunc("is_dir", builtinIsDir)       // snake_case alias
+	e.RegisterFunc("file_exists", builtinExists) // PHP-style alias
 
 	// 路径处理
 	e.RegisterFunc("dirname", builtinDirname)
@@ -73,6 +78,12 @@ func RegisterFileIO(e *engine.Engine) {
 	e.RegisterFunc("rewind", builtinRewind)
 	e.RegisterFunc("ftruncate", builtinFtruncate)
 	e.RegisterFunc("fgetcsv", builtinFgetcsv)
+
+	// P1: 文件 I/O 增强
+	e.RegisterFunc("tempfile", builtinTempfile)
+	e.RegisterFunc("read_json", builtinReadJSON)
+	e.RegisterFunc("write_json", builtinWriteJSON)
+	e.RegisterFunc("walk", builtinWalk)
 
 	// 模块注册 — import "file" 可用
 	e.RegisterModule("file", map[string]engine.GoFunction{
@@ -110,6 +121,10 @@ func RegisterFileIO(e *engine.Engine) {
 		"chmod":             builtinChmod,
 		"scandir":           builtinScandir,
 		"glob":              builtinGlob,
+		"tempfile":          builtinTempfile,
+		"read_json":         builtinReadJSON,
+		"write_json":        builtinWriteJSON,
+		"walk":              builtinWalk,
 	})
 }
 
@@ -132,6 +147,8 @@ func FileIONames() []string {
 		"chdir", "rename", "unlink", "is_readable", "is_writable", "chmod", "scandir", "glob",
 		// Phase 11.4: 流操作 stub
 		"fseek", "ftell", "rewind", "ftruncate", "fgetcsv",
+		// P1: 文件 I/O 增强
+		"tempfile", "read_json", "write_json", "walk",
 	}
 }
 
@@ -1366,6 +1383,90 @@ func parseCSVLine(line string, extraArgs []engine.Value) (engine.Value, error) {
 	return engine.NewArray(arr), nil
 }
 
+// ============================================================================
+// P1: 文件 I/O 增强函数
+// ============================================================================
+
+// builtinTempfile 创建临时文件并返回路径。
+func builtinTempfile(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	prefix := "jpl_tmp"
+	suffix := ""
+	if len(args) >= 1 {
+		prefix = args[0].String()
+	}
+	if len(args) >= 2 {
+		suffix = args[1].String()
+	}
+	f, err := os.CreateTemp("", prefix+"*"+suffix)
+	if err != nil {
+		return nil, fmt.Errorf("tempfile() failed: %v", err)
+	}
+	f.Close()
+	return engine.NewString(f.Name()), nil
+}
+
+// builtinReadJSON 读取并解析 JSON 文件。
+func builtinReadJSON(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("read_json() expects 1 argument, got %d", len(args))
+	}
+	content, err := os.ReadFile(args[0].String())
+	if err != nil {
+		return nil, fmt.Errorf("read_json() failed: %v", err)
+	}
+	return builtinJSONDecode(ctx, []engine.Value{engine.NewString(string(content))})
+}
+
+// builtinWriteJSON 序列化并写入 JSON 文件。
+func builtinWriteJSON(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) < 2 || len(args) > 3 {
+		return nil, fmt.Errorf("write_json() expects 2-3 arguments, got %d", len(args))
+	}
+	path := args[0].String()
+	value := args[1]
+	pretty := false
+	if len(args) == 3 {
+		pretty = engine.IsTruthy(args[2])
+	}
+	goValue := jplValueToGo(value)
+	var bytes []byte
+	var err error
+	if pretty {
+		bytes, err = json.MarshalIndent(goValue, "", "  ")
+	} else {
+		bytes, err = json.Marshal(goValue)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("write_json() failed: %v", err)
+	}
+	if err := os.WriteFile(path, append(bytes, '\n'), 0644); err != nil {
+		return nil, fmt.Errorf("write_json() failed: %v", err)
+	}
+	return engine.NewNull(), nil
+}
+
+// builtinWalk 递归遍历目录。
+func builtinWalk(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("walk() expects 1 argument, got %d", len(args))
+	}
+	root := args[0].String()
+	var result []engine.Value
+	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		entry := map[string]engine.Value{
+			"path":   engine.NewString(path),
+			"is_dir": engine.NewBool(info.IsDir()),
+			"size":   engine.NewInt(info.Size()),
+		}
+		result = append(result, engine.NewObject(entry))
+		return nil
+	})
+	return engine.NewArray(result), nil
+}
+
 // FileIOSigs returns function signatures for REPL :doc command.
 func FileIOSigs() map[string]string {
 	return map[string]string{
@@ -1404,5 +1505,9 @@ func FileIOSigs() map[string]string {
 		"ftruncate":            "ftruncate(stream, size) → bool  — Truncate file to size",
 		"fgetcsv":              "fgetcsv(stream, [delimiter], [enclosure]) → array  — Read CSV line",
 		"stream_get_meta_data": "stream_get_meta_data(stream) → object  — Get stream metadata",
+		"tempfile":             "tempfile([prefix], [suffix]) → string  — Create temp file, return path",
+		"read_json":            "read_json(path) → value  — Read and parse JSON file",
+		"write_json":           "write_json(path, value, [pretty]) → null  — Write value as JSON to file",
+		"walk":                 "walk(root) → array  — Recursive directory traversal",
 	}
 }

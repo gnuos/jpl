@@ -8,8 +8,8 @@ import (
 
 func TestStringNames(t *testing.T) {
 	names := StringNames()
-	if len(names) != 60 {
-		t.Errorf("expected 60 string function names, got %d", len(names))
+	if len(names) != 64 {
+		t.Errorf("expected 64 string function names, got %d", len(names))
 	}
 }
 

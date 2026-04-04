@@ -1,0 +1,125 @@
+// Advanced Cryptography
+// 演示新增的 crypto 函数：random_bytes, hash
+
+// ============================================================================
+// 1. 密码学安全随机数
+// ============================================================================
+
+// 生成随机字节
+$randomBytes = random_bytes(16)
+println "Random bytes (16): #{strlen($randomBytes)} bytes"
+
+$randomBytes32 = random_bytes(32)
+println "Random bytes (32): #{strlen($randomBytes32)} bytes"
+
+// 生成随机十六进制字符串
+fn randomHex($length) {
+    $bytes = random_bytes($length)
+    return hex_encode($bytes)
+}
+
+$hex = randomHex(16)
+println "Random hex (32 chars): #{$hex}"
+
+// 生成随机 Base64 字符串
+fn randomBase64($length) {
+    $bytes = random_bytes($length)
+    return base64_encode($bytes)
+}
+
+$b64 = randomBase64(24)
+println "Random base64: #{$b64}"
+
+// ============================================================================
+// 2. 通用 hash 函数
+// ============================================================================
+
+$data = "Hello, JPL!"
+
+// MD5
+$md5 = hash("md5", $data)
+println "MD5: #{$md5}"
+
+// SHA1
+$sha1 = hash("sha1", $data)
+println "SHA1: #{$sha1}"
+
+// SHA256
+$sha256 = hash("sha256", $data)
+println "SHA256: #{$sha256}"
+
+// SHA512
+$sha512 = hash("sha512", $data)
+println "SHA512: #{substr($sha512, 0, 32)}..."
+
+// ============================================================================
+// 3. 原始二进制输出
+// ============================================================================
+
+$rawHash = hash("sha256", $data, true)
+println "Raw SHA256 length: #{strlen($rawHash)} bytes"
+
+$hexHash = hash("sha256", $data, false)
+println "Hex SHA256 length: #{strlen($hexHash)} chars"
+
+// ============================================================================
+// 4. 实用函数：生成文件校验和
+// ============================================================================
+
+fn fileChecksum($path) {
+    if (!exists($path)) {
+        return null
+    }
+    $content = read($path)
+    return hash("sha256", $content)
+}
+
+$checksum = fileChecksum("README.md")
+if ($checksum != null) {
+    println "README.md SHA256: #{substr($checksum, 0, 16)}..."
+} else {
+    println "README.md not found"
+}
+
+// ============================================================================
+// 5. 实用函数：生成随机密码
+// ============================================================================
+
+fn generatePassword($length) {
+    $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
+    $charLen = strlen($chars)
+    $password = ""
+    for ($i = 0; $i < $length; $i = $i + 1) {
+        $index = randomInt(0, $charLen - 1)
+        $password = $password .. substr($chars, $index, 1)
+    }
+    return $password
+}
+
+$pwd = generatePassword(16)
+println "Generated password: #{$pwd}"
+
+// ============================================================================
+// 6. HMAC 签名验证
+// ============================================================================
+
+$key = "my_secret_key_2026"
+$message = "Important data to sign"
+
+$signature = hmac_sha256($key, $message)
+println "HMAC-SHA256: #{$signature}"
+
+// 验证签名
+$verify = hmac_sha256($key, $message)
+if ($verify == $signature) {
+    println "Signature verified!"
+} else {
+    println "Signature mismatch!"
+}
+
+// 错误的密钥验证
+$wrongKey = "wrong_key"
+$wrongSig = hmac_sha256($wrongKey, $message)
+if ($wrongSig != $signature) {
+    println "Wrong key correctly rejected!"
+}

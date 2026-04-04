@@ -117,6 +117,12 @@ func RegisterFunctional(e *engine.Engine) {
 	e.RegisterFunc("drop", builtinDrop)
 	e.RegisterFunc("sum", builtinSum)
 	e.RegisterFunc("size", builtinSize)
+
+	// P1
+	e.RegisterFunc("group_by", builtinGroupBy)
+	e.RegisterFunc("count_by", builtinCountBy)
+	e.RegisterFunc("sort_by", builtinSortBy)
+	e.RegisterFunc("compact", builtinCompact)
 }
 
 // FunctionalNames 返回函数式编程函数名称列表。
@@ -129,6 +135,7 @@ func FunctionalNames() []string {
 		"sort", "contains", "unique", "partition", "flattenDeep",
 		"difference", "union", "zip", "unzip", "first", "last",
 		"take", "drop", "sum", "size",
+		"group_by", "count_by", "sort_by", "compact",
 	}
 }
 
@@ -1135,6 +1142,114 @@ func builtinSize(ctx *engine.Context, args []engine.Value) (engine.Value, error)
 }
 
 // FunctionalSigs returns function signatures for REPL :doc command.
+
+// builtinGroupBy 按函数返回值分组。
+func builtinGroupBy(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("group_by() expects 2 arguments, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("group_by() argument 1 must be array, got %s", args[0].Type())
+	}
+	arr := args[0].Array()
+	fn := args[1]
+	vm := ctx.VM()
+
+	groups := make(map[string]engine.Value)
+	for _, item := range arr {
+		val, err := vm.CallValue(fn, item)
+		if err != nil {
+			return nil, err
+		}
+		key := val.String()
+		var group []engine.Value
+		if g, ok := groups[key]; ok {
+			group = g.Array()
+		}
+		group = append(group, item)
+		groups[key] = engine.NewArray(group)
+	}
+	return engine.NewObject(groups), nil
+}
+
+// builtinCountBy 按函数返回值计数。
+func builtinCountBy(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("count_by() expects 2 arguments, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("count_by() argument 1 must be array, got %s", args[0].Type())
+	}
+	arr := args[0].Array()
+	fn := args[1]
+	vm := ctx.VM()
+
+	counts := make(map[string]engine.Value)
+	for _, item := range arr {
+		val, err := vm.CallValue(fn, item)
+		if err != nil {
+			return nil, err
+		}
+		key := val.String()
+		var count int64
+		if c, ok := counts[key]; ok {
+			count = c.Int()
+		}
+		counts[key] = engine.NewInt(count + 1)
+	}
+	return engine.NewObject(counts), nil
+}
+
+// builtinSortBy 按函数返回值排序。
+func builtinSortBy(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 2 {
+		return nil, fmt.Errorf("sort_by() expects 2 arguments, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("sort_by() argument 1 must be array, got %s", args[0].Type())
+	}
+	arr := args[0].Array()
+	fn := args[1]
+	vm := ctx.VM()
+
+	result := make([]engine.Value, len(arr))
+	keys := make([]float64, len(arr))
+	copy(result, arr)
+
+	for i, item := range result {
+		val, err := vm.CallValue(fn, item)
+		if err != nil {
+			return nil, err
+		}
+		keys[i] = val.Float()
+	}
+
+	for i := 1; i < len(result); i++ {
+		for j := i; j > 0 && keys[j] < keys[j-1]; j-- {
+			result[j], result[j-1] = result[j-1], result[j]
+			keys[j], keys[j-1] = keys[j-1], keys[j]
+		}
+	}
+	return engine.NewArray(result), nil
+}
+
+// builtinCompact 移除假值。
+func builtinCompact(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("compact() expects 1 argument, got %d", len(args))
+	}
+	if args[0].Type() != engine.TypeArray {
+		return nil, fmt.Errorf("compact() argument must be array, got %s", args[0].Type())
+	}
+	arr := args[0].Array()
+	result := make([]engine.Value, 0, len(arr))
+	for _, item := range arr {
+		if engine.IsTruthy(item) {
+			result = append(result, item)
+		}
+	}
+	return engine.NewArray(result), nil
+}
 func FunctionalSigs() map[string]string {
 	return map[string]string{
 		"map":         "map(array_or_range, fn(element) → newValue) → array  — Apply function to each element",
@@ -1159,5 +1274,9 @@ func FunctionalSigs() map[string]string {
 		"drop":        "drop(array_or_range, n) → array  — Skip first n elements",
 		"sum":         "sum(array_or_range) → int  — Sum numeric elements",
 		"size":        "size(value) → int  — Return element count",
+		"group_by":    "group_by(array, fn(element) → key) → object  — Group elements by function result",
+		"count_by":    "count_by(array, fn(element) → key) → object  — Count elements by function result",
+		"sort_by":     "sort_by(array, fn(element) → float) → array  — Sort array by function result",
+		"compact":     "compact(array) → array  — Remove falsy values",
 	}
 }

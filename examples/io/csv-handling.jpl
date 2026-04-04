@@ -1,0 +1,91 @@
+// CSV Handling
+// 演示 JPL 的 CSV 文件读写功能
+
+// ============================================================================
+// 1. 解析 CSV 字符串
+// ============================================================================
+
+$csvData = "name,age,city\nAlice,30,New York\nBob,25,London\nCharlie,35,Tokyo"
+
+$rows = split($csvData, "\n")
+$headers = split($rows[0], ",")
+
+println "Headers: #{$headers}"
+
+foreach ($row in $rows) {
+    if ($row == $rows[0]) {
+        continue
+    }
+    $fields = split($row, ",")
+    println "Name: #{$fields[0]}, Age: #{$fields[1]}, City: #{$fields[2]}"
+}
+
+// ============================================================================
+// 2. 使用 str_getcsv 解析 CSV 行
+// ============================================================================
+
+$line = '"Smith, John",28,"San Francisco"'
+$fields = str_getcsv($line)
+println "Parsed CSV fields: #{$fields}"
+
+// ============================================================================
+// 3. 写入 CSV 文件
+// ============================================================================
+
+$records = [
+    ["name", "age", "city"],
+    ["Alice", "30", "New York"],
+    ["Bob", "25", "London"],
+    ["Charlie", "35", "Tokyo"]
+]
+
+$csvPath = "/tmp/example_csv.csv"
+$content = ""
+foreach ($record in $records) {
+    $line = join($record, ",")
+    $content = $content .. $line .. "\n"
+}
+
+write($csvPath, $content)
+println "CSV written to #{$csvPath}"
+
+// ============================================================================
+// 4. 读取 CSV 文件
+// ============================================================================
+
+$csvContent = read($csvPath)
+$csvRows = split($csvContent, "\n")
+
+foreach ($csvRow in $csvRows) {
+    if ($csvRow == "") {
+        continue
+    }
+    $csvFields = str_getcsv($csvRow)
+    println "CSV row: #{$csvFields}"
+}
+
+// ============================================================================
+// 5. 将 CSV 数据转换为对象数组
+// ============================================================================
+
+$dataLines = split($csvContent, "\n")
+$dataCols = split($dataLines[0], ",")
+
+println "\nParsed as objects:"
+$i = 1
+while ($i < len($dataLines)) {
+    $line = $dataLines[$i]
+    if ($line == "") {
+        $i = $i + 1
+        continue
+    }
+    $fields = split($line, ",")
+    $obj = {}
+    $j = 0
+    while ($j < len($dataCols)) {
+        $obj[$dataCols[$j]] = $fields[$j]
+        $j = $j + 1
+    }
+    println "  #{$obj["name"]} (age: #{$obj["age"]}, city: #{$obj["city"]})"
+    $i = $i + 1
+}

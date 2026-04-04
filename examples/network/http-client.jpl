@@ -1,0 +1,129 @@
+// HTTP Client Examples
+// 演示 HTTP 客户端请求
+
+// ============================================================================
+// 1. 基本 GET 请求
+// ============================================================================
+
+// 简单 GET 请求
+$response = http_get("https://httpbin.org/get")
+println "Status: #{$response.status}"
+println "Content-Type: #{$response.headers["Content-Type"]}"
+println "Body: #{substr($response.body, 0, 200)}..."
+
+// ============================================================================
+// 2. 带选项的 GET 请求
+// ============================================================================
+
+$response = http_get("https://httpbin.org/headers", {
+    headers: {
+        "X-Custom-Header": "JPL-Example",
+        "Accept": "application/json"
+    },
+    timeout: 10
+})
+println "Status: #{$response.status}"
+println "Time: #{$response.time}s"
+
+// ============================================================================
+// 3. POST 请求（JSON 数据）
+// ============================================================================
+
+$response = http_post("https://httpbin.org/post", {
+    json: {
+        name: "JPL",
+        version: "0.9.5",
+        description: "A high-performance scripting language"
+    }
+})
+println "POST Status: #{$response.status}"
+
+// ============================================================================
+// 4. POST 请求（表单数据）
+// ============================================================================
+
+$response = http_post("https://httpbin.org/post", {
+    form: {
+        username: "alice",
+        email: "alice@example.com"
+    }
+})
+println "Form POST Status: #{$response.status}"
+
+// ============================================================================
+// 5. PUT 请求
+// ============================================================================
+
+$response = http_put("https://httpbin.org/put", {
+    json: {
+        id: 1,
+        name: "Updated Name"
+    }
+})
+println "PUT Status: #{$response.status}"
+
+// ============================================================================
+// 6. DELETE 请求
+// ============================================================================
+
+$response = http_delete("https://httpbin.org/delete")
+println "DELETE Status: #{$response.status}"
+
+// ============================================================================
+// 7. HEAD 请求
+// ============================================================================
+
+$response = http_head("https://httpbin.org/get")
+println "HEAD Status: #{$response.status}"
+println "HEAD Content-Length: #{$response.headers["Content-Length"]}"
+
+// ============================================================================
+// 8. 通用请求
+// ============================================================================
+
+$response = http_request("PATCH", "https://httpbin.org/patch", {
+    json: {
+        field: "new_value"
+    }
+})
+println "PATCH Status: #{$response.status}"
+
+// ============================================================================
+// 9. 错误处理
+// ============================================================================
+
+try {
+    // 404 错误
+    $response = http_get("https://httpbin.org/status/404")
+    println "404 Status: #{$response.status}"
+
+    // 超时
+    $response = http_get("https://httpbin.org/delay/10", {
+        timeout: 3
+    })
+} catch ($e) {
+    println "HTTP Error: #{$e.message}"
+}
+
+// ============================================================================
+// 10. 实用函数：JSON API 调用
+// ============================================================================
+
+fn apiGet($url) {
+    $response = http_get($url, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+    if ($response.status == 200) {
+        return json_decode($response.body)
+    }
+    return null
+}
+
+// 示例：获取 httpbin 的 IP 信息
+$data = apiGet("https://httpbin.org/ip")
+if ($data != null) {
+    println "API Response:"
+    pp $data
+}

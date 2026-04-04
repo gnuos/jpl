@@ -33,6 +33,10 @@ func RegisterSystem(e *engine.Engine) {
 	e.RegisterFunc("umask", builtinUmask)
 	e.RegisterFunc("uname", builtinUname)
 
+	// P1
+	e.RegisterFunc("cpu_count", builtinCPUCount)
+	e.RegisterFunc("meminfo", builtinMeminfo)
+
 	// 模块注册 — import "sys" 可用
 	e.RegisterModule("sys", map[string]engine.GoFunction{
 		"disk_free_space": builtinDiskFreeSpace, "disk_total_space": builtinDiskTotalSpace,
@@ -41,6 +45,9 @@ func RegisterSystem(e *engine.Engine) {
 		"getpid": builtinGetpid, "getuid": builtinGetuid, "getgid": builtinGetgid,
 		"umask": builtinUmask,
 		"uname": builtinUname,
+		// P1
+		"cpu_count": builtinCPUCount,
+		"meminfo":   builtinMeminfo,
 	})
 }
 
@@ -53,6 +60,7 @@ func SystemNames() []string {
 		"getpid", "getuid", "getgid",
 		"umask",
 		"uname",
+		"cpu_count", "meminfo",
 	}
 }
 
@@ -400,11 +408,11 @@ func builtinUname(ctx *engine.Context, args []engine.Value) (engine.Value, error
 	}
 
 	obj := map[string]engine.Value{
-		"sysname":  engine.NewString(runtime.GOOS),
-		"nodename": engine.NewString(getHostname()),
+		"os":       engine.NewString(runtime.GOOS),
+		"hostname": engine.NewString(getHostname()),
 		"release":  engine.NewString(""),
 		"version":  engine.NewString(runtime.Version()),
-		"machine":  engine.NewString(runtime.GOARCH),
+		"arch":     engine.NewString(runtime.GOARCH),
 	}
 
 	return engine.NewObject(obj), nil
@@ -420,6 +428,31 @@ func getHostname() string {
 }
 
 // SystemSigs returns function signatures for REPL :doc command.
+
+// builtinCPUCount 返回 CPU 核心数。
+func builtinCPUCount(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("cpu_count() expects no arguments, got %d", len(args))
+	}
+	return engine.NewInt(int64(runtime.NumCPU())), nil
+}
+
+// builtinMeminfo 返回内存使用信息。
+func builtinMeminfo(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
+	if len(args) != 0 {
+		return nil, fmt.Errorf("meminfo() expects no arguments, got %d", len(args))
+	}
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	result := map[string]engine.Value{
+		"alloc":         engine.NewInt(int64(m.Alloc)),
+		"total_alloc":   engine.NewInt(int64(m.TotalAlloc)),
+		"sys":           engine.NewInt(int64(m.Sys)),
+		"num_gc":        engine.NewInt(int64(m.NumGC)),
+		"num_goroutine": engine.NewInt(int64(runtime.NumGoroutine())),
+	}
+	return engine.NewObject(result), nil
+}
 func SystemSigs() map[string]string {
 	return map[string]string{
 		"disk_free_space":  "disk_free_space(path) → int  — Get available disk space in bytes",
@@ -433,5 +466,7 @@ func SystemSigs() map[string]string {
 		"getuid":           "getuid() → int  — Get current user ID",
 		"getgid":           "getgid() → int  — Get current group ID",
 		"uname":            "uname() → object  — Get system information",
+		"cpu_count":        "cpu_count() → int  — Get number of CPU cores",
+		"meminfo":          "meminfo() → object  — Get memory usage information",
 	}
 }
