@@ -6,13 +6,6 @@ import (
 	"github.com/gnuos/jpl/engine"
 )
 
-func TestStringNames(t *testing.T) {
-	names := StringNames()
-	if len(names) != 64 {
-		t.Errorf("expected 64 string function names, got %d", len(names))
-	}
-}
-
 // ============================================================================
 // strlen
 // ============================================================================

@@ -937,6 +937,19 @@ func (r *RegexLiteral) expressionNode()     {}
 func (r *RegexLiteral) Pos() token.Position { return r.Token.Pos }
 func (r *RegexLiteral) String() string      { return fmt.Sprintf("#/%s/%s#", r.Pattern, r.Flags) }
 
+// IndirectRef 间接变量引用表达式
+// 语法：`varname
+// 语义：在运行时求值 varname 对应的变量名的值，再查找该变量
+// 示例：x = "a"; `x → 先求 x 得到 "a"，再查找变量 a
+type IndirectRef struct {
+	Token token.Token // ` Token
+	Name  string      // 变量名（不含 ` 前缀）
+}
+
+func (i *IndirectRef) expressionNode()     {}
+func (i *IndirectRef) Pos() token.Position { return i.Token.Pos }
+func (i *IndirectRef) String() string      { return "`" + i.Name }
+
 // RegexPattern 正则模式（match/case 中使用）
 type RegexPattern struct {
 	Token   token.Token // REGEX Token

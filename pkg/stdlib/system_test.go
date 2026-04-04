@@ -349,14 +349,14 @@ func TestUnameBasic(t *testing.T) {
 
 	obj := result.Object()
 
-	sysname := obj["sysname"]
-	if sysname.String() == "" {
-		t.Error("uname()['sysname'] should not be empty")
+	os := obj["os"]
+	if os.String() == "" {
+		t.Error("uname()['os'] should not be empty")
 	}
 
-	machine := obj["machine"]
-	if machine.String() == "" {
-		t.Error("uname()['machine'] should not be empty")
+	arch := obj["arch"]
+	if arch.String() == "" {
+		t.Error("uname()['arch'] should not be empty")
 	}
 }
 
@@ -399,12 +399,12 @@ $free > 0 && $total > 0 && $free <= $total`
 
 func TestUnameIntegration(t *testing.T) {
 	script := `$info = uname();
-$info["sysname"]`
+$info["os"]`
 	result, err := compileAndRunBuiltins(script)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if result.String() == "" {
-		t.Error("uname()['sysname'] should not be empty")
+		t.Error("uname()['os'] should not be empty")
 	}
 }

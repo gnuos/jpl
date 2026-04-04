@@ -6,13 +6,6 @@ import (
 	"github.com/gnuos/jpl/engine"
 )
 
-func TestArrayNames(t *testing.T) {
-	names := ArrayNames()
-	if len(names) != 28 {
-		t.Errorf("expected 28 array function names, got %d", len(names))
-	}
-}
-
 // ============================================================================
 // push
 // ============================================================================

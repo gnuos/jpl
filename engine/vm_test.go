@@ -2905,3 +2905,64 @@ func TestRuntimeErrorFormatFallback(t *testing.T) {
 		t.Errorf("expected simple format for zero line, got: %s", formatted2)
 	}
 }
+
+// ============================================================================
+// 间接变量引用测试（Phase 20）
+// ============================================================================
+
+func TestVMIndirectRef(t *testing.T) {
+	tests := []struct {
+		name     string
+		script   string
+		expected string
+	}{
+		{
+			name:     "basic indirect ref",
+			script:   `a = "hello"; x = "a"; ` + "`x",
+			expected: "hello",
+		},
+		{
+			name:     "indirect ref with $-prefixed variable",
+			script:   `$a = "world"; x = "$a"; ` + "`x",
+			expected: "world",
+		},
+		{
+			name:     "chained indirect ref",
+			script:   `a = "hello"; b = "a"; x = "b"; ` + "`x",
+			expected: "a",
+		},
+		{
+			name:     "indirect ref with integer value",
+			script:   `a = 42; x = "a"; ` + "`x",
+			expected: "42",
+		},
+		{
+			name:     "indirect ref in expression",
+			script:   `a = 10; x = "a"; y = ` + "`x; y + 5",
+			expected: "15",
+		},
+		{
+			name:     "indirect ref undefined variable",
+			script:   `x = "nonexistent"; ` + "`x",
+			expected: "null",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := compileAndRun(tt.script)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			got := result.String()
+			if result.Type() == TypeString {
+				got = result.String()
+			} else {
+				got = result.Stringify()
+			}
+			if got != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, got)
+			}
+		})
+	}
+}

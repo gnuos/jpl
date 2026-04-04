@@ -117,6 +117,11 @@ func (l *Lexer) NextToken() token.Token {
 		return l.scanInstanceVar(pos)
 	}
 
+	// 处理间接变量引用（`name）
+	if ch == '`' {
+		return l.scanBacktick(pos)
+	}
+
 	// 处理普通标识符或关键字
 	if isIdentifierStart(ch) {
 		return l.scanIdentifier(pos)
@@ -434,6 +439,28 @@ func (l *Lexer) scanInstanceVar(pos token.Position) token.Token {
 	literal := sb.String()
 
 	return l.newToken(token.INSTANCE_VAR, literal, pos)
+}
+
+// scanBacktick 扫描间接变量引用（`name）
+func (l *Lexer) scanBacktick(pos token.Position) token.Token {
+	l.advance() // 跳过 `
+
+	// ` 后必须紧跟标识符字符
+	if l.atEnd() || !isIdentifierStart(l.current()) && l.current() != '_' {
+		return l.newToken(token.ILLEGAL, "`", pos)
+	}
+
+	// 扫描变量名
+	var sb strings.Builder
+	sb.WriteRune('`')
+
+	for !l.atEnd() && isIdentifierPart(l.current()) {
+		sb.WriteRune(l.advance())
+	}
+
+	literal := sb.String()
+
+	return l.newToken(token.BACKTICK, literal, pos)
 }
 
 // scanUnderscore 扫描下划线

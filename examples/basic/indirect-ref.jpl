@@ -1,0 +1,59 @@
+// ============================================================================
+// 间接变量引用（Indirect Variable Reference）
+// 语法：`varname
+// 语义：按运行时变量名称间接访问变量值
+// ============================================================================
+
+// 基本间接引用
+a = "hello"
+x = "a"
+println "=== 基本间接引用 ==="
+println "a = " .. a
+println "x = " .. x
+println "`x = " .. `x
+
+// 引用带 $ 前缀的变量名
+println "\n=== 带 $ 前缀的变量 ==="
+$name = "world"
+x = "$name"
+println "$name = " .. $name
+println "x = " .. x
+println "`x = " .. `x
+
+// 在表达式中使用
+println "\n=== 在表达式中使用 ==="
+a = 10
+x = "a"
+y = `x + 5
+println "a = " .. a
+println "x = " .. x
+println "`x + 5 = " .. y
+
+// 链式间接引用
+println "\n=== 链式间接引用 ==="
+a = "hello"
+b = "a"
+x = "b"
+println "a = " .. a
+println "b = " .. b
+println "x = " .. x
+println "`x = " .. `x  // → "a"（`x → "b" → 查找变量 b → "a"）
+
+// 未定义变量返回 null
+println "\n=== 未定义变量 ==="
+x = "nonexistent"
+val = `x
+println "x = " .. x
+println "`x = " .. val
+
+// 实际应用场景：动态配置
+println "\n=== 应用场景：动态配置 ==="
+config_host = "localhost"
+config_port = 8080
+config_debug = true
+
+keys = ["host", "port", "debug"]
+foreach ($key in keys) {
+    varname = "config_" .. $key
+    println $key .. " = " .. `varname
+}

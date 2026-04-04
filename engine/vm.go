@@ -670,6 +670,9 @@ func (vm *VM) run() error {
 		case OP_REGEX_MATCH:
 			vm.opRegexMatch(ins)
 
+		case OP_GET_INDIRECT:
+			vm.opGetIndirect(ins)
+
 		default:
 			return NewRuntimeError(fmt.Sprintf("unknown opcode: %s", op))
 		}
@@ -865,6 +868,53 @@ func (vm *VM) opSetVar(ins Instruction) {
 
 	// 否则设置全局变量
 	vm.gcSetGlobal(name, value)
+}
+
+func (vm *VM) opGetIndirect(ins Instruction) {
+	a := ins.A()
+	b := ins.B()
+	name := vm.registers[b].String()
+
+	// 先查找局部变量（通过 VarNames 映射）
+	if vm.function.VarNames != nil {
+		for i, varName := range vm.function.VarNames {
+			if varName == name && i < len(vm.registers) {
+				vm.gcSetRegister(a, vm.registers[i])
+				return
+			}
+		}
+	}
+
+	// 再查找全局变量
+	if val, ok := vm.GetGlobal(name); ok {
+		vm.gcSetRegister(a, val)
+		return
+	}
+
+	// 检查函数表
+	if fns, found := vm.funcMap[name]; found && len(fns) > 0 {
+		vm.gcSetRegister(a, NewString(fns[0].Name))
+		return
+	}
+
+	// 检查引擎注册的变量
+	if vm.engine != nil {
+		if ev, err := vm.engine.Get(name); err == nil {
+			vm.gcSetRegister(a, ev)
+			return
+		}
+	}
+
+	// 检查预设常量和 define() 定义的常量
+	if vm.engine != nil {
+		if cv, found := vm.engine.GetConst(name); found {
+			vm.gcSetRegister(a, cv)
+			return
+		}
+	}
+
+	// 变量未定义，返回 null
+	vm.gcSetRegister(a, NewNull())
 }
 
 // ============================================================================

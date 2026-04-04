@@ -1800,6 +1800,8 @@ func (c *Compiler) compileExpr(expr parser.Expression, target int) int {
 		c.compileMatchExpr(e, target)
 	case *parser.RegexLiteral:
 		c.compileRegexLiteral(e, target)
+	case *parser.IndirectRef:
+		c.compileIndirectRef(e, target)
 	default:
 		c.emitABC(OP_LOADNULL, target, 0, 0)
 	}
@@ -1878,6 +1880,17 @@ func (c *Compiler) compileRegexLiteral(re *parser.RegexLiteral, target int) {
 	}
 	kIdx := c.addConstant(regexVal)
 	c.emitABx(OP_LOADK, target, kIdx)
+}
+
+// compileIndirectRef 编译间接变量引用 `varname
+// 运行时：先求值 varname 变量得到名称字符串，再通过 OP_GET_INDIRECT 查找
+func (c *Compiler) compileIndirectRef(ref *parser.IndirectRef, target int) {
+	// 先编译标识符表达式到临时寄存器（获取变量名的值）
+	tmpReg := c.allocReg()
+	c.compileIdentifier(&parser.Identifier{Token: ref.Token, Value: ref.Name}, tmpReg)
+	// 发出间接查找指令：R[target] = lookup(R[tmpReg].String())
+	c.emitABC(OP_GET_INDIRECT, target, tmpReg, 0)
+	c.freeReg()
 }
 
 func (c *Compiler) compileIdentifier(id *parser.Identifier, target int) {

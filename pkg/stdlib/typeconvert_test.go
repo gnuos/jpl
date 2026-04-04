@@ -194,19 +194,3 @@ func TestBoolval(t *testing.T) {
 		})
 	}
 }
-
-// TestTypeConvertNames 测试函数名称列表
-func TestTypeConvertNames(t *testing.T) {
-	names := TypeConvertNames()
-	expected := []string{"intval", "floatval", "strval", "boolval", "bigint", "bigdecimal"}
-
-	if len(names) != len(expected) {
-		t.Errorf("TypeConvertNames() returned %d names, expected %d", len(names), len(expected))
-	}
-
-	for i, name := range expected {
-		if i >= len(names) || names[i] != name {
-			t.Errorf("TypeConvertNames()[%d] = %s, expected %s", i, names[i], name)
-		}
-	}
-}

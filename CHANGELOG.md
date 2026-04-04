@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.9.7 (2026-04-04)
+
+### 新增
+
+#### 间接变量引用（Phase 20）
+- 新增反引号 `` ` `` 语法实现间接变量引用，类似 PHP 可变变量或 Perl 符号引用
+- 语法：`` `varname`` — 先求值 `varname` 得到变量名字符串，再按名称查找目标变量
+- 支持所有变量名风格（`a`、`$a`、`_a`）
+- 查找顺序：局部变量 → 全局变量 → 函数表 → 常量
+- 新增 `OP_GET_INDIRECT` 字节码指令
+- 示例：`a = "hello"; x = "a"; `x` → "hello"
+
+### 修复
+
+#### TestUnameBasic 和 TestUnameIntegration 单元测试
+- 修复 `uname()` 测试检查不存在的键名（`sysname`/`machine`）导致的 nil 指针 panic
+- 改为检查实际存在的键名（`os`/`arch`）
+
+### 文档
+
+- `docs/Learning/Syntax.md` — 新增「间接变量引用」语法章节
+- `README.md` — 语言特性列表新增间接变量引用条目
+- `examples/basic/indirect-ref.jpl` — 新增间接变量引用示例文件
+- `examples/README.md` — 基础语法表和学习路径新增 indirect-ref.jpl 条目
+
 ## v0.9.6 (2026-04-04)
 
 ### 新增

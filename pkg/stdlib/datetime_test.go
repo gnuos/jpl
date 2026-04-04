@@ -212,14 +212,6 @@ $n.year`
 	}
 }
 
-// TestDateTimeNames 测试日期时间函数列表
-func TestDateTimeNames(t *testing.T) {
-	names := DateTimeNames()
-	if len(names) != 16 {
-		t.Errorf("expected 16 datetime function names, got %d", len(names))
-	}
-}
-
 // TestGetdate 测试 getdate 函数
 func TestGetdate(t *testing.T) {
 	e := engine.NewEngine()

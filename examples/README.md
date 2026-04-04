@@ -62,6 +62,7 @@ jpl run network/binary-protocol.jpl
 | `arrays.jpl` | 数组操作、函数式编程 |
 | `objects.jpl` | 对象操作、属性访问 |
 | `regex.jpl` | 正则表达式操作 |
+| `indirect-ref.jpl` | 间接变量引用（`` ` `` 语法） |
 
 ### 2. Phase 10: 语法增强
 
@@ -263,6 +264,7 @@ jpl check network/tcp-echo-server.jpl
 | `file-io.jpl` | 文件读写、流操作、目录管理、JSON处理 |
 | `type_cast.jpl` | ⭐ Go 风格类型转换 `int(x)`, `float(x)`, `string(x)`, `bool(x)` |
 | `parse_object.jpl` | ⭐ 安全对象解析，对比 `eval()` 的安全性 |
+| `indirect-ref.jpl` | ⭐ 间接变量引用，`` ` `` 语法按名称查找变量 |
 
 ### I/O 函数示例 (io/) ⭐ 新增
 
@@ -317,9 +319,10 @@ jpl check network/tcp-echo-server.jpl
 1. **Hello World** (`basic/hello.jpl`)
 2. **数据类型** (`basic/datatypes.jpl`)
 3. **运算符** (`basic/operators.jpl`)
-4. **控制流** (`basic/control-flow.jpl`)
-5. **函数** (`basic/functions.jpl`)
-6. **类型转换** (`basic/type_cast.jpl`) ⭐ 新增
+4. **间接变量引用** (`basic/indirect-ref.jpl`) ⭐ 新增
+5. **控制流** (`basic/control-flow.jpl`)
+6. **函数** (`basic/functions.jpl`)
+7. **类型转换** (`basic/type_cast.jpl`) ⭐ 新增
 
 ### 进阶学习
 

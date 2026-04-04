@@ -113,6 +113,9 @@ const (
 	// 正则匹配
 	OP_REGEX_MATCH // R[A] = R[B] =~ R[C] (字符串匹配正则，返回 bool)
 
+	// 间接变量引用（Phase 20）
+	OP_GET_INDIRECT // R[A] = lookup(R[B].String())（间接变量查找：按运行时名称查找变量）
+
 	OP_COUNT // 操作码总数（哨兵）
 )
 
@@ -182,6 +185,7 @@ var opcodeNames = [...]string{
 	OP_GETARGV:         "GETARGV",
 	OP_GETARGC:         "GETARGC",
 	OP_REGEX_MATCH:     "REGEX_MATCH",
+	OP_GET_INDIRECT:    "GET_INDIRECT",
 }
 
 func (op Opcode) String() string {
@@ -326,6 +330,8 @@ func disassembleInstruction(ins Instruction, consts []Value) string {
 	case OP_LOAD, OP_LOADNULL, OP_NEG, OP_NOT, OP_BITNOT, OP_TYPEOF:
 		return fmt.Sprintf("%-12s R%d, R%d", op, a, b)
 	case OP_GETVAR:
+		return fmt.Sprintf("%-12s R%d, R%d", op, a, b)
+	case OP_GET_INDIRECT:
 		return fmt.Sprintf("%-12s R%d, R%d", op, a, b)
 	case OP_SETVAR:
 		return fmt.Sprintf("%-12s R%d, R%d", op, b, c)

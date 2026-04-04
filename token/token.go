@@ -157,6 +157,9 @@ const (
 	KW_FLOAT  // float
 	KW_STRING // string
 	KW_BOOL   // bool
+
+	// 间接变量引用（Phase 20）
+	BACKTICK // ` 间接引用前缀
 )
 
 // keywords 关键字映射表
@@ -446,6 +449,8 @@ func (t TokenType) String() string {
 		return "KW_STRING"
 	case KW_BOOL:
 		return "KW_BOOL"
+	case BACKTICK:
+		return "BACKTICK"
 	default:
 		return "UNKNOWN"
 	}

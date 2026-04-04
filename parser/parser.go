@@ -179,6 +179,7 @@ func NewParser(l *lexer.Lexer) *Parser {
 		token.IF:        p.parseIfExpression,
 		token.MATCH:     p.parseMatchExpression,
 		token.REGEX:     p.parseRegexLiteral,
+		token.BACKTICK:  p.parseIndirectRef,
 		// 字符串插值标记（不应在字符串外出现）
 		token.INTERP_START: p.parseInterpStartError,
 		token.INTERP_END:   p.parseInterpEndError,
@@ -1406,6 +1407,22 @@ func (p *Parser) parseRegexLiteral() Expression {
 		Token:   p.cur,
 		Pattern: pattern,
 		Flags:   flags,
+	}
+}
+
+// parseIndirectRef 解析间接变量引用 `varname
+// 语法：` 后跟标识符
+// 语义：运行时按名称查找变量
+func (p *Parser) parseIndirectRef() Expression {
+	lit := p.cur.Literal
+	// lit 格式为 "`varname"，去掉 ` 前缀
+	if len(lit) < 2 || lit[0] != '`' {
+		p.errors = append(p.errors, "invalid indirect reference")
+		return nil
+	}
+	return &IndirectRef{
+		Token: p.cur,
+		Name:  lit[1:],
 	}
 }
 

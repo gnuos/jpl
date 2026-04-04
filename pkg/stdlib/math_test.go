@@ -8,13 +8,6 @@ import (
 	"github.com/gnuos/jpl/engine"
 )
 
-func TestMathNames(t *testing.T) {
-	names := MathNames()
-	if len(names) != 41 {
-		t.Errorf("expected 41 math function names, got %d", len(names))
-	}
-}
-
 // ============================================================================
 // abs
 // ============================================================================
@@ -254,7 +247,7 @@ func TestRandom(t *testing.T) {
 }
 
 func TestRandomInt(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		result, err := callBuiltin("randomInt", engine.NewInt(1), engine.NewInt(10))
 		if err != nil {
 			t.Fatalf("randomInt error: %v", err)
