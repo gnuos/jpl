@@ -147,3 +147,11 @@ func builtinDie(ctx *engine.Context, args []engine.Value) (engine.Value, error) 
 	// 消息被包含在 ExitError 中，用于调试和日志
 	return nil, engine.NewExitError(code, message)
 }
+
+// ProcessSigs returns function signatures for REPL :doc command.
+func ProcessSigs() map[string]string {
+	return map[string]string{
+		"exit": "exit([code])  — Terminate script with exit code",
+		"die":  "die([message], [code])  — Output message and terminate",
+	}
+}

@@ -1299,3 +1299,13 @@ func builtinIsBuffer(ctx *engine.Context, args []engine.Value) (engine.Value, er
 	_, ok := args[0].(*BufferValue)
 	return engine.NewBool(ok), nil
 }
+
+// BinarySigs returns function signatures for REPL :doc command.
+func BinarySigs() map[string]string {
+	return map[string]string{
+		"pack":   "pack(format, values...) → array  — Pack values into binary bytes",
+		"unpack": "unpack(format, bytes) → value  — Unpack binary bytes to values",
+		"ord":    "ord(str) → int  — Get ASCII value of first character",
+		"chr":    "chr(ascii) → string  — Convert ASCII to character",
+	}
+}

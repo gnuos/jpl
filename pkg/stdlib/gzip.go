@@ -395,3 +395,11 @@ func splitLines(s string) []engine.Value {
 	}
 	return lines
 }
+
+// GzipSigs returns function signatures for REPL :doc command.
+func GzipSigs() map[string]string {
+	return map[string]string{
+		"gzip_compress":   "gzip_compress(data) → string  — Compress data with gzip",
+		"gzip_decompress": "gzip_decompress(data) → string  — Decompress gzip data",
+	}
+}

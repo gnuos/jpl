@@ -1133,3 +1133,31 @@ func builtinSize(ctx *engine.Context, args []engine.Value) (engine.Value, error)
 		return engine.NewInt(1), nil
 	}
 }
+
+// FunctionalSigs returns function signatures for REPL :doc command.
+func FunctionalSigs() map[string]string {
+	return map[string]string{
+		"map":         "map(array_or_range, fn(element) → newValue) → array  — Apply function to each element",
+		"filter":      "filter(array_or_range, fn(element) → bool) → array  — Filter elements by predicate",
+		"reduce":      "reduce(array_or_range, fn(acc, element) → newAcc, [initial]) → value  — Reduce to single value",
+		"find":        "find(array_or_range, fn(element) → bool) → value  — Find first matching element",
+		"some":        "some(array_or_range, fn(element) → bool) → bool  — Check if any element matches",
+		"every":       "every(array_or_range, fn(element) → bool) → bool  — Check if all elements match",
+		"sort":        "sort(array, [fn(a, b) → bool]) → array  — Sort array with optional comparator",
+		"contains":    "contains(array_or_range, value) → bool  — Check if value exists",
+		"reject":      "reject(array_or_range, fn(element) → bool) → array  — Remove matching elements",
+		"partition":   "partition(array_or_range, fn(element) → bool) → array  — Split into two groups",
+		"unique":      "unique(array) → array  — Remove duplicates",
+		"flattenDeep": "flattenDeep(array, [depth]) → array  — Flatten nested arrays",
+		"difference":  "difference(array, ...other_arrays) → array  — Elements only in first array",
+		"union":       "union(...arrays) → array  — Merge and deduplicate arrays",
+		"zip":         "zip(...arrays) → array  — Combine arrays by index",
+		"unzip":       "unzip(tuple_array) → array  — Split tuple array into arrays",
+		"first":       "first(array_or_range) → value  — Return first element",
+		"last":        "last(array_or_range) → value  — Return last element",
+		"take":        "take(array_or_range, n) → array  — Take first n elements",
+		"drop":        "drop(array_or_range, n) → array  — Skip first n elements",
+		"sum":         "sum(array_or_range) → int  — Sum numeric elements",
+		"size":        "size(value) → int  — Return element count",
+	}
+}

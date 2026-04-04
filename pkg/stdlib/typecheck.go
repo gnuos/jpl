@@ -440,3 +440,25 @@ func builtinIsBigDecimal(ctx *engine.Context, args []engine.Value) (engine.Value
 	_, ok := args[0].(*engine.BigDecimalValue)
 	return engine.NewBool(ok), nil
 }
+
+// TypeCheckSigs returns function signatures for REPL :doc command.
+func TypeCheckSigs() map[string]string {
+	return map[string]string{
+		"is_null":       "is_null(value) → bool  — Check if value is null",
+		"is_bool":       "is_bool(value) → bool  — Check if value is boolean",
+		"is_int":        "is_int(value) → bool  — Check if value is integer",
+		"is_float":      "is_float(value) → bool  — Check if value is float",
+		"is_string":     "is_string(value) → bool  — Check if value is string",
+		"is_array":      "is_array(value) → bool  — Check if value is array",
+		"is_object":     "is_object(value) → bool  — Check if value is object",
+		"is_func":       "is_func(value) → bool  — Check if value is function",
+		"is_numeric":    "is_numeric(value) → bool  — Check if value is numeric (int/float/bigint/bigdecimal)",
+		"is_scalar":     "is_scalar(value) → bool  — Check if value is scalar type",
+		"is_bigint":     "is_bigint(value) → bool  — Check if value is BigInt",
+		"is_bigdecimal": "is_bigdecimal(value) → bool  — Check if value is BigDecimal",
+		"is_regex":      "is_regex(value) → bool  — Check if value is regex",
+		"is_stream":     "is_stream(value) → bool  — Check if value is stream",
+		"is_error":      "is_error(value) → bool  — Check if value is error",
+		"empty":         "empty(value) → bool  — Check if value is empty (PHP style)",
+	}
+}

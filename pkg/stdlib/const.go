@@ -94,3 +94,11 @@ func builtinDefined(ctx *engine.Context, args []engine.Value) (engine.Value, err
 	_, ok := ctx.Engine().GetConst(name)
 	return engine.NewBool(ok), nil
 }
+
+// ConstFuncSigs returns function signatures for REPL :doc command.
+func ConstFuncSigs() map[string]string {
+	return map[string]string{
+		"define":  "define(name, value) → null  — Define a constant",
+		"defined": "defined(name) → bool  — Check if constant is defined",
+	}
+}

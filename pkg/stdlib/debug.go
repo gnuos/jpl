@@ -51,3 +51,12 @@ func builtinClearErrors(ctx *engine.Context, args []engine.Value) (engine.Value,
 	ctx.Engine().ClearErrorLog()
 	return engine.NewNull(), nil
 }
+
+// DebugSigs returns function signatures for REPL :doc command.
+func DebugSigs() map[string]string {
+	return map[string]string{
+		"errors":       "errors() → array  — Get all error messages",
+		"last_error":   "last_error() → string  — Get last error message",
+		"clear_errors": "clear_errors() → null  — Clear error log",
+	}
+}

@@ -832,3 +832,46 @@ func builtinBaseConvert(ctx *engine.Context, args []engine.Value) (engine.Value,
 		return engine.NewString(fmt.Sprintf("%d", num)), nil
 	}
 }
+
+// MathSigs returns function signatures for REPL :doc command.
+func MathSigs() map[string]string {
+	return map[string]string{
+		"abs":          "abs(n) → number  — Absolute value",
+		"ceil":         "ceil(n) → int  — Round up",
+		"floor":        "floor(n) → int  — Round down",
+		"round":        "round(n, [precision]) → number  — Round to precision",
+		"sqrt":         "sqrt(n) → float  — Square root",
+		"pow":          "pow(base, exp) → number  — Power",
+		"min":          "min(a, b, ...) → number  — Minimum value",
+		"max":          "max(a, b, ...) → number  — Maximum value",
+		"rand":         "rand() → float  — Random float [0, 1)",
+		"rand_int":     "rand_int(min, max) → int  — Random integer in range",
+		"rand_str":     "rand_str([length]) → string  — Random alphanumeric string",
+		"getrandmax":   "getrandmax() → int  — Maximum random value",
+		"dechex":       "dechex(n) → string  — Decimal to hex",
+		"decoct":       "decoct(n) → string  — Decimal to octal",
+		"decbin":       "decbin(n) → string  — Decimal to binary",
+		"hexdec":       "hexdec(str) → int  — Hex to decimal",
+		"bindec":       "bindec(str) → int  — Binary to decimal",
+		"octdec":       "octdec(str) → int  — Octal to decimal",
+		"base_convert": "base_convert(num, from_base, to_base) → string  — Convert between bases",
+		"sin":          "sin(radians) → float  — Sine",
+		"cos":          "cos(radians) → float  — Cosine",
+		"tan":          "tan(radians) → float  — Tangent",
+		"asin":         "asin(n) → float  — Arc sine",
+		"acos":         "acos(n) → float  — Arc cosine",
+		"atan":         "atan(n) → float  — Arc tangent",
+		"atan2":        "atan2(y, x) → float  — Arc tangent of y/x",
+		"sinh":         "sinh(n) → float  — Hyperbolic sine",
+		"cosh":         "cosh(n) → float  — Hyperbolic cosine",
+		"tanh":         "tanh(n) → float  — Hyperbolic tangent",
+		"log":          "log(n) → float  — Natural logarithm",
+		"log10":        "log10(n) → float  — Base-10 logarithm",
+		"exp":          "exp(n) → float  — e raised to power n",
+		"pi":           "pi() → float  — Return PI constant",
+		"fmod":         "fmod(x, y) → float  — Floating point modulo",
+		"hypot":        "hypot(x, y) → float  — Hypotenuse",
+		"deg2rad":      "deg2rad(degrees) → float  — Degrees to radians",
+		"rad2deg":      "rad2deg(radians) → float  — Radians to degrees",
+	}
+}

@@ -63,3 +63,11 @@ func RegisterGCInfo(e *engine.Engine, g *gc.GC) {
 	}
 	e.RegisterConst("__gc_enabled__", engine.NewBool(true))
 }
+
+// GCSigs returns function signatures for REPL :doc command.
+func GCSigs() map[string]string {
+	return map[string]string{
+		"gc":      "gc() → object  — Trigger garbage collection, return stats",
+		"gc_info": "gc_info() → object  — Get GC statistics",
+	}
+}

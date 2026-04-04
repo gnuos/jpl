@@ -637,3 +637,20 @@ func builtinFileWithLock(ctx *engine.Context, args []engine.Value) (engine.Value
 
 	return engine.NewNull(), nil
 }
+
+// FileIOAsyncSigs returns function signatures for REPL :doc command.
+func FileIOAsyncSigs() map[string]string {
+	return map[string]string{
+		"file_get_async":    "file_get_async(path, fn(data)) → null  — Async read entire file",
+		"file_put_async":    "file_put_async(path, data, fn()) → null  — Async write entire file",
+		"file_append_async": "file_append_async(path, data, fn()) → null  — Async append to file",
+		"file_get_bytes":    "file_get_bytes(path, fn(buffer)) → null  — Async read binary file",
+		"file_put_bytes":    "file_put_bytes(path, buffer, fn()) → null  — Async write binary file",
+		"file_read_lines":   "file_read_lines(path, fn(line), fn()) → null  — Stream read line by line",
+		"file_read_chunks":  "file_read_chunks(path, chunkSize, fn(chunk), fn()) → null  — Stream read in chunks",
+		"file_get_batch":    "file_get_batch(paths, fn(results)) → null  — Batch read multiple files",
+		"file_put_batch":    "file_put_batch(items, fn(results)) → null  — Batch write multiple files",
+		"file_parallel":     "file_parallel(ops, fn(results)) → null  — Parallel file operations",
+		"file_with_lock":    "file_with_lock(path, fn(lock)) → null  — Acquire file lock and execute",
+	}
+}

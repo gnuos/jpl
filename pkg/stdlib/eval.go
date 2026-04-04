@@ -97,3 +97,10 @@ func builtinEval(ctx *engine.Context, args []engine.Value) (engine.Value, error)
 
 	return vm.GetResult(), nil
 }
+
+// EvalSigs returns function signatures for REPL :doc command.
+func EvalSigs() map[string]string {
+	return map[string]string{
+		"eval": "eval(code) → value  — Execute JPL code string",
+	}
+}

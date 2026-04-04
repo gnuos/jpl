@@ -130,3 +130,11 @@ func builtinInflate(ctx *engine.Context, args []engine.Value) (engine.Value, err
 
 	return engine.NewString(string(result)), nil
 }
+
+// ZlibSigs returns function signatures for REPL :doc command.
+func ZlibSigs() map[string]string {
+	return map[string]string{
+		"zlib_compress":   "zlib_compress(data) → string  — Compress data with zlib",
+		"zlib_decompress": "zlib_decompress(data) → string  — Decompress zlib data",
+	}
+}

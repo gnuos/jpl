@@ -662,3 +662,26 @@ func prettyPrintValue(v engine.Value, indent int) string {
 		return v.Stringify()
 	}
 }
+
+// IOSigs returns function signatures for REPL :doc command.
+func IOSigs() map[string]string {
+	return map[string]string{
+		"print":                "print(args...) → null  — Output to stdout without newline",
+		"println":              "println(args...) → null  — Output to stdout with newline",
+		"puts":                 "puts(args...) → null  — Output to stdout without quotes, with newline",
+		"pp":                   "pp(args...) → null  — Pretty print formatted output",
+		"echo":                 "echo(args...) → string  — Concatenate arguments as string",
+		"format":               "format(template, args...) → string  — Format string with %s placeholders",
+		"assert":               "assert(condition, [message]) → null  — Assertion check",
+		"fopen":                "fopen(path, [mode]) → stream  — Open file stream",
+		"fread":                "fread(stream, length) → string  — Read bytes from stream",
+		"fgets":                "fgets(stream) → string  — Read line from stream",
+		"fwrite":               "fwrite(stream, data) → int  — Write data to stream",
+		"fclose":               "fclose(stream) → null  — Close stream",
+		"feof":                 "feof(stream) → bool  — Check if stream is at EOF",
+		"fflush":               "fflush(stream) → bool  — Flush stream buffer",
+		"stream_get_meta_data": "stream_get_meta_data(stream) → object  — Get stream metadata",
+		"is_readable":          "is_readable(path_or_stream) → bool  — Check if readable",
+		"is_writable":          "is_writable(path_or_stream) → bool  — Check if writable",
+	}
+}

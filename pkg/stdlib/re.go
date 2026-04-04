@@ -320,3 +320,17 @@ func builtinReGroupsRaw(ctx *engine.Context, args []engine.Value) (engine.Value,
 	}
 	return engine.NewObject(result), nil
 }
+
+// ReSigs returns function signatures for REPL :doc command.
+func ReSigs() map[string]string {
+	return map[string]string{
+		"re_match":      "re_match(pattern, str) → bool  — Check if pattern matches",
+		"re_replace":    "re_replace(pattern, replacement, str) → string  — Replace all matches",
+		"re_split":      "re_split(pattern, str) → array  — Split by pattern",
+		"re_find":       "re_find(pattern, str) → string  — Find first match",
+		"re_find_all":   "re_find_all(pattern, str) → array  — Find all matches",
+		"re_groups":     "re_groups(pattern, str) → object  — Get capture groups",
+		"re_groups_raw": "re_groups_raw(regex, str) → object  — Get capture groups from regex value",
+		"re_quote":      "re_quote(str) → string  — Escape regex special characters",
+	}
+}

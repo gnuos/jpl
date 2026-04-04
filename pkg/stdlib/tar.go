@@ -308,3 +308,12 @@ func builtinTarCreate(ctx *engine.Context, args []engine.Value) (engine.Value, e
 
 	return engine.NewInt(1), nil
 }
+
+// TarSigs returns function signatures for REPL :doc command.
+func TarSigs() map[string]string {
+	return map[string]string{
+		"tar_create":  "tar_create(filename, entries) → int  — Create tar archive",
+		"tar_extract": "tar_extract(tar_path, dest_dir) → bool  — Extract tar archive",
+		"tar_list":    "tar_list(tar_path) → array  — List tar archive contents",
+	}
+}

@@ -1087,3 +1087,30 @@ func builtinSigwait(ctx *engine.Context, args []engine.Value) (engine.Value, err
 
 	return engine.NewInt(int64(sig.(syscall.Signal))), nil
 }
+
+// ProcessExtSigs returns function signatures for REPL :doc command.
+func ProcessExtSigs() map[string]string {
+	return map[string]string{
+		"exec":        "exec(cmd, [args]) → string  — Execute command, return output",
+		"system":      "system(cmd) → int  — Execute command, return exit code",
+		"shell_exec":  "shell_exec(cmd) → string  — Execute via shell, return full output",
+		"proc_open":   "proc_open(cmd, [opts]) → Process  — Open process with pipes",
+		"proc_close":  "proc_close(proc) → int  — Close process, return exit code",
+		"proc_wait":   "proc_wait(proc) → int  — Wait for process to end",
+		"proc_status": "proc_status(proc) → object  — Get process status",
+		"spawn":       "spawn(cmd, [args]) → Process  — Spawn background process",
+		"kill":        "kill(pid, [signal]) → bool  — Send signal to process",
+		"waitpid":     "waitpid(proc_or_pid) → int  — Wait for process, return exit code",
+		"usleep":      "usleep(us) → null  — Sleep for microseconds",
+		"pipe":        "pipe() → Pipe  — Create pipe",
+		"sigwait":     "sigwait(signal_or_signals) → int  — Wait for signal",
+		"getpid":      "getpid() → int  — Get current process ID",
+		"getppid":     "getppid() → int  — Get parent process ID",
+		"getlogin":    "getlogin() → string  — Get login username",
+		"hostname":    "hostname() → string  — Get hostname",
+		"tmpdir":      "tmpdir() → string  — Get temp directory",
+		"getenv":      "getenv(name, [default]) → string  — Get environment variable",
+		"setenv":      "setenv(name, value) → bool  — Set environment variable",
+		"putenv":      "putenv(expr) → bool  — Set env var (KEY=VALUE format)",
+	}
+}

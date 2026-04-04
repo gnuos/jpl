@@ -111,3 +111,11 @@ func builtinUnset(ctx *engine.Context, args []engine.Value) (engine.Value, error
 
 	return engine.NewNull(), nil
 }
+
+// DeleteSigs returns function signatures for REPL :doc command.
+func DeleteSigs() map[string]string {
+	return map[string]string{
+		"delete": "delete(obj_or_arr, key) → bool  — Delete object member or array element",
+		"unset":  "unset(var) → null  — Set variable to null",
+	}
+}

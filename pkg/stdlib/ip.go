@@ -543,3 +543,13 @@ func parseBinary(s string) ([]byte, error) {
 	}
 	return result, nil
 }
+
+// IPSigs returns function signatures for REPL :doc command.
+func IPSigs() map[string]string {
+	return map[string]string{
+		"ip_parse":    "ip_parse(ip) → object  — Parse IP address details",
+		"ip_format":   "ip_format(ip, format) → string  — Format IP address",
+		"ip_validate": "ip_validate(ip) → bool  — Validate IP address format",
+		"ip_in_range": "ip_in_range(ip, range) → bool  — Check if IP is in range",
+	}
+}

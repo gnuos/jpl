@@ -996,6 +996,28 @@ func builtinNetIsUnix(ctx *engine.Context, args []engine.Value) (engine.Value, e
 	return engine.NewBool(sock.isUnix), nil
 }
 
+// NetSigs returns function signatures for REPL :doc command.
+func NetSigs() map[string]string {
+	return map[string]string{
+		"listen":       "listen(host, port) → socket  — TCP listen",
+		"connect":      "connect(host, port) → socket  — TCP connect",
+		"accept":       "accept(server) → socket  — Accept TCP connection",
+		"send":         "send(socket, data) → int  — Send data",
+		"recv":         "recv(socket, length) → string  — Receive data",
+		"close":        "close(socket) → bool  — Close socket",
+		"getsockname":  "getsockname(socket) → object  — Get local address",
+		"getpeername":  "getpeername(socket) → object  — Get remote address",
+		"set_nonblock": "set_nonblock(socket) → bool  — Set non-blocking mode",
+		"is_unix":      "is_unix(socket) → bool  — Check if Unix socket",
+		"bind":         "bind(host, port) → socket  — UDP bind",
+		"sendto":       "sendto(socket, data, host, port) → int  — UDP send",
+		"recvfrom":     "recvfrom(socket, length) → array  — UDP receive",
+		"unix_listen":  "unix_listen(path) → socket  — Unix socket listen",
+		"unix_connect": "unix_connect(path) → socket  — Unix socket connect",
+		"unix_accept":  "unix_accept(server) → socket  — Accept Unix connection",
+	}
+}
+
 // ==============================================================================
 // 网络事件注册方法（使用通用事件接口）
 // 提供 net_on_accept, net_on_read, net_on_write 等函数

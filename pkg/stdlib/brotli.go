@@ -287,3 +287,11 @@ func builtinBrotliClose(ctx *engine.Context, args []engine.Value) (engine.Value,
 	handle.isClosed = true
 	return engine.NewNull(), nil
 }
+
+// BrotliSigs returns function signatures for REPL :doc command.
+func BrotliSigs() map[string]string {
+	return map[string]string{
+		"brotli_compress":   "brotli_compress(data) → string  — Compress data with brotli",
+		"brotli_decompress": "brotli_decompress(data) → string  — Decompress brotli data",
+	}
+}

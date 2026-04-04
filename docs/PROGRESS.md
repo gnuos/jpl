@@ -8,6 +8,7 @@
 
 | 日期 | 阶段 | 任务 | 说明 |
 |------|------|------|------|
+| 2026-04-03 | REPL 改进 | 多行续输 + :doc 完整签名 | 括号/引号平衡检测自动进入多行模式，提示符变为 `... `；41 个模块函数签名全覆盖，`:doc fn` 显示完整参数和返回值 |
 | 2026-04-03 | 用户体验 | 更好的错误消息 | 运行时错误显示行号 + 源码上下文（箭头标记 + 前后 2 行），Program 存储源代码，RuntimeError 新增 FormatWithContext |
 | 2026-04-03 | 性能优化 | 尾调用优化 (TCO) | 自递归尾调用栈帧复用，支持 10000+ 深度递归不溢出；编译器 emit OP_TAIL_CALL，VM 自递归检测 + IP 跳转，opReturn 尾调用返回传播 |
 | 2026-04-03 | 语言特性 | static 变量 | 函数级持久化变量，调用间保持值；新增 5 个测试 + 示例文件 static-variables.jpl |
@@ -94,11 +95,33 @@
 - LSP 支持 — 投入产出比低，lint + fmt 已覆盖核心价值
 - 调试器 (DAP) — 风险高，--debug + REPL 已提供基本调试能力
 
-**最后更新**：2026-04-03（更好的错误消息 + 尾调用优化 + static 变量完成）
+**最后更新**：2026-04-03（REPL 多行续输 + :doc 签名 + 更好的错误消息 + 尾调用优化 + static 变量完成）
 
 ---
 
 ## 近期完成（2026-04-03）
+
+### REPL 多行续输 + :doc 完整签名 ✅
+
+**多行续输**：
+- 括号/引号平衡检测：输入未闭合的 `(`、`{`、`[`、`"`、`'`、`'''`、`"""` 时自动进入多行模式
+- 提示符从 `> ` 变为 `... `（通过 go-prompt `WithPrefixCallback` 动态切换）
+- 空行提交多行代码
+- 支持转义字符、三引号、注释中的括号忽略
+- 新增 11 个测试用例（5 个 `isBalanced` + 2 个多行模式 + 4 个 `:doc`）
+
+**:doc 完整签名**：
+- 41 个 stdlib 模块全部添加 `*Sigs()` 函数，覆盖 500+ 内置函数
+- 每个函数签名包含参数名、可选参数标记、返回值类型和简要描述
+- 示例：`map(array_or_range, fn(element) → newValue) → array  — Apply function to each element`
+- 未知函数显示 `未知函数: <name>`
+
+**改动文件**：
+- `cmd/jpl/repl.go` — REPL 新增 `multiLine`/`multiBuf` 字段；`Executor` 实现多行续输逻辑；`isBalanced()` 括号平衡检测；`WithPrefixCallback` 动态提示符；`GetFunctionDoc` 改用 `stdlib.GetFunctionDoc`
+- `pkg/stdlib/builtin.go` — 新增 `FunctionSignatures()`、`GetFunctionDoc()`、`SortedFunctionDocs()`
+- `pkg/stdlib/*.go` — 41 个模块文件各添加 `*Sigs()` 函数签名映射
+- `cmd/jpl/repl_test.go` — 新增 11 个测试：`TestIsBalanced_*`（5）、`TestREPLMultiLine*`（2）、`TestREPLDoc*`（3）、`TestGetFunctionDocSignatures`（1）
+- `docs/Learning/Syntax.md` — 更新函数定义部分（static 变量 + 尾调用优化），新增 match/case 多行体小节
 
 ### 更好的错误消息 ✅
 

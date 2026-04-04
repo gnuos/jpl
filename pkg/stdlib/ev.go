@@ -636,6 +636,20 @@ func builtinEvTimerNow(ctx *engine.Context, args []engine.Value) (engine.Value, 
 	return engine.NewInt(microseconds), nil
 }
 
+// EvSigs returns function signatures for REPL :doc command.
+func EvSigs() map[string]string {
+	return map[string]string{
+		"ev_registry_new": "ev_registry_new() → EvRegistry  — Create event registry",
+		"ev_loop_new":     "ev_loop_new() → EvLoop  — Create event loop",
+		"ev_attach":       "ev_attach(loop, registry) → bool  — Attach registry to loop",
+		"ev_run":          "ev_run(loop) → null  — Run event loop (blocking)",
+		"ev_run_once":     "ev_run_once() → bool  — Run one event iteration",
+		"ev_stop":         "ev_stop(loop) → bool  — Stop event loop",
+		"ev_is_running":   "ev_is_running(loop) → bool  — Check if loop is running",
+		"ev_timer_now":    "ev_timer_now() → int  — Get current time in microseconds",
+	}
+}
+
 // ==============================================================================
 // 定时器和信号注册函数（内部使用）
 // ==============================================================================

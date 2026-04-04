@@ -484,3 +484,19 @@ func builtinUTF8Decode(ctx *engine.Context, args []engine.Value) (engine.Value, 
 
 	return engine.NewString(string(bytes)), nil
 }
+
+// VMFuncSigs returns function signatures for REPL :doc command.
+func VMFuncSigs() map[string]string {
+	return map[string]string{
+		"func_num_args":         "func_num_args() → int  — Get current function arg count",
+		"func_get_arg":          "func_get_arg(index) → value  — Get arg by index",
+		"func_get_args":         "func_get_args() → array  — Get all args as array",
+		"function_exists":       "function_exists(name) → bool  — Check if function exists",
+		"is_callable":           "is_callable(value) → bool  — Check if value is callable",
+		"get_defined_functions": "get_defined_functions() → array  — Get all function names",
+		"get_defined_constants": "get_defined_constants() → array  — Get all constant names",
+		"jpl_version":           "jpl_version() → string  — Get JPL version",
+		"utf8_encode":           "utf8_encode(str) → string  — Encode to UTF-8 hex",
+		"utf8_decode":           "utf8_decode(hex) → string  — Decode UTF-8 hex",
+	}
+}

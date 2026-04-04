@@ -285,3 +285,20 @@ func builtinSha1File(ctx *engine.Context, args []engine.Value) (engine.Value, er
 	h := sha1.Sum(data)
 	return engine.NewString(hex.EncodeToString(h[:])), nil
 }
+
+// HashSigs returns function signatures for REPL :doc command.
+func HashSigs() map[string]string {
+	return map[string]string{
+		"md5":           "md5(data) → string  — Calculate MD5 hash (32 hex chars)",
+		"sha1":          "sha1(data) → string  — Calculate SHA-1 hash (40 hex chars)",
+		"sha256":        "sha256(data) → string  — Calculate SHA-256 hash (64 hex chars)",
+		"sha512":        "sha512(data) → string  — Calculate SHA-512 hash (128 hex chars)",
+		"crc32":         "crc32(data) → int  — Calculate CRC32 checksum",
+		"base64_encode": "base64_encode(data) → string  — Encode to Base64",
+		"base64_decode": "base64_decode(data) → string  — Decode from Base64",
+		"hex_encode":    "hex_encode(data) → string  — Encode to hexadecimal",
+		"hex_decode":    "hex_decode(data) → string  — Decode from hexadecimal",
+		"md5_file":      "md5_file(path) → string  — Calculate MD5 hash of file",
+		"sha1_file":     "sha1_file(path) → string  — Calculate SHA-1 hash of file",
+	}
+}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -28,7 +27,9 @@ type REPL struct {
 	DebugMode   bool
 	HistoryFile string
 	CmdHistory  []string
-	CodeHistory []string // 累积的代码历史（用于函数/变量持久化）
+	CodeHistory []string        // 累积的代码历史（用于函数/变量持久化）
+	multiLine   bool            // 是否处于多行续输模式
+	multiBuf    strings.Builder // 多行续输缓冲区
 }
 
 // NewREPL 创建新的 REPL 实例
@@ -90,6 +91,33 @@ func (r *REPL) saveHistory(input string) {
 
 // Executor 执行输入的代码或调试指令
 func (r *REPL) Executor(input string) {
+	// 处理多行续输的退出（空行提交）
+	if r.multiLine && strings.TrimSpace(input) == "" {
+		r.multiLine = false
+		code := r.multiBuf.String()
+		r.multiBuf.Reset()
+		if strings.TrimSpace(code) == "" {
+			return
+		}
+		r.saveHistory(code)
+		r.ExecCode(code)
+		return
+	}
+
+	// 多行续输模式：累积输入
+	if r.multiLine {
+		r.multiBuf.WriteString(input)
+		r.multiBuf.WriteString("\n")
+		if !r.needsContinuation() {
+			r.multiLine = false
+			code := r.multiBuf.String()
+			r.multiBuf.Reset()
+			r.saveHistory(code)
+			r.ExecCode(code)
+		}
+		return
+	}
+
 	input = strings.TrimSpace(input)
 	if input == "" {
 		return
@@ -101,11 +129,127 @@ func (r *REPL) Executor(input string) {
 		return
 	}
 
-	// 保存到历史
-	r.saveHistory(input)
+	// 检查是否需要多行续输
+	r.multiBuf.Reset()
+	r.multiBuf.WriteString(input)
+	r.multiBuf.WriteString("\n")
+	if r.needsContinuation() {
+		r.multiLine = true
+		return
+	}
 
-	// 执行 JPL 代码
+	// 单行直接执行
+	r.saveHistory(input)
 	r.ExecCode(input)
+}
+
+// needsContinuation 检查当前缓冲区是否需要继续输入（括号/引号未闭合）
+func (r *REPL) needsContinuation() bool {
+	code := r.multiBuf.String()
+	return !isBalanced(code)
+}
+
+// isBalanced 检查代码中的括号、引号是否平衡
+func isBalanced(code string) bool {
+	var stack []rune
+	inSingleQuote := false
+	inDoubleQuote := false
+	inTripleSingle := false
+	inTripleDouble := false
+	escape := false
+	i := 0
+	runes := []rune(code)
+	n := len(runes)
+
+	for i < n {
+		ch := runes[i]
+
+		if escape {
+			escape = false
+			i++
+			continue
+		}
+
+		if ch == '\\' {
+			escape = true
+			i++
+			continue
+		}
+
+		// 检查三引号
+		if !inSingleQuote && !inDoubleQuote && i+2 < n {
+			if runes[i] == '\'' && runes[i+1] == '\'' && runes[i+2] == '\'' {
+				inTripleSingle = !inTripleSingle
+				i += 3
+				continue
+			}
+			if runes[i] == '"' && runes[i+1] == '"' && runes[i+2] == '"' {
+				inTripleDouble = !inTripleDouble
+				i += 3
+				continue
+			}
+		}
+
+		// 在三引号内，忽略其他字符
+		if inTripleSingle || inTripleDouble {
+			i++
+			continue
+		}
+
+		// 单引号
+		if ch == '\'' && !inDoubleQuote {
+			inSingleQuote = !inSingleQuote
+			i++
+			continue
+		}
+
+		// 双引号
+		if ch == '"' && !inSingleQuote {
+			inDoubleQuote = !inDoubleQuote
+			i++
+			continue
+		}
+
+		// 在字符串内，忽略括号
+		if inSingleQuote || inDoubleQuote {
+			i++
+			continue
+		}
+
+		// 跳过注释
+		if ch == '/' && i+1 < n && runes[i+1] == '/' {
+			// 跳过到行尾
+			for i < n && runes[i] != '\n' {
+				i++
+			}
+			continue
+		}
+
+		// 括号平衡
+		switch ch {
+		case '(', '{', '[':
+			stack = append(stack, ch)
+		case ')':
+			if len(stack) == 0 || stack[len(stack)-1] != '(' {
+				return false
+			}
+			stack = stack[:len(stack)-1]
+		case '}':
+			if len(stack) == 0 || stack[len(stack)-1] != '{' {
+				return false
+			}
+			stack = stack[:len(stack)-1]
+		case ']':
+			if len(stack) == 0 || stack[len(stack)-1] != '[' {
+				return false
+			}
+			stack = stack[:len(stack)-1]
+		}
+
+		i++
+	}
+
+	return len(stack) == 0 && !inSingleQuote && !inDoubleQuote && !inTripleSingle && !inTripleDouble
 }
 
 // HandleCommand 处理调试指令
@@ -127,6 +271,10 @@ func (r *REPL) HandleCommand(cmd string) {
 		fmt.Println("  :doc <name>    - 查看函数签名")
 		fmt.Println("  :help          - 显示此帮助")
 		fmt.Println("  :quit          - 退出 REPL")
+		fmt.Println()
+		fmt.Println("多行续输:")
+		fmt.Println("  输入未闭合的括号或引号时，自动进入多行模式")
+		fmt.Println("  提示符变为 '... '，输入空行提交代码")
 		fmt.Println()
 		fmt.Println("快捷键:")
 		fmt.Println("  Ctrl+C         - 中断执行")
@@ -343,16 +491,11 @@ func FormatVars(vars []engine.VarInfo, skipDollar bool) string {
 
 // GetFunctionDoc 获取函数文档（导出用于测试）
 func GetFunctionDoc(name string) string {
-	// 检查是否为内置函数
-	funcs := stdlib.FunctionNames()
-	found := slices.Contains(funcs, name)
-
-	if !found {
-		return fmt.Sprintf("未知函数: %s", name)
+	doc := stdlib.GetFunctionDoc(name)
+	if doc != "" {
+		return doc
 	}
-
-	// 返回简化版函数签名
-	return fmt.Sprintf("%s(...)", name)
+	return fmt.Sprintf("未知函数: %s", name)
 }
 
 // ============================================================================
@@ -384,7 +527,12 @@ func runREPL(cmd *cobra.Command, args []string) {
 	// 创建 go-prompt
 	p := prompt.New(
 		replInstance.Executor,
-		prompt.WithPrefix("> "),
+		prompt.WithPrefixCallback(func() string {
+			if replInstance.multiLine {
+				return "... "
+			}
+			return "> "
+		}),
 		prompt.WithHistory(replInstance.CmdHistory),
 		prompt.WithTitle("JPL REPL"),
 		prompt.WithCompleter(replInstance.Completer),

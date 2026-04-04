@@ -418,3 +418,20 @@ func getHostname() string {
 	}
 	return name
 }
+
+// SystemSigs returns function signatures for REPL :doc command.
+func SystemSigs() map[string]string {
+	return map[string]string{
+		"disk_free_space":  "disk_free_space(path) → int  — Get available disk space in bytes",
+		"disk_total_space": "disk_total_space(path) → int  — Get total disk space in bytes",
+		"fileatime":        "fileatime(path) → int  — Get file last access time",
+		"filemtime":        "filemtime(path) → int  — Get file last modification time",
+		"filectime":        "filectime(path) → int  — Get file status change time",
+		"touch":            "touch(path) → bool  — Update file timestamps or create",
+		"umask":            "umask([mask]) → int  — Get or set file creation mask",
+		"getpid":           "getpid() → int  — Get current process ID",
+		"getuid":           "getuid() → int  — Get current user ID",
+		"getgid":           "getgid() → int  — Get current group ID",
+		"uname":            "uname() → object  — Get system information",
+	}
+}

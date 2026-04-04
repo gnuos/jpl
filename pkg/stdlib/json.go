@@ -459,3 +459,11 @@ func normalizeNumber(s string) string {
 
 	return intPart + "." + fracPart
 }
+
+// JSONSigs returns function signatures for REPL :doc command.
+func JSONSigs() map[string]string {
+	return map[string]string{
+		"json_encode": "json_encode(value, [pretty]) → string  — Serialize to JSON",
+		"json_decode": "json_decode(str) → value  — Parse JSON string",
+	}
+}

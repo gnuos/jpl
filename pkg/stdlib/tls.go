@@ -808,3 +808,20 @@ func builtinTLSGenCert(ctx *engine.Context, args []engine.Value) (engine.Value, 
 		"key_path":  engine.NewString(keyPath),
 	}), nil
 }
+
+// TLSSigs returns function signatures for REPL :doc command.
+func TLSSigs() map[string]string {
+	return map[string]string{
+		"tls_connect":       "tls_connect(host, port, [options]) → TLSSocket  — TLS client connect",
+		"tls_listen":        "tls_listen(port, cert, key, [options]) → TLSListener  — TLS server listen",
+		"tls_accept":        "tls_accept(server) → TLSSocket  — Accept TLS connection",
+		"tls_close":         "tls_close(conn) → bool  — Close TLS connection",
+		"tls_send":          "tls_send(conn, data) → int  — Send encrypted data",
+		"tls_recv":          "tls_recv(conn, length) → string  — Receive decrypted data",
+		"tls_get_cipher":    "tls_get_cipher(conn) → string  — Get negotiated cipher suite",
+		"tls_get_version":   "tls_get_version(conn) → string  — Get TLS version",
+		"tls_get_cert_info": "tls_get_cert_info(conn) → object  — Get certificate info",
+		"tls_set_cert":      "tls_set_cert(conn, cert_file, key_file) → bool  — Set client certificate",
+		"tls_gen_cert":      "tls_gen_cert([options]) → object  — Generate self-signed certificate",
+	}
+}

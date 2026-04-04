@@ -672,3 +672,16 @@ func builtinHTTPRequest(ctx *engine.Context, args []engine.Value) (engine.Value,
 
 	return doHTTPRequest(method, urlStr, options)
 }
+
+// HTTPSigs returns function signatures for REPL :doc command.
+func HTTPSigs() map[string]string {
+	return map[string]string{
+		"http_get":     "http_get(url, [options]) → HTTPResponse  — HTTP GET request",
+		"http_post":    "http_post(url, [options]) → HTTPResponse  — HTTP POST request",
+		"http_put":     "http_put(url, [options]) → HTTPResponse  — HTTP PUT request",
+		"http_delete":  "http_delete(url, [options]) → HTTPResponse  — HTTP DELETE request",
+		"http_head":    "http_head(url, [options]) → HTTPResponse  — HTTP HEAD request",
+		"http_patch":   "http_patch(url, [options]) → HTTPResponse  — HTTP PATCH request",
+		"http_request": "http_request(method, url, [options]) → HTTPResponse  — Generic HTTP request",
+	}
+}

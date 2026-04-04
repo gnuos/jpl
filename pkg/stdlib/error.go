@@ -36,3 +36,11 @@ func builtinError(ctx *engine.Context, args []engine.Value) (engine.Value, error
 
 	return engine.NewError(message, code, errType), nil
 }
+
+// ErrorSigs returns function signatures for REPL :doc command.
+func ErrorSigs() map[string]string {
+	return map[string]string{
+		"error": "error(message, [code], [type]) → error  — Create error object",
+		"throw": "throw(error)  — Throw error (language construct)",
+	}
+}

@@ -399,3 +399,13 @@ func builtinAESDecrypt(ctx *engine.Context, args []engine.Value) (engine.Value, 
 
 	return engine.NewString(string(plaintext)), nil
 }
+
+// CryptoSigs returns function signatures for REPL :doc command.
+func CryptoSigs() map[string]string {
+	return map[string]string{
+		"aes_encrypt": "aes_encrypt(data, key) → string  — AES-256-GCM encrypt (base64 output)",
+		"aes_decrypt": "aes_decrypt(data, key) → string  — AES-256-GCM decrypt",
+		"hmac_sha256": "hmac_sha256(key, data) → string  — HMAC-SHA256",
+		"hmac_sha512": "hmac_sha512(key, data) → string  — HMAC-SHA512",
+	}
+}

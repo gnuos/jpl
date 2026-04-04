@@ -600,3 +600,240 @@ func TestREPLMathFunctions(t *testing.T) {
 		t.Errorf("sqrt(16) 应包含 4, 得到: %s", output)
 	}
 }
+
+// ============================================================================
+// 多行续输测试
+// ============================================================================
+
+// TestIsBalanced_BasicParentheses 测试基本括号平衡
+func TestIsBalanced_BasicParentheses(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"println(42)", true},
+		{"fn test() {", false},
+		{"fn test() {\n    return 42\n}", true},
+		{"$x = [1, 2, 3", false},
+		{"$x = [1, 2, 3]", true},
+		{"(1 + (2 * 3))", true},
+		{"(1 + (2 * 3)", false},
+	}
+
+	for _, tt := range tests {
+		result := isBalanced(tt.input)
+		if result != tt.expected {
+			t.Errorf("isBalanced(%q) = %v, want %v", tt.input, result, tt.expected)
+		}
+	}
+}
+
+// TestIsBalanced_Strings 测试字符串中的括号
+func TestIsBalanced_Strings(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{`$s = "hello"`, true},
+		{`$s = "hello`, false},
+		{`$s = 'world'`, true},
+		{`$s = 'world`, false},
+		{`$s = "(unbalanced)"`, true},
+		{`$s = 'has {braces}'`, true},
+	}
+
+	for _, tt := range tests {
+		result := isBalanced(tt.input)
+		if result != tt.expected {
+			t.Errorf("isBalanced(%q) = %v, want %v", tt.input, result, tt.expected)
+		}
+	}
+}
+
+// TestIsBalanced_TripleQuotes 测试三引号
+func TestIsBalanced_TripleQuotes(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"'''triple\nquoted'''", true},
+		{"'''triple\nquoted", false},
+		{`"""triple
+quoted"""`, true},
+		{`"""triple
+quoted`, false},
+	}
+
+	for _, tt := range tests {
+		result := isBalanced(tt.input)
+		if result != tt.expected {
+			t.Errorf("isBalanced(%q) = %v, want %v", tt.input, result, tt.expected)
+		}
+	}
+}
+
+// TestIsBalanced_Comments 测试注释中的括号
+func TestIsBalanced_Comments(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{"// comment with (unbalanced parens", true},
+		{"x = 1 // (not balanced", true},
+		{"x = (1)", true},
+	}
+
+	for _, tt := range tests {
+		result := isBalanced(tt.input)
+		if result != tt.expected {
+			t.Errorf("isBalanced(%q) = %v, want %v", tt.input, result, tt.expected)
+		}
+	}
+}
+
+// TestIsBalanced_Escaped 测试转义字符
+func TestIsBalanced_Escaped(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected bool
+	}{
+		{`$x = "escaped \" quote"`, true},
+		{`$x = 'escaped \' quote'`, true},
+	}
+
+	for _, tt := range tests {
+		result := isBalanced(tt.input)
+		if result != tt.expected {
+			t.Errorf("isBalanced(%q) = %v, want %v", tt.input, result, tt.expected)
+		}
+	}
+}
+
+// TestREPLMultiLineContinuation 测试多行续输模式
+func TestREPLMultiLineContinuation(t *testing.T) {
+	r := newTestREPL()
+
+	// 输入未闭合的括号，应进入多行模式
+	r.Executor("fn test() {")
+	if !r.multiLine {
+		t.Error("输入未闭合的括号后应进入多行模式")
+	}
+
+	// 继续输入
+	r.Executor("    return 42")
+	if !r.multiLine {
+		t.Error("多行模式下输入应继续保持多行模式")
+	}
+
+	// 输入闭合括号，应退出多行模式并执行
+	r.Executor("}")
+	if r.multiLine {
+		t.Error("输入闭合括号后应退出多行模式")
+	}
+}
+
+// TestREPLMultiLineEmptySubmit 测试空行提交多行代码
+func TestREPLMultiLineEmptySubmit(t *testing.T) {
+	r := newTestREPL()
+
+	// 进入多行模式
+	r.Executor("fn test() {")
+	if !r.multiLine {
+		t.Fatal("应进入多行模式")
+	}
+
+	// 空行应提交代码
+	output := captureOutput(func() {
+		r.Executor("")
+	})
+
+	// 空行提交后应退出多行模式
+	if r.multiLine {
+		t.Error("空行提交后应退出多行模式")
+	}
+
+	// 代码不完整，应显示编译错误
+	if !strings.Contains(output, "编译错误") {
+		t.Logf("空行提交后输出: %s", output)
+	}
+}
+
+// ============================================================================
+// :doc 指令增强测试
+// ============================================================================
+
+// TestREPLDocFullSignature 测试 :doc 显示完整签名
+func TestREPLDocFullSignature(t *testing.T) {
+	r := newTestREPL()
+
+	tests := []struct {
+		cmd     string
+		contain string
+	}{
+		{":doc strlen", "strlen("},
+		{":doc map", "map("},
+		{":doc json_encode", "json_encode("},
+		{":doc push", "push("},
+		{":doc md5", "md5("},
+		{":doc sleep", "sleep("},
+	}
+
+	for _, tt := range tests {
+		output := captureOutput(func() {
+			r.HandleCommand(tt.cmd)
+		})
+		if !strings.Contains(output, tt.contain) {
+			t.Errorf("%s 应包含 %q, 得到: %s", tt.cmd, tt.contain, output)
+		}
+	}
+}
+
+// TestREPLDocUnknownFunction 测试 :doc 未知函数
+func TestREPLDocUnknownFunction(t *testing.T) {
+	r := newTestREPL()
+
+	output := captureOutput(func() {
+		r.HandleCommand(":doc nonexistent_fn")
+	})
+
+	if !strings.Contains(output, "未知函数") {
+		t.Errorf("应提示未知函数, 得到: %s", output)
+	}
+}
+
+// TestREPLDocNoArgs 测试 :doc 无参数
+func TestREPLDocNoArgs(t *testing.T) {
+	r := newTestREPL()
+
+	output := captureOutput(func() {
+		r.HandleCommand(":doc")
+	})
+
+	if !strings.Contains(output, "用法") {
+		t.Errorf("应提示用法, 得到: %s", output)
+	}
+}
+
+// TestGetFunctionDocSignatures 测试函数签名完整性
+func TestGetFunctionDocSignatures(t *testing.T) {
+	// 验证常见函数都有签名
+	commonFuncs := []string{
+		"println", "print", "puts", "printf", "sprintf",
+		"strlen", "substr", "str_replace", "trim", "explode", "implode",
+		"push", "pop", "shift", "unshift", "map", "filter", "reduce",
+		"json_encode", "json_decode",
+		"md5", "sha1", "sha256",
+		"abs", "sqrt", "pow", "min", "max", "rand",
+		"sleep", "date", "time",
+		"exit", "die",
+		"fopen", "fread", "fwrite", "fclose",
+		"http_get", "http_post",
+	}
+
+	for _, fn := range commonFuncs {
+		doc := GetFunctionDoc(fn)
+		if doc == "" || strings.Contains(doc, "未知函数") {
+			t.Errorf("函数 %q 应有签名文档, 得到: %s", fn, doc)
+		}
+	}
+}

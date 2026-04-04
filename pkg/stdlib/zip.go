@@ -325,3 +325,13 @@ func builtinZipCreate(ctx *engine.Context, args []engine.Value) (engine.Value, e
 
 	return engine.NewInt(1), nil
 }
+
+// ZipSigs returns function signatures for REPL :doc command.
+func ZipSigs() map[string]string {
+	return map[string]string{
+		"zip_create":   "zip_create(filename, entries) → int  — Create zip archive",
+		"zip_add_file": "zip_add_file(zip, filename, content) → bool  — Add file to zip",
+		"zip_extract":  "zip_extract(zip_path, dest_dir) → bool  — Extract zip archive",
+		"zip_list":     "zip_list(zip_path) → array  — List zip archive contents",
+	}
+}

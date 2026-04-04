@@ -633,3 +633,21 @@ func builtinGmmktime(ctx *engine.Context, args []engine.Value) (engine.Value, er
 	t := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
 	return engine.NewFloat(float64(t.Unix())), nil
 }
+
+// DateTimeSigs returns function signatures for REPL :doc command.
+func DateTimeSigs() map[string]string {
+	return map[string]string{
+		"time":         "time() → float  — Current Unix timestamp (seconds)",
+		"now":          "now([format]) → object/string  — Current time or formatted string",
+		"date":         "date(format, [timestamp]) → string  — Format timestamp",
+		"sleep":        "sleep(ms) → null  — Sleep for milliseconds",
+		"usleep":       "usleep(us) → null  — Sleep for microseconds",
+		"getdate":      "getdate([timestamp]) → object  — Get date info",
+		"gettimeofday": "gettimeofday() → object  — Get time info with microseconds",
+		"strftime":     "strftime(format, [timestamp]) → string  — Format with strftime",
+		"gmdate":       "gmdate(format, [timestamp]) → string  — Format GMT time",
+		"localtime":    "localtime([timestamp], [is_assoc]) → array/object  — Local time info",
+		"mktime":       "mktime(hour, minute, second, month, day, year) → float  — Create timestamp",
+		"gmmktime":     "gmmktime(hour, minute, second, month, day, year) → float  — Create GMT timestamp",
+	}
+}

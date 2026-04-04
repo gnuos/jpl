@@ -1406,6 +1406,61 @@ func builtinStrrev(ctx *engine.Context, args []engine.Value) (engine.Value, erro
 	return engine.NewString(string(runes)), nil
 }
 
+// StringSigs returns function signatures for REPL :doc command.
+func StringSigs() map[string]string {
+	return map[string]string{
+		"strlen":                  "strlen(str) → int  — Get character count (UTF-8)",
+		"substr":                  "substr(str, start, [length]) → string  — Extract substring",
+		"strpos":                  "strpos(haystack, needle) → int  — Find position of substring",
+		"strrpos":                 "strrpos(haystack, needle, [offset]) → int  — Find last occurrence",
+		"str_replace":             "str_replace(str, search, replace) → string  — Replace all occurrences",
+		"trim":                    "trim(str) → string  — Remove whitespace from both ends",
+		"ltrim":                   "ltrim(str, [chars]) → string  — Remove whitespace from left",
+		"rtrim":                   "rtrim(str, [chars]) → string  — Remove whitespace from right",
+		"chop":                    "chop(str, [chars]) → string  — Alias of rtrim",
+		"strcmp":                  "strcmp(str1, str2) → int  — Binary-safe string comparison",
+		"strcasecmp":              "strcasecmp(str1, str2) → int  — Case-insensitive comparison",
+		"strncmp":                 "strncmp(str1, str2, n) → int  — Compare first n characters",
+		"strncasecmp":             "strncasecmp(str1, str2, n) → int  — Case-insensitive compare first n",
+		"stripos":                 "stripos(haystack, needle, [offset]) → int  — Case-insensitive find position",
+		"strripos":                "strripos(haystack, needle, [offset]) → int  — Case-insensitive find last",
+		"strstr":                  "strstr(haystack, needle) → string  — Find substring and return rest",
+		"stristr":                 "stristr(haystack, needle) → string  — Case-insensitive strstr",
+		"strchr":                  "strchr(haystack, needle) → string  — Find first character occurrence",
+		"sprintf":                 "sprintf(format, args...) → string  — Format string",
+		"printf":                  "printf(format, args...) → string  — Format and output",
+		"vsprintf":                "vsprintf(format, args_array) → string  — Format with array args",
+		"vprintf":                 "vprintf(format, args_array) → string  — Format and output with array",
+		"ord":                     "ord(str) → int  — Get ASCII value of first character",
+		"chr":                     "chr(ascii) → string  — Convert ASCII value to character",
+		"nl2br":                   "nl2br(str, [isXHTML]) → string  — Convert newlines to <br>",
+		"bin2hex":                 "bin2hex(str) → string  — Convert binary to hex",
+		"str_getcsv":              "str_getcsv(str, [delimiter], [enclosure]) → array  — Parse CSV string",
+		"levenshtein":             "levenshtein(str1, str2) → int  — Calculate Levenshtein distance",
+		"similar_text":            "similar_text(str1, str2) → int  — Calculate similarity",
+		"strtok":                  "strtok(str, token) → string  — Tokenize string",
+		"parse_str":               "parse_str(str) → object  — Parse query string",
+		"http_build_query":        "http_build_query(obj) → string  — Build URL query string",
+		"substr_compare":          "substr_compare(str1, str2, [offset], [length]) → int  — Compare substrings",
+		"substr_count":            "substr_count(haystack, needle, [offset], [length]) → int  — Count occurrences",
+		"str_repeat":              "str_repeat(str, times) → string  — Repeat string",
+		"str_pad":                 "str_pad(str, length, [pad_string], [pad_type]) → string  — Pad string",
+		"str_split":               "str_split(str, [length]) → array  — Split string into chunks",
+		"strrev":                  "strrev(str) → string  — Reverse string",
+		"htmlspecialchars":        "htmlspecialchars(str, [flags], [encoding]) → string  — Encode HTML entities",
+		"htmlspecialchars_decode": "htmlspecialchars_decode(str, [flags]) → string  — Decode HTML entities",
+		"strip_tags":              "strip_tags(str, [allowable_tags]) → string  — Remove HTML tags",
+		"wordwrap":                "wordwrap(str, width, [break], [cut]) → string  — Wrap text to width",
+		"strtolower":              "strtolower(str) → string  — Convert to lowercase",
+		"strtoupper":              "strtoupper(str) → string  — Convert to uppercase",
+		"chunk_split":             "chunk_split(str, chunklen, [end]) → string  — Split into chunks",
+		"explode":                 "explode(delimiter, str) → array  — Split string by delimiter",
+		"implode":                 "implode(glue, array) → string  — Join array elements",
+		"split":                   "split(str, delimiter) → array  — Split string by delimiter",
+		"join":                    "join(array, delimiter) → string  — Join array elements",
+	}
+}
+
 func builtinHtmlspecialchars(ctx *engine.Context, args []engine.Value) (engine.Value, error) {
 	if len(args) < 1 || len(args) > 3 {
 		return nil, fmt.Errorf("htmlspecialchars() expects 1 to 3 arguments, got %d", len(args))

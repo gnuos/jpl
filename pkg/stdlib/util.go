@@ -88,3 +88,10 @@ func builtinLen(ctx *engine.Context, args []engine.Value) (engine.Value, error) 
 		return nil, fmt.Errorf("len() not supported for type %s", v.Type())
 	}
 }
+
+// UtilSigs returns function signatures for REPL :doc command.
+func UtilSigs() map[string]string {
+	return map[string]string{
+		"len": "len(value) → int  — Return length of string, array, or object",
+	}
+}

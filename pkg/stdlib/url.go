@@ -247,3 +247,14 @@ func builtinParseURL(ctx *engine.Context, args []engine.Value) (engine.Value, er
 
 	return engine.NewObject(result), nil
 }
+
+// UrlSigs returns function signatures for REPL :doc command.
+func UrlSigs() map[string]string {
+	return map[string]string{
+		"urlencode":    "urlencode(str) → string  — URL encode (space → +)",
+		"urldecode":    "urldecode(str) → string  — URL decode (+ → space)",
+		"rawurlencode": "rawurlencode(str) → string  — Raw URL encode (space → %20)",
+		"rawurldecode": "rawurldecode(str) → string  — Raw URL decode",
+		"parse_url":    "parse_url(url) → object  — Parse URL into components",
+	}
+}

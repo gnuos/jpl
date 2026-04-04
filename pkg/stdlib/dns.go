@@ -349,3 +349,14 @@ func builtinDNSGetRecords(ctx *engine.Context, args []engine.Value) (engine.Valu
 
 	return engine.NewArray(results), nil
 }
+
+// DNSSigs returns function signatures for REPL :doc command.
+func DNSSigs() map[string]string {
+	return map[string]string{
+		"dns_resolve":     "dns_resolve(host) → array  — Resolve all IPs (IPv4+IPv6)",
+		"dns_resolve_one": "dns_resolve_one(host) → string  — Resolve first IP",
+		"dns_resolve_v4":  "dns_resolve_v4(host) → array  — Resolve IPv4 only",
+		"dns_resolve_v6":  "dns_resolve_v6(host) → array  — Resolve IPv6 only",
+		"dns_get_records": "dns_get_records(host, [type]) → array  — Get DNS records",
+	}
+}

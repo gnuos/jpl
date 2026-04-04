@@ -228,3 +228,15 @@ func builtinBoolval(ctx *engine.Context, args []engine.Value) (engine.Value, err
 
 	return engine.NewBool(engine.IsTruthy(args[0])), nil
 }
+
+// TypeConvertSigs returns function signatures for REPL :doc command.
+func TypeConvertSigs() map[string]string {
+	return map[string]string{
+		"intval":     "intval(value, [base]) → int  — Convert to integer",
+		"floatval":   "floatval(value) → float  — Convert to float",
+		"strval":     "strval(value) → string  — Convert to string",
+		"boolval":    "boolval(value) → bool  — Convert to boolean",
+		"bigint":     "bigint(value) → bigint  — Convert to BigInt",
+		"bigdecimal": "bigdecimal(value) → bigdecimal  — Convert to BigDecimal",
+	}
+}

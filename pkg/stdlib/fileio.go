@@ -1365,3 +1365,44 @@ func parseCSVLine(line string, extraArgs []engine.Value) (engine.Value, error) {
 	}
 	return engine.NewArray(arr), nil
 }
+
+// FileIOSigs returns function signatures for REPL :doc command.
+func FileIOSigs() map[string]string {
+	return map[string]string{
+		"read":                 "read(path) → string  — Read file content as string",
+		"write":                "write(path, content) → null  — Write string to file (overwrite)",
+		"append":               "append(path, content) → null  — Append string to file",
+		"fopen":                "fopen(path, [mode]) → stream  — Open file stream",
+		"fread":                "fread(stream, length) → string  — Read bytes from stream",
+		"fgets":                "fgets(stream) → string  — Read line from stream",
+		"fwrite":               "fwrite(stream, data) → int  — Write data to stream",
+		"fclose":               "fclose(stream) → null  — Close stream",
+		"feof":                 "feof(stream) → bool  — Check if stream at EOF",
+		"fflush":               "fflush(stream) → bool  — Flush stream buffer",
+		"file_exists":          "file_exists(path) → bool  — Check if file exists",
+		"is_file":              "is_file(path) → bool  — Check if path is a file",
+		"is_dir":               "is_dir(path) → bool  — Check if path is a directory",
+		"file_size":            "file_size(path) → int  — Get file size in bytes",
+		"file_get_contents":    "file_get_contents(path) → string  — Read entire file as string",
+		"file_put_contents":    "file_put_contents(path, content) → int  — Write string to file, return bytes written",
+		"copy":                 "copy(source, dest) → bool  — Copy file",
+		"readfile":             "readfile(path) → string  — Read file and return content",
+		"pathinfo":             "pathinfo(path) → object  — Get path components (dirname, basename, extension, filename)",
+		"chdir":                "chdir(path) → bool  — Change working directory",
+		"rename":               "rename(old, new) → bool  — Rename or move file",
+		"unlink":               "unlink(path) → bool  — Delete file",
+		"realpath":             "realpath(path) → string  — Get canonical absolute path",
+		"is_readable":          "is_readable(path_or_stream) → bool  — Check if readable",
+		"is_writable":          "is_writable(path_or_stream) → bool  — Check if writable",
+		"chmod":                "chmod(path, mode) → bool  — Change file permissions",
+		"scandir":              "scandir(path, [sorting_order]) → array  — List directory contents",
+		"glob":                 "glob(pattern, [flags]) → array  — Find files matching pattern",
+		"cwd":                  "cwd() → string  — Get current working directory",
+		"fseek":                "fseek(stream, offset, whence) → int  — Seek file position",
+		"ftell":                "ftell(stream) → int  — Get current file position",
+		"rewind":               "rewind(stream) → null  — Reset file pointer to start",
+		"ftruncate":            "ftruncate(stream, size) → bool  — Truncate file to size",
+		"fgetcsv":              "fgetcsv(stream, [delimiter], [enclosure]) → array  — Read CSV line",
+		"stream_get_meta_data": "stream_get_meta_data(stream) → object  — Get stream metadata",
+	}
+}

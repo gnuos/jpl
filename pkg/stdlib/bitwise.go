@@ -78,3 +78,15 @@ func builtinShr(ctx *engine.Context, args []engine.Value) (engine.Value, error) 
 	}
 	return engine.NewInt(args[0].Int() >> uint(args[1].Int())), nil
 }
+
+// BitwiseSigs returns function signatures for REPL :doc command.
+func BitwiseSigs() map[string]string {
+	return map[string]string{
+		"bit_and": "bit_and(a, b) → int  — Bitwise AND",
+		"bit_or":  "bit_or(a, b) → int  — Bitwise OR",
+		"bit_xor": "bit_xor(a, b) → int  — Bitwise XOR",
+		"bit_not": "bit_not(a) → int  — Bitwise NOT",
+		"bit_shl": "bit_shl(a, b) → int  — Bitwise left shift",
+		"bit_shr": "bit_shr(a, b) → int  — Bitwise right shift",
+	}
+}

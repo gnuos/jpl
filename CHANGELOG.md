@@ -1,6 +1,44 @@
 # Changelog
 
-## v0.9.4 (Unreleased)
+## v0.9.5 (2026-04-04)
+
+### 新增
+
+#### 更好的错误消息
+- 运行时错误显示行号 + 源码上下文（箭头标记 + 前后 2 行）
+- Program 结构体新增 `Source` 和 `SourceLines` 字段存储源代码
+- 编译器在编译时自动存储源代码
+- VM 在错误发生时自动附加当前行号到 RuntimeError
+- RuntimeError 新增 `FormatWithContext()` 方法
+- CLI（run/eval/repl）全部更新为使用新的错误格式
+- 新增 3 个测试用例
+
+**输出示例**：
+```
+runtime error at line 3: something went wrong
+   1 | fn greet() {
+   2 |     $msg = "hello"
+ → 3 |     throw "something went wrong"
+   4 | }
+   5 | 
+```
+
+#### REPL 多行续输
+- 括号/引号平衡检测：输入未闭合的 `(`、`{`、`[`、`"`、`'`、`'''`、`"""` 时自动进入多行模式
+- 提示符从 `> ` 动态切换为 `... `（go-prompt `WithPrefixCallback`）
+- 空行提交多行代码
+- 支持转义字符、三引号、注释中的括号忽略
+- 新增 7 个测试用例
+
+#### :doc 完整函数签名
+- 41 个 stdlib 模块全覆盖，500+ 内置函数签名
+- 包含参数名、可选参数、返回值类型和简要描述
+- 示例：`map(array_or_range, fn(element) → newValue) → array`
+- 新增 4 个测试用例
+
+---
+
+## v0.9.4 (2026-04-03)
 
 ### 新增
 
@@ -68,8 +106,6 @@
 ---
 
 ## v0.9.0 (2026-04-02)
-
-> 项目进入维护模式，核心功能完整。
 
 ### 新增
 

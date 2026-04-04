@@ -268,3 +268,12 @@ func init() {
 	// 这会在包初始化时注册函数名
 	// 实际的注册在 RegisterObjectParse 中完成
 }
+
+// ObjectParseSigs returns function signatures for REPL :doc command.
+func ObjectParseSigs() map[string]string {
+	return map[string]string{
+		"parse_ini":  "parse_ini(str) → object  — Parse INI format string",
+		"parse_yaml": "parse_yaml(str) → object  — Parse YAML format string",
+		"parse_toml": "parse_toml(str) → object  — Parse TOML format string",
+	}
+}
